@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - master
+    paths:
+      - "**/*.nix"
+      - "flake.lock"
   schedule:
     # rebuild everyday at 2:51
     # TIP: Choose a random time here so not all repositories are build at once:
