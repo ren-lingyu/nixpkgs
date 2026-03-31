@@ -12,8 +12,15 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-ERFPsPATl9bhq12vQfMIb5GpU2WXlyTlmw7dAKOir6k=";
   });
 
-  meta = {
+  passthru = {
+    pkgs = [ ];
+    tlType = "run";
+    tlDeps = with texlive; [ ];
+  };
+
+  meta = with lib; {
     description = "Package ${pname} for LuaLaTeX version ${version}";
+    license = lib.licenses.mit;
     platforms = lib.platforms.all;
   };
 
