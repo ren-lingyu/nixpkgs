@@ -1,18 +1,29 @@
 {
+  
   description = "My personal NUR repository";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  outputs = { self, nixpkgs }:
+  
+  nixpkgs = {
+    url = "git+https://mirrors.tuna.tsinghua.edu.cn/git/nixpkgs.git?ref=nixos-unstable&shallow=1";
+    # type = "github";
+    # owner = "NixOS";
+    # repo = "nixpkgs";
+    # ref = "nixos-unstable";
+  };
+      
+  outputs = { self, nixpkgs }:  
     let
       forAllSystems = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
     in
-    {
-      legacyPackages = forAllSystems (system: import ./default.nix {
-        pkgs = import nixpkgs { inherit system; };
-      });
-      packages = forAllSystems (system: nixpkgs.lib.filterAttrs (_: v: nixpkgs.lib.isDerivation v) self.legacyPackages.${system});
-      nixosModules = import ./nixos-modules;
-      # homeModules = import ./home-modules;
-      # darwinModules = import ./darwin-modules;
-      # flakeModules = import ./flake-modules;
-    };
+      {
+        
+        legacyPackages = forAllSystems (system: import ./default.nix {
+          pkgs = import nixpkgs { inherit system; };
+        });
+        packages = forAllSystems (system: nixpkgs.lib.filterAttrs (_: v: nixpkgs.lib.isDerivation v) self.legacyPackages.${system});
+        nixosModules = import ./nixos-modules;
+        # homeModules = import ./home-modules;
+        # darwinModules = import ./darwin-modules;
+        # flakeModules = import ./flake-modules;
+      };
+  
 }
