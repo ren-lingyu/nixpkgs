@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, lib, ... }:
+{ stdenv, fetchFromGitHub, lib, pkgs, ... }:
 
 stdenv.mkDerivation rec {
   
@@ -15,7 +15,7 @@ stdenv.mkDerivation rec {
   passthru = {
     pkgs = [ ];
     tlType = "run";
-    tlDeps = with texlive; [ ];
+    tlDeps = with pkgs.texlive; [ ];
   };
 
   meta = with lib; {
