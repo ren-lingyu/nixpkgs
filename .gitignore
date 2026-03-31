@@ -11,9 +11,9 @@
 !overlay.nix
 !ci.nix
 
-!github/
-!github/**/
-!github/**/*.yaml
+!.github/
+!.github/**/
+!.github/**/*.yaml
 
 !lib/
 !lib/**/
