@@ -3,7 +3,7 @@
 stdenv.mkDerivation rec {
   
   pname = "luadraw";
-  version = "2.7";
+  version = "2.7.0";
   src = fetchFromGitHub ({
     owner = "pfradin";
     repo = "luadraw";
