@@ -1,4 +1,9 @@
 #+TITLE: aRenCoco's NUR
+#+AUTHOR: aRenCoco
+
+* Packages Included
+
+- [[file:pkgs/luadraw/][luadraw]], packaged from [[https://github.com/pfradin/luadraw]].
 
 * README from [[https://github.com/nix-community/nur-packages-template.git][nur-packages-template]]
 
