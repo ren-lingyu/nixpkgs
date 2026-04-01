@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
     outputsToInstall = [ ];
   };
 
-  outputs = [ "tex" "texdoc" ];
+  outputs = [ "out" "tex" "texdoc" ];
 
   installPhase = lib.concatStringsSep "\n" [
     "runHook preInstall"
