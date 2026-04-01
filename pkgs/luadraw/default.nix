@@ -24,6 +24,8 @@ stdenv.mkDerivation rec {
   installPhase = lib.concatStringsSep "\n" [
     "runHook preInstall"
     ""
+    "mkdir -p \$out"
+    ""
     "mkdir -p \$tex/tex/latex/${pname}"
     "cp -r files/* \$tex/tex/latex/${pname}/"
     ""
