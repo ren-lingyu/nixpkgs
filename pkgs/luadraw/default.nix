@@ -11,25 +11,27 @@ stdenv.mkDerivation rec {
     fetchSubmodules = false;
     sha256 = "sha256-ERFPsPATl9bhq12vQfMIb5GpU2WXlyTlmw7dAKOir6k=";
   });
-
+  
   passthru = {
-    pkgs = [ ];
-    tlType = "run";
-    tlDeps = with pkgs.texlive; [ ];
+    tlType = "tex";
+    outputSpecified = true;
   };
 
   meta = with lib; {
     description = "Package ${pname} for LuaLaTeX version ${version}";
     license = lib.licenses.mit;
     platforms = lib.platforms.all;
+    outputsToInstall = [ ];
   };
+
+  outputs = [ "tex" "texdoc" ];
 
   installPhase = lib.concatStringsSep "\n" [
     "runHook preInstall"
-    "mkdir -p \$out/tex/latex/${pname}/"
-    "cp -r files/* \$out/tex/latex/${pname}/"
-    "mkdir -p \$out/doc/latex/${pname}/"
-    "cp -r doc/* \$out/doc/latex/${pname}/"
+    "mkdir -p \$tex/tex/latex/${pname}/"
+    "cp -r files/* \$tex/tex/latex/${pname}/"
+    "mkdir -p \$texdoc/doc/latex/${pname}/"
+    "cp -r doc/* \$texdoc/doc/latex/${pname}/"
     "runHook postInstall"
   ];
   
