@@ -20,15 +20,7 @@
         legacyPackages = forAllSystems (system: import ./default.nix {
           pkgs = import nixpkgs { inherit system; };
         });
-        packages = forAllSystems (system:
-          let
-            legacy = self.legacyPackages.${system};
-          in
-            (nixpkgs.lib.filterAttrs (_: v: nixpkgs.lib.isDerivation v) legacy)
-            // {
-              texlivePackages = legacy.texlivePackages;
-            }
-        );
+        packages = forAllSystems (system: self.legacyPackages.${system});
         nixosModules = import ./nixos-modules;
         # homeModules = import ./home-modules;
         # darwinModules = import ./darwin-modules;
