@@ -3,13 +3,13 @@
 stdenv.mkDerivation rec {
   
   pname = "luadraw";
-  version = "2.7.0";
+  version = "2.8.0";
   src = fetchFromGitHub {
     owner = "pfradin";
     repo = "luadraw";
-    rev = "a0713482ef87666fb59a788bae18ba58656e7163";
+    rev = "4bbc37c8baadde6c25721ada659a6bd3953d971c";
     fetchSubmodules = false;
-    sha256 = "sha256-ERFPsPATl9bhq12vQfMIb5GpU2WXlyTlmw7dAKOir6k=";
+    sha256 = "sha256-JQJL89iGNyx8FLgIBXQVv0sxvpl1siRjZFmwJrnbGZg=";
   };
   
   dontBuild = true;
