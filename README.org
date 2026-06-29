@@ -1,5 +1,5 @@
-#+TITLE: aRenCoco's NUR
-#+AUTHOR: aRenCoco
+#+TITLE: Lingyu's NUR
+#+AUTHOR: Lingyu Ren
 
 * Packages Included
 
