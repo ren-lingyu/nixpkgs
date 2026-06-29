@@ -1,7 +1,11 @@
-{ pkgs }:
+{ pkgs, markerNames ? [ "recurseForDerivations" ] } : let
 
-with pkgs.lib; {
-  # Add your library functions here
-  #
-  # hexint = x: hexvals.${toLower x};
-}
+  lib = pkgs.lib;
+
+in (rec {
+
+  stripPackageTreeMarkers = import ./strip-package-tree-markers.nix { inherit lib; } markerNames;
+
+  mkRecursiveOverlay = import ./mk-recursive-overlay.nix { inherit lib; } stripPackageTreeMarkers;
+  
+})
