@@ -8,4 +8,6 @@
     luadraw = pkgs.callPackage ./texlive/luadraw { };
   };
 
+  wayfile = pkgs.callPackage ./wayfile { };
+
 }
