@@ -4,11 +4,7 @@
 
   inputs = {
     nixpkgs = {
-      url = "git+https://mirrors.tuna.tsinghua.edu.cn/git/nixpkgs.git?ref=nixos-unstable&shallow=1";
-      # type = "github";
-      # owner = "NixOS";
-      # repo = "nixpkgs";
-      # ref = "nixos-unstable";
+      url = "git+https://github.com/NixOS/nixpkgs?ref=refs/heads/nixos-unstable&shallow=1";
     };
   };
       
