@@ -21,7 +21,8 @@
       # packages = forAllSystems (system : self.legacyPackages.${system});
       overlays = import ./overlays;
       nixosModules = import ./nixos-modules;
-      # homeModules = import ./home-modules;
+      homeManagerModules = import ./home-manager-modules;
+      homeModules = self.homeManagerModules;
       # darwinModules = import ./darwin-modules;
       # flakeModules = import ./flake-modules;
       

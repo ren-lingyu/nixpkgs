@@ -23,6 +23,10 @@
 !nixos-modules/**/
 !nixos-modules/**/*.nix
 
+!home-manager-modules/
+!home-manager-modules/**/
+!home-manager-modules/**/*.nix
+
 !overlays/
 !overlays/**/
 !overlays/**/*.nix
