@@ -22,22 +22,13 @@ in {
       description = "Internal desktop file name installed by the Wayfile package.";
     };
     
-    setAsDefaultFileManager = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      example = true;
-      description = "Whether to set Wayfile as the default application for opening directories.";
-    };
-    
     mimeTypes = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [
-        "inode/directory"
-      ];
+      type = lib.types.nullOr (lib.types.listOf lib.types.str);
+      default = null;
       example = [
         "inode/directory"
       ];
-      description = "MIME types to associate with Wayfile when programs.wayfile.setAsDefaultFileManager is enabled.";
+      description = "MIME types to associate with Wayfile when `programs.wayfile.mimeTypes` is not null.";
     };
     
   };
@@ -52,7 +43,7 @@ in {
         cfg.package
       ];
       
-      xdg.mimeApps = lib.mkIf cfg.setAsDefaultFileManager {
+      xdg.mimeApps = lib.mkIf (cfg.mimeTypes != null) {
         enable = true;
         defaultApplications = builtins.listToAttrs (builtins.map (mimeType : {
           name = mimeType;
