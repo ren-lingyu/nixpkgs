@@ -11,8 +11,8 @@
       if
         builtins.isAttrs value_
       then
-        lib.mapAttrs (x_ : child_ : stripMarkers_ child_) (
-          lib.filterAttrs (name_: _child_: !(hasMarkerName_ name_)) value_
+        lib.mapAttrs (unused_name_ : child_ : stripMarkers_ child_) (
+          lib.filterAttrs (name_: unused_child_: !(hasMarkerName_ name_)) value_
         )
       else
         value_
