@@ -2,7 +2,7 @@
   
   pname = "luadraw";
   version = "3.2";
-
+  
   src = fetchFromGitHub {
     owner = "pfradin";
     repo = "luadraw";
@@ -18,8 +18,16 @@
   
   passthru = {
     tlType = "run";
+    tlDeps = ps_ : with ps_; [
+      latex
+      iftex
+      luacode
+      tools
+      xkeyval
+      pgf
+    ];
   };
-
+  
   installPhase = lib.concatStringsSep "\n" [
     "runHook preInstall"
     ""
@@ -33,7 +41,7 @@
     ""
     "runHook postInstall"
   ];
-
+  
   meta = with lib; {
     description = "LuaLaTeX package ${pname} version ${version} for creating mathematical drawings";
     homepage = "https://github.com/pfradin/luadraw";
