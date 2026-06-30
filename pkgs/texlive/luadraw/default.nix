@@ -1,15 +1,14 @@
-{ stdenv, fetchFromGitHub, lib }:
-
-stdenv.mkDerivation rec {
+{ stdenvNoCC, fetchFromGitHub, lib } : stdenvNoCC.mkDerivation rec {
   
   pname = "luadraw";
-  version = "2.8.0";
+  version = "3.2";
+
   src = fetchFromGitHub {
     owner = "pfradin";
     repo = "luadraw";
-    rev = "4bbc37c8baadde6c25721ada659a6bd3953d971c";
+    rev = "f4aec9ddf382e5c4b7d6629b01ac0b8639d7b0d6";
     fetchSubmodules = false;
-    sha256 = "sha256-JQJL89iGNyx8FLgIBXQVv0sxvpl1siRjZFmwJrnbGZg=";
+    hash = "sha256-XuyuiGM1Kk0oh7rDahR/dqMIeWPyFEqx3vsYh7r8t+I=";
   };
   
   dontBuild = true;
@@ -18,26 +17,27 @@ stdenv.mkDerivation rec {
   outputs = [ "out" "tex" "texdoc" ];
   
   passthru = {
-    tlType = "tex";
+    tlType = "run";
   };
 
   installPhase = lib.concatStringsSep "\n" [
     "runHook preInstall"
     ""
-    "mkdir -p \$out"
+    "mkdir -p \"$out\""
     ""
-    "mkdir -p \$tex/tex/latex/${pname}"
-    "cp -r files/* \$tex/tex/latex/${pname}/"
+    "mkdir -p \"$tex/tex/lualatex/${pname}\""
+    "cp -r files/* \"$tex/tex/lualatex/${pname}/\""
     ""
-    "mkdir -p \$texdoc/doc/latex/${pname}"
-    "cp -r doc/* \$texdoc/doc/latex/${pname}/"
+    "mkdir -p \"$texdoc/doc/lualatex/${pname}\""
+    "cp -r doc/* \"$texdoc/doc/lualatex/${pname}/\""
     ""
     "runHook postInstall"
   ];
 
   meta = with lib; {
-    description = "LuaLaTeX package ${pname} version ${version}";
-    license = licenses.mit;
+    description = "LuaLaTeX package ${pname} version ${version} for creating mathematical drawings";
+    homepage = "https://github.com/pfradin/luadraw";
+    license = licenses.lppl13c;
     platforms = platforms.all;
     maintainers = [ ];
   };
