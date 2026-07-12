@@ -12,8 +12,7 @@
     
     forAllSystems = inputs.nixpkgs.lib.genAttrs inputs.nixpkgs.lib.systems.flakeExposed;
     
-  in
-    {
+  in {
       
       legacyPackages = forAllSystems (system : let
         pkgs_ = import inputs.nixpkgs { inherit system; };
