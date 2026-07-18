@@ -1,8 +1,8 @@
 { stdenvNoCC, fetchFromGitHub, lib } : stdenvNoCC.mkDerivation rec {
-  
+
   pname = "luadraw";
   version = "3.2";
-  
+
   src = fetchFromGitHub {
     owner = "pfradin";
     repo = "luadraw";
@@ -10,12 +10,12 @@
     fetchSubmodules = false;
     hash = "sha256-XuyuiGM1Kk0oh7rDahR/dqMIeWPyFEqx3vsYh7r8t+I=";
   };
-  
+
   dontBuild = true;
   dontStrip = true;
-  
+
   outputs = [ "out" "tex" "texdoc" ];
-  
+
   passthru = {
     tlType = "run";
     tlDeps = ps_ : with ps_; [
@@ -27,7 +27,7 @@
       pgf
     ];
   };
-  
+
   installPhase = lib.concatStringsSep "\n" [
     "runHook preInstall"
     ""
@@ -41,7 +41,7 @@
     ""
     "runHook postInstall"
   ];
-  
+
   meta = with lib; {
     description = "LuaLaTeX package ${pname} version ${version} for creating mathematical drawings";
     homepage = "https://github.com/pfradin/luadraw";
@@ -49,5 +49,5 @@
     platforms = platforms.all;
     maintainers = [ ];
   };
-  
+
 }

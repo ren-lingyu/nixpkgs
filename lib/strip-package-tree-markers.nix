@@ -1,5 +1,5 @@
 { lib } : markerNames_ : tree_ : let
-  
+
   hasMarkerName_ = name_ : builtins.elem name_ markerNames_;
 
   stripMarkers_ = value_ : (

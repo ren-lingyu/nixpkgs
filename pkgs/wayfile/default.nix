@@ -1,5 +1,5 @@
 {
-  
+
   lib,
   stdenv,
   fetchFromGitHub,
@@ -26,12 +26,12 @@
   bzip2,
   p7zip,
   libarchive,
-  
+
 } : stdenv.mkDerivation rec {
-  
+
   pname = "wayfile";
   version = "1.1.0";
-  
+
   src = fetchFromGitHub {
     owner = "blackbartblues";
     repo = "Wayfile";
@@ -41,7 +41,7 @@
     fetchSubmodules = true;
     hash = "sha256-f5F9IIebPb+RN2eyEC8KWs+ttjt8uQ/9cANqhcSEJdQ=";
   };
-  
+
   nativeBuildInputs = [
     # Upstream uses CMake with the Ninja generator.
     cmake
@@ -51,7 +51,7 @@
     # Wraps the Qt application so that Qt plugins and QML imports are found at runtime.
     qt6.wrapQtAppsHook
   ];
-  
+
   buildInputs = [
     # Provides gio-2.0 and gio-unix-2.0.
     glib
@@ -66,7 +66,7 @@
 
   qtWrapperArgs = [
     "--prefix PATH : ${lib.makeBinPath [
-      
+
       # MIME and external application integration:
       # - gio open
       # - gtk-launch
@@ -77,7 +77,7 @@
 
       # Used for git status badges / repository information.
       git
-      
+
       # Runtime helpers used by Wayfile for search and file transfers.
       fd
       rsync
@@ -85,7 +85,7 @@
       # Optional Wayland clipboard helper. Wayfile can use wl-paste as a
       # fallback when pasting image data copied from external applications.
       wl-clipboard
-      
+
       # Archive support. Wayfile calls external tools for compressing and
       # extracting common archive formats.
       zip
@@ -96,10 +96,10 @@
       bzip2
       p7zip
       libarchive
-      
+
     ]}"
   ];
-  
+
   cmakeFlags = [
     # Avoid pulling in the test target and its additional Qt test dependency.
     "-DBUILD_TESTS=OFF"
@@ -111,7 +111,7 @@
     # The generated Wayfile QML module misses this helper script, although it is installed in the copied source QML tree.
     "install -Dm644 \"$out/share/wayfile/src/qml/views/DropParse.js\" \"$out/share/wayfile/Wayfile/qml/views/DropParse.js\""
   ];
-  
+
   meta = {
     description = "Qt6/QML file manager for Wayland";
     homepage = "https://github.com/blackbartblues/Wayfile";
@@ -119,5 +119,5 @@
     platforms = lib.platforms.linux;
     mainProgram = "wayfile";
   };
-  
+
 }

@@ -7,5 +7,5 @@
   # darwinModules = { }; # nix-darwin modules
   # flakeModules = { }; # flake-parts modules
   overlays = import ./overlays; # nixpkgs overlays
-  
+
 }

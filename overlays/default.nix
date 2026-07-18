@@ -3,9 +3,9 @@ let
   pkgs_ = import ../pkgs;
 
   lib_ = import ../lib;
-    
+
 in {
-  
+
   default = final : prev : let
 
     lib = prev.lib;
@@ -56,13 +56,13 @@ in {
         value = wrapTexliveEnv_ prev.${name_};
       }) (builtins.filter (name_ : builtins.hasAttr name_ prev) texliveEnvNames_)
     );
-    
+
   in lib.mergeAttrsList [
-    
+
     overlayTree_
-    
+
     wrappedTexliveEnvs_
-    
+
     {
       texlive = lib.mergeAttrsList [
         texlive_
@@ -75,7 +75,7 @@ in {
         }
       ];
     }
-    
+
   ];
-  
+
 }

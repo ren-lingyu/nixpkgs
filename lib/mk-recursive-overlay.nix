@@ -1,5 +1,5 @@
 { lib } : stripPackageTreeMarkers_ : oldTree_ : newTree_ : let
-  
+
   deepOverlay_ = old_ : new_ : (
     if
       lib.isDerivation new_ || lib.isDerivation old_
