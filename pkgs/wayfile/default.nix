@@ -36,10 +36,10 @@
     owner = "blackbartblues";
     repo = "Wayfile";
     # Fixed to the commit corresponding to the packaged upstream snapshot.
-    rev = "2ad0ca3a9cb507f9f3108651e03c4c6af5a0413c";
+    rev = "e03db0c44d84aab3d3d67f6ae4b8fb6f9b3ae482";
     # Wayfile uses a git submodule for qml icons.
     fetchSubmodules = true;
-    hash = "sha256-f5F9IIebPb+RN2eyEC8KWs+ttjt8uQ/9cANqhcSEJdQ=";
+    hash = "sha256-zwPvFQCNXyqCfscfDtpF88Aal9Ho+3WsIdDaOQ/kNzg=";
   };
 
   nativeBuildInputs = [
