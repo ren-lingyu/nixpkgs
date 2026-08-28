@@ -1,14 +1,14 @@
 { stdenvNoCC, fetchFromGitHub, lib } : stdenvNoCC.mkDerivation rec {
 
   pname = "luadraw";
-  version = "3.2";
+  version = "3.4";
 
   src = fetchFromGitHub {
     owner = "pfradin";
     repo = "luadraw";
-    rev = "f4aec9ddf382e5c4b7d6629b01ac0b8639d7b0d6";
+    rev = "32bed27969eeff7e968622eaf29483d2846e792e";
     fetchSubmodules = false;
-    hash = "sha256-XuyuiGM1Kk0oh7rDahR/dqMIeWPyFEqx3vsYh7r8t+I=";
+    hash = "sha256-BZ+tJ95pRpLXfCfw5WSBMkDkxvqlYivuXRZiXUR7M2s=";
   };
 
   dontBuild = true;
