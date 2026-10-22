@@ -10,3 +10,82 @@ repository's original use as a personal NUR repository.
 * Flake infrastructure
 The flake is built with flake-parts. Formatting is configured through treefmt-nix
 with nixfmt, exposed as the flake formatter and a formatting check.
+
+* Shared library
+The flake's =lib= output provides functions for use by other repositories.
+It can also be imported directly with a caller-supplied Nixpkgs =lib=:
+
+#+begin_src nix
+import ./lib { inherit lib; }
+#+end_src
+
+** Package and module organization
+=lib.packages= discovers overlays and modules from a caller-supplied directory
+tree. All functions take an attribute set; paths such as =overlayFile= and
+=modulePath= are relative to each discovered directory and have no defaults.
+
+| Function | Arguments | Result |
+|----------+-----------+--------|
+| =mkOverlays= | =root=, =overlayFile= | An attribute set of overlays named after the immediate child directories containing overlays or descendant overlays. |
+| =mkLegacyPackages= | =root=, =overlayFile=, =pkgs= | A package tree selected from an existing package set using the overlay directory layout. |
+| =mkNixosModule= | =root=, =modulePath= | A module whose =imports= collect the discovered NixOS modules. |
+| =mkHomeModule= | =root=, =modulePath= | A module whose =imports= collect the discovered Home Manager modules. |
+
+For example, with this flake available as =inputs.personal-nixpkgs=, a consumer
+can construct overlays and select its packages for one system:
+
+#+begin_src nix
+let
+  helpers = inputs.personal-nixpkgs.lib.packages;
+  root = ./pkgs;
+  overlayFile = "overlay.nix";
+  overlays = helpers.mkOverlays { inherit root overlayFile; };
+  pkgs = import inputs.nixpkgs {
+    system = "x86_64-linux";
+    overlays = builtins.attrValues overlays;
+  };
+in
+{
+  inherit overlays;
+  legacyPackages.x86_64-linux = helpers.mkLegacyPackages {
+    inherit root overlayFile pkgs;
+  };
+}
+#+end_src
+
+Here, =./pkgs= and =overlay.nix= are consumer choices. =mkLegacyPackages= reads
+the resulting =pkgs=; it does not apply overlays itself.
+
+*** Overlay conventions
+Discovery starts with the children of =root=. An overlay file directly inside
+=root= is not loaded. A regular overlay has the form =final: prev: { ... }=;
+its returned attributes determine the package names at that level.
+
+Descendant overlays are grouped under the containing directory's name as a
+package namespace. Existing scopes are extended through =overrideScope=;
+ordinary attribute sets and new namespaces use =lib.makeScope= and require
+the parent package set to provide =newScope=. A namespace cannot replace a
+derivation or a non-attribute value.
+
+An overlay factory can explicitly accept ={ descendantOverlay }= and return an
+overlay. It receives the composed descendant overlay and takes responsibility
+for applying it; automatic namespace handling of those descendants is skipped.
+Within a level, local overlays are composed before automatic namespace overlays.
+
+=mkLegacyPackages= preserves namespace nesting and selects derivations at leaf
+directories with overlay files. A selected derivation cannot have descendant
+overlays; selected namespace paths must exist in the supplied package set.
+
+*** Module conventions
+=mkNixosModule= and =mkHomeModule= use the same discovery mechanism. For example:
+
+#+begin_src nix
+helpers.mkHomeModule {
+  root = ./pkgs;
+  modulePath = "home-module.nix";
+}
+#+end_src
+
+The helper recursively searches child directories for the chosen =modulePath=.
+A directory with such a module must not also contain matching modules in its
+descendants. The module file directly inside =root= is not included.

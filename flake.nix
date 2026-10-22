@@ -17,45 +17,67 @@
 
   outputs =
     { self, ... }@inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } (
-      { config, lib, ... }: {
-        imports = [ inputs.treefmt-nix.flakeModule ];
+    inputs.flake-parts.lib.mkFlake
+      {
+        inherit inputs;
 
-        config = {
-          systems = inputs.nixpkgs.lib.systems.flakeExposed;
+        specialArgs =
+          let
+            lib = inputs.nixpkgs.lib;
+          in
+          rec {
+            llib = import ./lib { inherit lib; };
+          };
+      }
+      (
+        {
+          llib,
+          config,
+          lib,
+          ...
+        }:
+        {
+          imports = [ inputs.treefmt-nix.flakeModule ];
 
-          perSystem =
-            {
-              inputs',
-              config,
-              pkgs,
-              lib,
-              ...
-            }:
-            {
-              treefmt = {
-                flakeFormatter = true;
-                flakeCheck = true;
-                enableDefaultExcludes = false;
-                projectRootFile = builtins.baseNameOf __curPos.file;
-                settings.excludes = [
-                  ".gitignore"
-                  "LICENSE"
-                  "README.org"
-                  "flake.lock"
-                ];
-                programs = {
-                  nixfmt = {
-                    enable = true;
-                    package = pkgs.nixfmt;
-                    width = 100;
-                    indent = 2;
-                    strict = true;
+          config = {
+            systems = inputs.nixpkgs.lib.systems.flakeExposed;
+
+            flake = {
+              lib = llib;
+            };
+
+            perSystem =
+              {
+                inputs',
+                config,
+                pkgs,
+                lib,
+                ...
+              }:
+              {
+                treefmt = {
+                  flakeFormatter = true;
+                  flakeCheck = true;
+                  enableDefaultExcludes = false;
+                  projectRootFile = builtins.baseNameOf __curPos.file;
+                  settings.excludes = [
+                    ".gitignore"
+                    "LICENSE"
+                    "README.org"
+                    "flake.lock"
+                  ];
+                  programs = {
+                    nixfmt = {
+                      enable = true;
+                      package = pkgs.nixfmt;
+                      width = 100;
+                      indent = 2;
+                      strict = true;
+                    };
                   };
                 };
               };
-            };
-        };
-      }
-    );
+          };
+        }
+      );
 }
