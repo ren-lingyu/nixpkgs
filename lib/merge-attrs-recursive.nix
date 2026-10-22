@@ -1,4 +1,6 @@
-{ allowOverrides ? false }:
+{
+  allowOverrides ? false,
+}:
 let
   isMergeable_ = value_: builtins.isAttrs value_ && (value_.type or null) != "derivation";
 
@@ -51,10 +53,7 @@ else if !(builtins.isList sets_) || !(builtins.all isMergeable_ sets_) then
 else
   let
     merged_ = merge_ [ ] (
-      if allowOverrides then
-        builtins.foldl' (reversed_: set_: [ set_ ] ++ reversed_) [ ] sets_
-      else
-        sets_
+      if allowOverrides then builtins.foldl' (reversed_: set_: [ set_ ] ++ reversed_) [ ] sets_ else sets_
     );
   in
   builtins.seq merged_.checked merged_.value

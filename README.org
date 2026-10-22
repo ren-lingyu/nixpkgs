@@ -128,3 +128,27 @@ helpers.mkHomeModule {
 The helper recursively searches child directories for the chosen =modulePath=.
 A directory with such a module must not also contain matching modules in its
 descendants. The module file directly inside =root= is not included.
+
+* Tests
+=tests/default.nix= accepts ={ llib }= and collects the test suites. Each suite
+receives the repository library through that argument. Dependencies outside a
+test's directory must be passed as function parameters; parent-directory imports
+and equivalent ancestor traversal are forbidden. Additional =lib= or =pkgs=
+arguments can be introduced when a suite needs them.
+
+The =mergeAttrsRecursive= suite contains 43 evaluation cases covering recursive
+merging, strict conflicts, later-entry override precedence, subtree replacement,
+function and list values, derivation-shaped leaves, input validation, and
+laziness. It returns named boolean results on success and reports failed case
+names in an error. The derivation cases do not build real packages.
+
+Run the current suites from the repository root, passing the library explicitly:
+
+#+begin_src sh
+nix-instantiate --eval --strict --readonly-mode \
+  --expr 'import ./tests { llib = import ./lib { lib = {}; }; }'
+#+end_src
+
+The current suites need no Nixpkgs library functions, so this command supplies
+an empty =lib= and does not fetch flake inputs. The tests are not yet connected
+to the flake's =checks= output.
