@@ -1,2 +1,12 @@
-#+TITLE: nixpkgs
+#+TITLE: Personal Nixpkgs
 #+AUTHOR: Lingyu Ren
+
+* Introduction
+A shared foundation for my Nix flake-based projects, intended to be added as a
+flake input where needed for cross-repository functions and conventions.
+The name reflects its role in this project ecosystem and continuity with the
+repository's original use as a personal NUR repository.
+
+* Flake infrastructure
+The flake is built with flake-parts. Formatting is configured through treefmt-nix
+with nixfmt, exposed as the flake formatter and a formatting check.
