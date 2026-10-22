@@ -19,6 +19,45 @@ It can also be imported directly with a caller-supplied Nixpkgs =lib=:
 import ./lib { inherit lib; }
 #+end_src
 
+** Recursive attribute-set merge
+=lib.mergeAttrsRecursive= takes a named configuration argument followed by a
+positional list of non-derivation attribute sets. It recursively merges shared
+attribute-set nodes. The configuration argument is required; pass ={ }= to use
+the defaults. For example, it can combine repository-level libraries:
+
+#+begin_src nix
+inputs.personal-nixpkgs.lib.mergeAttrsRecursive { } [
+  inputs.personal-nixpkgs.lib
+  inputs.other-project.lib
+]
+#+end_src
+
+=allowOverrides= must be a boolean and defaults to =false=. Repeated leaves,
+including functions, are conflicts even when their values are equal. A leaf and an attribute set
+at the same path also conflict. Errors contain the path as a JSON array, and
+all overlapping paths are checked before the result is returned.
+
+For example, merging =[ { tools.editor = "emacs"; } { tools.editor = "emacs"; } ]=
+in strict mode throws a conflict at =["tools","editor"]= despite equal values.
+
+With =allowOverrides = true=, later list entries take precedence at conflicts;
+shared attribute sets still merge recursively:
+
+#+begin_src nix
+inputs.personal-nixpkgs.lib.mergeAttrsRecursive { allowOverrides = true; } [
+  { a = 1; nested.x = 1; }
+  { a = 2; nested.y = 2; }
+]
+# => { a = 2; nested = { x = 1; y = 2; }; }
+#+end_src
+
+A winning leaf replaces the whole lower-priority subtree. For example,
+merging =[ { a.x = 1; } { a = 2; } { a.y = 3; } ]= with overrides enabled
+produces ={ a.y = 3; }=: the middle leaf replaces the first subtree before the
+last entry takes precedence. Derivations are treated as whole leaves.
+An empty input list produces ={ }=, and leaves defined by only one input
+remain lazy.
+
 ** Package and module organization
 =lib.packages= discovers overlays and modules from a caller-supplied directory
 tree. All functions take an attribute set; paths such as =overlayFile= and
