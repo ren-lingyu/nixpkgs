@@ -12,6 +12,10 @@
 !lib/**/
 !lib/**/*.nix
 
+!tests/
+!tests/**/
+!tests/**/*.nix
+
 !pkgs/
 !pkgs/**/
 !pkgs/**/*.nix
