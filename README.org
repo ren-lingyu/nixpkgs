@@ -150,5 +150,14 @@ nix-instantiate --eval --strict --readonly-mode \
 #+end_src
 
 The current suites need no Nixpkgs library functions, so this command supplies
-an empty =lib= and does not fetch flake inputs. The tests are not yet connected
-to the flake's =checks= output.
+an empty =lib= and does not fetch flake inputs.
+
+The flake passes =llib= into the test entry and exposes each suite under
+=checks.<system>.<suite>= alongside the formatting check. Failed suites stop
+evaluation; successful checks produce a JSON report of the named results.
+Run all checks for the current system with =nix flake check=, or build the
+merge suite's report directly:
+
+#+begin_src sh
+nix build .#checks.x86_64-linux.mergeAttrsRecursive
+#+end_src
