@@ -15,11 +15,14 @@ Overall migration completeness and historical buildability remain unverified.
 ## Completed shared library
 
 The owner has committed the shared-library baseline. The built-in aggregation
-implementation is now complete and staged, including the owner's preparatory
-move from `lib/packages.nix` to `lib/packages/default.nix` and its updated import.
-No ordinary project commit was created by the agent. Validation below concerns
-this staged worktree, not a committed implementation snapshot. No additional
-project parent is attached for it because current project HEAD lacks these changes.
+implementation has now been committed by the owner as
+`feat(lib): add built-in Emacs and TeX Live aggregation rules`, including the
+preparatory move from `lib/packages.nix` to `lib/packages/default.nix` and its
+updated import. The committed diff was inspected and matches the staged candidate
+reviewed before committing; the project worktree is clean. This checkpoint
+associates that inspected project snapshot. Validation below ran before the
+commit, against the same implementation content; it was not rerun after commit.
+No ordinary project commit was created by the agent.
 
 `lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
 `mkHomeModule`. README.org documents their interfaces and directory conventions.
@@ -85,10 +88,9 @@ environments are not automatically rebuilt. Nested selection merges preserve
 unrelated siblings and treat derivations atomically. These bounds were adopted
 during implementation planning rather than broadening all external replacements.
 
-README and tests are synchronized and all implementation changes are staged.
-The next action is owner review and an ordinary project commit if desired;
-agent policy does not authorize creating that commit. No further implementation
-or validation is currently outstanding within this bounded scope. The local
+README and tests are synchronized and the implementation is committed.
+No further implementation or validation is currently outstanding within this
+bounded scope. Future work should be selected separately from backlog. The local
 `~/nixos` and `~/emarccs` references were read only and remain unchanged.
 
 Read `memory/backlog.md` for broader package-set support, real consumer builds,
@@ -104,6 +106,12 @@ the reviewed migration contract, `memory/backlog.md` for deferred work and
 how to read memory. Skill changes require separate checkpoints from memory.
 Use `feat(skills)` for a newly available skill; scope library-driven test
 integration as `test(lib)` even when its wiring lives in `flake.nix`.
+
+For GAW checkpoint messages, choose the type from the actual knowledge or
+workflow change. Do not default to `docs` merely because memory is written in
+Markdown; reserve `docs` for documentation changes. The owner explicitly asked
+to avoid overusing `docs` in GAW. This is a forward-looking convention, not an
+instruction to rewrite existing checkpoint history.
 
 Checkpoint consequential findings and completed phases when they have recovery
 value. Do not defer a warranted checkpoint merely because the owner did not

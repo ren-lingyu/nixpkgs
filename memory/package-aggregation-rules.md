@@ -3,10 +3,11 @@
 ## Status, purpose and source boundary
 
 This is the owner's scoped development contract and implementation outcome.
-Implementation, README updates and minimal validation are complete in the staged
-project worktree. The owner authorized implementation and repeated scoped staging,
-formatting, targeted builds and full checks. No project commit has been created;
-validation is not attributed to an implementation commit that does not yet exist.
+Implementation, README updates and minimal validation are complete. The owner
+committed the implementation after authorizing scoped staging, formatting,
+targeted builds and full checks. The committed diff matches the reviewed staged
+candidate and is associated with this checkpoint. Validation ran against that
+content before commit; checks were not rerun merely to associate the snapshot.
 
 Move existing Emacs and TeX Live aggregation practice into `lib.packages`, with
 automatic selection by immediate child-directory name. Reuse the current scope,
@@ -32,7 +33,7 @@ The supplied guide names `lib/packages.nix`. At review time the owner had alread
 staged its 100%-identical move to `lib/packages/default.nix`, with the corresponding
 `lib/default.nix` import changed to `./packages`. Keep that existing preparation;
 use the current paths rather than recreating the old file. The implementation
-extends the moved file; the resulting staged candidate includes that preparation.
+extends the moved file; the committed implementation includes that preparation.
 
 Keep the public namespace `lib.packages`. Independent internal rule functions
 can live at `lib/packages/rules/emacsPackages.nix` and
@@ -197,6 +198,6 @@ The packages suite passed 54 cases (48 generic plus six real evaluations), and
 the unchanged merge suite passed 43 cases. The final authorized
 `nix flake check --no-write-lock-file --show-trace` passed both suites and treefmt
 on x86_64-linux after scoped formatting and the targeted packages check build.
-Other platforms were skipped. README matches the implemented boundaries. All
-project changes are staged; no lockfile update or reference-repository edit was
-made. The complete package-set/runtime test matrix remains deferred in backlog.
+Other platforms were skipped. README matches the implemented boundaries. The
+owner has committed all project changes and the project worktree is clean; no
+lockfile update or reference-repository edit was made. The complete package-set/runtime test matrix remains deferred in backlog.
