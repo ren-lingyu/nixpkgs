@@ -134,8 +134,14 @@ the domain-neutral `overlays.mkOverlay` prefix.
 
 The second delivery, public lib.tests, is implemented, documented, validated
 and committed by the owner. Read `memory/overlay-tests-design.md` for the complete
-contract and coverage. The owner requested `lib/tests/default.nix` to mirror
-`lib/packages/default.nix`. Root library assembly injects lib and overlayTree.
+contract and coverage. The current module is `lib/tests.nix`. The owner
+corrected the earlier directory preference: packages uses a directory because
+it has additional rule files; a single-file module should remain flat. The owner
+committed the byte-identical move from `lib/tests/default.nix` and updated the
+root import as `refactor(lib): flatten tests module into a single file`. Inspection
+confirmed only that move and import changed, with a clean project worktree.
+This checkpoint associates the inspected refactor; tests were not rerun for this
+path-only change. Root library assembly injects lib and overlayTree.
 Public tests.mkOverlays returns unapplied overlays without package defaults;
 tests.mkChecks takes a caller-built scope and flattens directory-selected
 derivations with separator defaulting to "/". Missing/non-derivation overlay

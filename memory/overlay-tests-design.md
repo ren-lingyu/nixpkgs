@@ -139,9 +139,14 @@ not change implementation content or add a public API.
 
 ## Second delivery outcome: public lib.tests
 
-The owner requests lib/tests/default.nix, matching lib/packages/default.nix,
-rather than a flat lib/tests.nix. This module is implemented and injected with
-lib and overlayTree by the root library. It exposes exactly mkOverlays and
+The module now lives at lib/tests.nix and is injected with lib and overlayTree
+by the root library. The owner initially requested lib/tests/default.nix to
+mirror packages, then corrected that choice: packages needs a directory for its
+additional rule files, whereas this single-file module should remain flat.
+The owner committed the byte-identical move and root import update as
+`refactor(lib): flatten tests module into a single file`. The inspected commit
+changes only these two paths; the project worktree was clean. This checkpoint
+associates that source inspection, without claiming a new test run. It exposes exactly mkOverlays and
 mkChecks. The former delegates without package defaults; the latter follows the
 independent extraction table above, flattening only discovered directory paths.
 Namespace errors identify paths as JSON arrays. Extraction reads filesystem
