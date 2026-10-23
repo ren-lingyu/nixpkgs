@@ -1,67 +1,109 @@
-# Parameterized overlay construction: proposal review
+# Overlay constructors: adopted design revision
 
 ## Status and scope
 
-The owner requested review, not implementation, of a guide based on the current
-committed checks-only API baseline. Source inspection confirmed that baseline
-and a clean project worktree. Earlier GAW history already associates the source;
-this planning checkpoint introduces no additional project parent. No project
-files were changed or validation commands run for this review.
+The owner replaced the earlier mixed two-/three-layer input proposal with a
+uniform constructor protocol. This revision supersedes all four earlier review
+recommendations and the mixed-format compatibility plan. Original guidance
+remains applicable only where not overridden. The decision is adopted, not
+implemented: project source remains at the clean committed checks-only baseline.
+No Nix validation or project-file mutation occurred in this decision turn.
+Earlier GAW history already associates that baseline; this planning checkpoint
+has no additional project parent.
 
-The proposed bounded extension adds packages.mkOverlays.extraArgs, default {},
-and the same optional parameter to internal overlayTree.mkOverlays. Keep
-mkLegacyPackages extraction-only, package outputs unchanged, and tests.mkChecks
-unchanged in signature and args semantics. Consumer repositories are not to be
-modified. The older package-consumption redesign remains deferred.
+The bounded change extends packages.mkOverlays with extraArgs ? {} and internal
+overlayTree.mkOverlays with the same default. Keep mkLegacyPackages extraction,
+namespace algorithms, business package rules and mkChecks.args scope semantics
+unchanged. The older redesign of package consumption/output ownership remains
+deferred; this constructor change is an explicitly adopted additive capability
+plus an incompatible source-protocol migration, not that redesign.
 
-## Proposed contract
+## Uniform constructor protocol
 
-Overlay definitions may be ordinary final: prev functions, constructors taking
-{ extraArgs }, existing { descendantOverlay } factories, or constructors taking
-both names in one outer attrset. Only descendantOverlay owns descendant
-application. Inject only explicitly declared constructor keys, preserving strict
-attrset-pattern compatibility. Extra arguments remain in lexical closures;
-never merge them into final/prev/pkgs or callPackage environments automatically.
-Use the same extraArgs lazily at all recursion levels, including factory-owned
-and implicit Emacs descendants. Preserve generic scope algorithms, overlay
-ordering, explicit rule precedence, TeX selection and root/empty discovery.
+Every definition loaded or instantiated by overlayTree, including explicit
+files and implicitOverlays values, is a constructor returning a standard overlay:
 
-## Review findings, not yet owner-adopted changes
+```
+{ /* declared constructor arguments */ }: final: prev: { ... }
+```
 
-The extension fits the existing instantiateOverlay_/loadOverlay_/mkOverlay_
-structure and can reuse its ownership check. Complete propagation is necessary
-through both top-level dispatch and recursive namespace/factory paths.
+Use { }: for definitions with no construction needs. Only extraArgs and
+descendantOverlay are allowed explicit names in the first-layer pattern;
+reject unknown names, including when mixed with a supported name. Inspect
+builtins.functionArgs and pass only the declared supported keys in one call.
+Optional declarations such as extraArgs ? {} still receive the supplied
+value: parameter presence, not its default marker, determines injection.
+Only declaring descendantOverlay transfers ownership of descendant application.
+Declaring extraArgs alone leaves automatic namespace aggregation in place.
 
-The main wording conflict is in the tests boundary. Once the shared aggregator
-recognizes { extraArgs } with a default empty environment, unchanged mkChecks
-inherits that recognition, with extraArgs = {}. It cannot also guarantee that
-parameterized test overlays remain unrecognized. Recommend describing the
-boundary as no new public tests parameter and no automatic mapping from args,
-while retaining existing behavior. Do not introduce a mode flag solely to
-force rejection unless the owner expressly requires that restriction.
+The second/third function layers retain ordinary Nix overlay syntax, including
+attribute-set destructuring of final. Do not inspect their parameter names as
+constructor declarations. The source format is intentionally incompatible with
+old two-argument definitions; do not add compatibility detection or mode flags.
+The public mkOverlays return values remain standard final: prev overlay functions.
 
-Constructor names should be documented as reserved in the outer attrset
-pattern. A standard overlay destructuring final with a field named extraArgs
-would now be interpreted as a constructor; compatibility is therefore scoped
-to ordinary positional overlays and the established descendantOverlay protocol,
-not every hypothetical attrset-pattern final argument. Apply declared optional
-constructor fields as well as required ones; field presence determines injection,
-not whether its functionArgs boolean marks a default.
+{ ... }: is accepted, while { }: is preferred for no-argument constructors.
+functionArgs cannot distinguish empty/open attrset patterns from positional
+lambda arguments; do not pretend to statically enforce the first pattern shape
+or implement arity inference. Always apply the first function as a constructor.
+Malformed old-style inputs may fail only on instantiation/application. Type
+checks may validate returned function and eventual non-derivation attrset, but
+full static detection of every malformed function shape is not promised.
 
-The guide says extraArgs applies only to directory-loaded definitions, while
-existing instantiateOverlay_ is also used for implicitOverlays values. Current
-built-ins do not request extraArgs, so compatibility is not blocked. Clarify
-whether the shared constructor protocol may apply to implicit definitions too;
-avoid accidentally promising different rules without an implementation reason.
+## Propagation, isolation and laziness
 
-Useful focused tests beyond the supplied matrix: strict constructor patterns
-receive no undeclared key; omitted extraArgs supplies {}; unused extraArgs and
-unused members may throw without being forced; constructor defaults do not
-suppress explicit injection; simultaneous extraArgs/descendantOverlay works at
-nested levels; public packages wrapper really forwards the environment; and
-extraArgs never leaks into pkgs or callPackage through the aggregator. Existing
-Emacs/TeX and 184-case baseline checks remain regression evidence, not proof
-that the proposed unimplemented behavior works.
+Carry the same extraArgs through mkOverlays_, mkOverlay_, loadOverlay_,
+instantiateOverlay_, namespace descendants and factory-owned descendants.
+Parameters remain lexical closure dependencies. Do not merge them into final,
+prev, pkgs or callPackage automatically; overlays explicitly forward values to
+package functions when needed. Unknown constructor fields are not an invitation
+to inject arbitrary named args from the extraArgs namespace.
 
-Next: clarify the tests wording and constructor contracts, then await owner
-instruction. Review does not authorize implementation, staging or Nix commands.
+Do not force extraArgs if undeclared or unused, nor force unread members.
+An unused extraArgs = throw value must remain safe. Strict attrset patterns
+must never receive undeclared constructor keys. Recursive scope/newScope and
+ordinary local-before-namespace composition, explicit rule precedence and empty
+or root discovery behavior remain unchanged.
+
+Implicit definitions use exactly the same instantiation rules as directory
+files. Existing Emacs { descendantOverlay }: factory stays intact. Adapt the
+ordinary TeX rule with an empty constructor at registration or definition,
+preserving its directory-capturing selectPackages closure and business logic.
+
+## Consumer and fixture migration
+
+Migrate test-overlay.nix suite entries and every actually loaded fixture overlay,
+including custom discovery filenames (custom.nix/check.nix), not just files named
+overlay.nix. Update inline implicitOverlays definitions used by generic tests.
+Keep direct standard overlays passed to composeManyExtensions/appendOverlays
+outside overlayTree as standard overlays; they are not constructor inputs.
+Ignored/throwing fixtures should retain their intended discovery assertions.
+
+mkChecks keeps its public signature and supplies no extraArgs; the shared
+aggregator uses default {}. Do not map mkChecks.args to constructor extraArgs.
+Test source definitions now use constructors too, without changing test scope,
+callPackage, extraction or test business logic. No package/test protocol switch.
+External consumer repositories are outside this migration.
+
+## Verification and implementation scope
+
+Test all four supported constructor patterns, defaulted parameters, unknown
+names alone and with supported names, empty/open first patterns, destructured
+final, strict-pattern selective injection, default-empty environment and both
+whole-environment/member laziness. Exercise recursive namespaces, explicit
+factories and implicit Emacs descendants, TeX behavior, and unchanged mkChecks
+args semantics. Cover the public packages.mkOverlays forwarding path in addition
+to internal tests. Verify constructed values are functions and their applied
+results are the intended non-derivation attrsets. No large software builds needed.
+
+The stated modification scope includes overlay-tree.nix, the package adapter,
+necessary test adapter changes, minimal internal rule wrapping, related source
+and fixture constructors, and README.org. Do not change mkLegacyPackages,
+namespace/scope algorithms or concrete package build logic. Update README for
+the new source contract, extraArgs and its distinction from mkChecks.args.
+
+Next: implement this adopted revision when implementation is requested, then
+obtain command authorization for its exact staging/formatting/validation scope.
+Prior checks (184 named cases on x86_64-linux) validate the old source snapshot,
+not this unimplemented protocol. No project code or test results are claimed
+for the new design yet.

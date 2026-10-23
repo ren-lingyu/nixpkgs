@@ -94,8 +94,8 @@ testApi's report changes with the new assertions. No lockfile or downstream
 repository was modified. Validation ran before commit against the same source;
 no checks were rerun for grounding. See `memory/overlay-tests-design.md` for the
 current contract and earlier migration evidence. The tests-side revision is
-complete. The next supplied objective is review of parameterized package
-overlay construction; see the proposal section below. Broader package-set/runtime
+complete. The owner has adopted a uniform overlay constructor design for the
+next development; see the constructor section below. Broader package-set/runtime
 work remains deferred.
 
 ## Package-side design boundary
@@ -107,17 +107,27 @@ explicitly deferred the package side. Keep packages.mkOverlays public and
 mkLegacyPackages as extraction from already extended pkgs. Do not apply the
 test API simplification or inferred extraArgs/pkgs parameters to packages.
 
-## Parameterized overlay proposal: review only
+## Overlay constructors: adopted revision, implementation pending
 
-The owner supplied a guide to add optional packages.mkOverlays.extraArgs and
-propagate it through internal overlay construction. This is a bounded additive
-proposal, not adoption of the deferred package-consumption redesign above.
-Read memory/parameterized-overlays.md for the proposed contract and review
-findings. No implementation or command execution was requested; the project
-worktree remains at the committed checks-only baseline and was clean on review.
-The guide is feasible, but its tests-no-new-recognition wording conflicts with
-shared default-empty construction support. Review recommendations are not yet
-owner-adopted decisions. Next: resolve the guide wording and await direction.
+The owner superseded the mixed-format proposal and all four prior review
+recommendations with a uniform constructor protocol. Every overlayTree-loaded
+or implicit definition must use a constructor returning final: prev overlay;
+only extraArgs and descendantOverlay are legal explicitly declared constructor
+keys. Selective injection, defaulted declarations and laziness are required.
+Only descendantOverlay owns descendants. No two-argument source compatibility
+or package/test protocol mode is to be introduced. Public overlays remain
+standard two-argument functions; ordinary final destructuring stays legal.
+
+Read memory/parameterized-overlays.md for the full adopted contract, migration
+scope and tests. packages.mkOverlays gains extraArgs; all source/fixture and
+implicit definitions are migrated, including test entries. mkChecks keeps its
+public API and args semantics, with constructor extraArgs defaulting to {}.
+The earlier package-consumption redesign remains deferred.
+
+This turn records the decision amendment. Source remains at the clean committed
+checks-only baseline; no implementation or Nix validation of the new protocol
+has occurred. Next: implementation under the revised scope when requested,
+with separate exact-command authorization for staging, formatting and checks.
 
 ## Built-in aggregation rules: implemented and validated
 
