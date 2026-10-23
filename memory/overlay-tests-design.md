@@ -17,7 +17,7 @@ authorization. The owner committed that delivery as
 matches the reviewed candidate. Public lib.tests has subsequently been completed
 and committed as well (see the second delivery outcome below). The owner later
 approved migrating ordinary suites while retaining direct API acceptance; that
-migration is now staged and validated (see the final section).
+migration is now validated and committed (see the final section).
 Existing committed aggregation functionality and its validation remain
 as described in `memory/package-aggregation-rules.md`.
 
@@ -103,8 +103,8 @@ migration references (section 8.4, phase four and completion criterion 7) as
 deferred work. The owner authorized implementing the plan, then narrowed the
 first delivery to generic-layer extraction and its tests. That delivery is now
 committed, as is the subsequent public lib.tests delivery. Own-suite migration
-was deferred during those deliveries and is now implemented in the worktree. Execution commands still require scoped
-authorization under project policy.
+was deferred during those deliveries and is now complete in a subsequent owner
+commit. Execution commands still require scoped authorization under project policy.
 
 ## First delivery outcome: generic extraction
 
@@ -181,7 +181,7 @@ inspected feature commit. Agent checks and the owner's independent nix flake che
 commit against that content; no claim is made that checks were rerun after commit.
 Both API deliveries are complete. Own-suite migration is covered below.
 
-## Repository suite migration: implemented, staged and validated
+## Repository suite migration: completed and committed
 
 The owner selected per-suite source/fixture consolidation and requested the
 migration plan be implemented. tests/suites contains mergeAttrsRecursive,
@@ -223,7 +223,10 @@ baseline flake for comparison; no tracked implementation is mutated for negative
 
 The 44 moved fixture files are byte-identical. Case expressions differ only in
 fixture paths and formatting. README matches the new wiring, and no library API,
-lockfile or downstream repository was changed. All migration changes are staged,
-not committed; this checkpoint makes no new project-source parent association.
-Next: owner review and project commit. Broader runtime/platform work remains in
-backlog, not part of this migration's completion.
+lockfile or downstream repository was changed. The owner committed the migration
+as `test(lib): organize repository suites with lib.tests`. After HEAD moved,
+the complete committed tree matched the reviewed index snapshot exactly: all 94
+file blobs and modes agree. The project worktree was clean on inspection. This
+checkpoint associates the inspected migration commit; the validation above ran
+before commit against identical source, with no post-commit rerun. The migration
+is complete. Broader runtime/platform work remains in backlog, outside its scope.

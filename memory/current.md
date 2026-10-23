@@ -30,10 +30,13 @@ The owner has also committed public lib.tests as
 HEAD movement, every file's blob and mode in the committed tree matched the
 reviewed staged snapshot exactly (90 files), and the project worktree was clean.
 An earlier checkpoint associates that inspected feature commit. Validation ran
-before commit against the same content. The test-suite migration below is now
-staged and validated on top of it, without a project commit; no new project parent
-is attached for those worktree changes. No ordinary project commit was created
-by the agent.
+before commit against the same content. The owner has now committed the test-suite migration below as
+`test(lib): organize repository suites with lib.tests`. All 94 committed file
+blobs and modes match the reviewed index snapshot exactly; the project worktree
+was clean on inspection. This checkpoint associates that inspected migration
+commit. Validation ran before commit against the same content; no checks were
+rerun just to establish provenance. No ordinary project commit was created by
+the agent.
 
 `lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
 `mkHomeModule`. README.org documents their interfaces and directory conventions.
@@ -75,7 +78,7 @@ six real package-set evaluations), 29 generic overlays and 47 test API cases.
 Three real writeText checks remain directly included. See
 `memory/overlay-tests-design.md` for migration details and important scope findings.
 
-Validation of the staged migration passed after final code fixes and formatting:
+Validation of the migration passed before commit, after final code fixes and formatting:
 
 - Scoped nix fmt over flake.nix, tests/default.nix, the standalone merge shim and
   tests/suites; no public library source changed.
@@ -93,8 +96,9 @@ and formatting, and all 44 moved fixtures byte-identical. No lockfile update,
 large ecosystem build, downstream edit or ancestor-relative import was introduced.
 The verification script in ignored tmp/ takes all dependencies as function
 parameters; its results are distilled above, not needed as a lasting test input.
-All intended project changes are staged, with no unstaged project edits. These
-results describe the worktree, not an uncreated migration commit.
+The owner committed all intended migration changes. The exact committed-tree
+comparison establishes that the pre-commit validation applies to the same source
+content; it does not imply a post-commit test rerun.
 
 ## Built-in aggregation rules: implemented and validated
 
@@ -140,12 +144,13 @@ Factory relocation has no implicit path mapping. No registry, runner, helper
 filter or arbitrary scope enumeration was added.
 
 The owner approved and requested the subsequent own-suite migration. It is now
-implemented and validated in the staged worktree: three ordinary suites use
+implemented, validated and committed by the owner: three ordinary suites use
 lib.tests, while testApi acceptance remains independently loaded. The flake now
 imports the complete check set without per-suite wrapping. README documents the
 new local layout, root guard and preserved standalone merge entry. No public
-API or assertions were changed. Next is owner review/project commit; the agent
-must not create that commit. Broader package-set/runtime tests remain deferred.
+API or assertions were changed. This migration is complete with no outstanding
+actions in its scope. Await the owner's next objective; broader package-set/runtime
+tests remain deferred.
 
 ## Memory conventions
 

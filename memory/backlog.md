@@ -110,8 +110,9 @@ behavior. See `memory/package-aggregation-rules.md` for the implemented subset.
 
 ## Migrate this repository's suites to lib.tests
 
-Status: implemented and validated in the staged worktree after the owner approved
-a concrete migration plan. Awaiting owner review/project commit.
+Status: completed, validated and committed by the owner after approval of the
+concrete migration plan. The committed tree matches the reviewed index snapshot
+exactly; the pre-commit verification therefore covers the committed source.
 
 Merge, generic overlay and package suites now use a shared caller-built scope
 and test-overlay.nix discovery. Cases/fixtures are consolidated by suite; testApi
