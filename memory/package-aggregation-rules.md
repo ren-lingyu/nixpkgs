@@ -171,7 +171,7 @@ this work does not delete them or modify the reference repositories.
 ## Implemented structure and validation outcome
 
 The original implementation classified explicit/implicit factories inside
-`lib/packages/default.nix`. The newly staged generic extraction moves overlay
+`lib/packages/default.nix`. The now committed generic extraction moves overlay
 classification, recursion and namespace handling into the injected internal
 aggregator; the package adapter still supplies top-level built-ins. Extraction
 and module algorithms are unchanged. See `memory/overlay-tests-design.md` for

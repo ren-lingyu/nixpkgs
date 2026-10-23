@@ -12,7 +12,10 @@ after that proceed to public lib.tests. The first delivery is implemented in the
 worktree, with 29 independent generic
 test cases added and existing assertions retained. Scoped formatting, targeted
 checks and full flake check have passed on x86_64-linux after explicit command
-authorization. All extraction changes are staged, with no project commit yet.
+authorization. The owner committed that delivery as
+`refactor(lib): extract generic overlay tree aggregation`; its committed diff
+matches the reviewed candidate. The owner now requests implementing public
+lib.tests, with own-suite migration still deferred.
 Existing committed aggregation functionality and its validation remain
 as described in `memory/package-aggregation-rules.md`.
 
@@ -96,14 +99,14 @@ The extraction contract and factory path constraint are now settled. Future
 implementation must follow the table above, and treat the guide's own-suite
 migration references (section 8.4, phase four and completion criterion 7) as
 deferred work. The owner authorized implementing the plan, then narrowed the
-current delivery
-to generic-layer extraction and its tests. No public lib.tests API or own-suite
-migration belongs in this first commit. Execution commands still require scoped
+first delivery to generic-layer extraction and its tests. That delivery is now
+committed; the owner explicitly requests the next delivery, public lib.tests.
+Own-suite migration remains deferred. Execution commands still require scoped
 authorization under project policy.
 
 ## First delivery outcome: generic extraction
 
-The generic implementation now lives at `lib/overlays/default.nix`; it exports
+The generic implementation now lives at `lib/overlay-tree.nix`; it exports
 mkOverlays and directory helpers internally. `lib/default.nix` injects it into
 the package consumer, which retains the exact extraction/module algorithms and
 supplies its implicit rules through ordinary closures. The generic layer has
@@ -120,7 +123,14 @@ README reflects this test wiring. Targeted overlays/package check builds and
 full flake check, including treefmt, passed on x86_64-linux. Other systems and
 runtime ecosystem builds were not tested. No lockfile or reference repo changed.
 
-The staged, validated extraction is the intended first project commit. Do not
-attribute these tests to current committed HEAD or attach that baseline as a
-new provenance parent for uncommitted implementation. After owner review/commit,
-the next delivery is public lib.tests following the settled contract above.
+The owner committed the validated extraction. Inspection confirms the committed
+diff matches the reviewed candidate; this checkpoint associates that source
+snapshot. Checks ran before commit, not after it. The next delivery, now requested
+by the owner, is public lib.tests following the settled contract above.
+
+The owner prefers a flat module file while the generic implementation is a
+single file. It was moved from lib/overlays/default.nix to lib/overlay-tree.nix,
+matching existing kebab-case filenames, and both imports were updated. This
+path-only adjustment is committed and the full authorized flake check passed again
+after the move, including all 126 cases and formatting on x86_64-linux. It does
+not change implementation content or add a public API.

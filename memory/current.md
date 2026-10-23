@@ -20,9 +20,11 @@ implementation has now been committed by the owner as
 preparatory move from `lib/packages.nix` to `lib/packages/default.nix` and its
 updated import. The committed diff was inspected and matches the staged candidate
 reviewed before committing. An earlier checkpoint associates that inspected
-project snapshot. The generic extraction described below is now staged on top
-of it, not committed. Its validation concerns the staged worktree; no additional
-project parent is attached for those uncommitted changes. No ordinary project
+project snapshot. The owner has now committed the generic extraction as
+`refactor(lib): extract generic overlay tree aggregation`. Its committed diff
+matches the reviewed and validated staged candidate, including the flat filename;
+the project worktree was clean on inspection. This checkpoint associates that
+inspected snapshot. Validation ran before commit against the same content. No ordinary project
 commit was created by the agent.
 
 `lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
@@ -79,7 +81,12 @@ attempt was blocked by sandbox access to the Nix daemon; the same authorized
 command passed outside the sandbox. No lockfile update, large Emacs/TeX build
 or runtime ecosystem smoke test was performed. Static review found no
 ancestor-relative dependencies, no domain names in the generic layer and no
-whitespace errors. All intended changes are staged with no unstaged project edits.
+whitespace errors. The owner subsequently preferred a flat single-file module name. The extraction
+now uses `lib/overlay-tree.nix`, with both imports updated and all changes committed.
+Its implementation bytes are unchanged by the move. The full authorized flake
+check was rerun after the rename and passed all 126 cases and formatting on
+x86_64-linux; other platforms remain unverified. The formatter command above
+records its original pre-rename path rather than a current runnable path.
 
 ## Built-in aggregation rules: implemented and validated
 
@@ -97,7 +104,7 @@ unrelated siblings and treat derivations atomically. These bounds were adopted
 during implementation planning rather than broadening all external replacements.
 
 README and tests are synchronized. The built-in rule implementation is committed;
-the new generic-layer extraction is staged and preserves those behaviors.
+the generic-layer extraction is committed and preserves those behaviors.
 No additional package-specific implementation is outstanding. The local
 `~/nixos` and `~/emarccs` references were read only and remain unchanged.
 
@@ -117,18 +124,19 @@ scope attributes. Factories supply no extraction path mapping; callers handle
 relocated exports. Migrating this repository's own test suites remains deferred;
 independent fixtures can validate the API while existing checks stay intact.
 The owner split implementation into deliveries. The first delivery is now
-complete and validated in the staged worktree: shared-layer extraction and an
-independent overlays test suite, intended as one project commit. The internal
-aggregator at `lib/overlays/default.nix` accepts `implicitOverlays`, while the
+committed: shared-layer extraction and an independent overlays test suite,
+validated before the owner committed it. The internal
+aggregator at `lib/overlay-tree.nix` accepts `implicitOverlays`, while the
 package adapter supplies Emacs/TeX rules and a directory-capturing TeX selector.
 Public APIs remain unchanged. Namespace errors now use the domain-neutral
 `overlays.mkOverlay` diagnostic prefix. Package extraction and module algorithms
 are unchanged, using injected directory helpers.
 
-Next: owner review/commit of this extraction, then proceed with public lib.tests
-under the settled contract. Stop before that next feature in the current delivery.
-Repository test-suite migration remains deferred independently; new generic
-coverage is wired through the existing boolean-to-JSON test entry.
+The owner now requested updating GAW and proceeding with public lib.tests under
+the settled contract. This second delivery is starting; no tests API implementation
+or validation has run yet. Preserve the existing boolean-to-JSON suites and add
+independent API cases plus a real extracted check. Repository test-suite migration
+remains deferred independently.
 The completed package migration above remains the implemented baseline.
 
 ## Memory conventions
