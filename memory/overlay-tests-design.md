@@ -124,8 +124,8 @@ full flake check, including treefmt, passed on x86_64-linux. Other systems and
 runtime ecosystem builds were not tested. No lockfile or reference repo changed.
 
 The owner committed the validated extraction. Inspection confirms the committed
-diff matches the reviewed candidate; this checkpoint associates that source
-snapshot. Checks ran before commit, not after it. The next delivery, now requested
+diff matches the reviewed candidate; an earlier grounding checkpoint associates
+that source snapshot. Checks ran before commit, not after it. The next delivery, now requested
 by the owner, is public lib.tests following the settled contract above.
 
 The owner prefers a flat module file while the generic implementation is a
@@ -134,3 +134,42 @@ matching existing kebab-case filenames, and both imports were updated. This
 path-only adjustment is committed and the full authorized flake check passed again
 after the move, including all 126 cases and formatting on x86_64-linux. It does
 not change implementation content or add a public API.
+
+## Second delivery outcome: public lib.tests
+
+The owner requests lib/tests/default.nix, matching lib/packages/default.nix,
+rather than a flat lib/tests.nix. This module is implemented and injected with
+lib and overlayTree by the root library. It exposes exactly mkOverlays and
+mkChecks. The former delegates without package defaults; the latter follows the
+independent extraction table above, flattening only discovered directory paths.
+Namespace errors identify paths as JSON arrays. Extraction reads filesystem
+structure but never imports overlay definitions. No generic-layer or package
+algorithm change was needed.
+
+`tests/test-api.nix` adds 47 named evaluation cases using dedicated fixtures:
+caller-owned scopes, shared and nested callPackage dependencies, dependency
+replacement with changed derivation paths, generic handling of package-like
+directory names, default/custom/empty separators, all leaf/namespace extraction
+branches, root/empty discovery, laziness outside selected paths, management
+member exclusion, helper-named derivation inclusion, custom filenames, factory
+ownership and relocation failures. Throwing overlay fixtures prove extraction
+does not load definitions. Scope helpers have no reserved directory role.
+
+`tests/test-checks.nix` constructs an independent scope, extracts real writeText
+derivations, and prefixes their names for flake integration. Three checks are
+built directly: testApi/checks/alpha, testApi/checks/nested/beta and
+testApi/validators. This consumer validates the new API without migrating the
+original boolean suites. The testApi suite is added through their existing JSON
+report mechanism. All cross-parent dependencies remain parameter-injected.
+
+Scoped nix fmt, targeted API/real-check nix build and full nix flake check with
+--no-write-lock-file --show-trace passed on x86_64-linux. All 173 evaluation cases
+(43 merge, 54 packages, 29 generic overlays, 47 API), three real extracted checks
+and treefmt passed. Existing report derivations are unchanged; other platforms
+were skipped. No lockfile update, downstream reference changes or large ecosystem
+builds occurred. README documents public APIs, caller scope assembly, discovery
+boundaries, the extraction contract, separators and factory path limitations.
+
+All feature changes are staged and reviewed; there is no ordinary feature commit
+yet. This checkpoint does not attribute worktree validation to the baseline
+project commit. Next is owner review/commit. Own-suite migration remains deferred.

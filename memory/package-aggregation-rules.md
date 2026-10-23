@@ -6,7 +6,7 @@ This is the owner's scoped development contract and implementation outcome.
 Implementation, README updates and minimal validation are complete. The owner
 committed the implementation after authorizing scoped staging, formatting,
 targeted builds and full checks. The committed diff matches the reviewed staged
-candidate and is associated with this checkpoint. Validation ran against that
+candidate and is associated with an earlier grounding checkpoint. Validation ran against that
 content before commit; checks were not rerun merely to associate the snapshot.
 
 Move existing Emacs and TeX Live aggregation practice into `lib.packages`, with
@@ -202,5 +202,5 @@ the unchanged merge suite passed 43 cases. The final authorized
 `nix flake check --no-write-lock-file --show-trace` passed both suites and treefmt
 on x86_64-linux after scoped formatting and the targeted packages check build.
 Other platforms were skipped. README matches the implemented boundaries. The
-owner has committed all project changes and the project worktree is clean; no
-lockfile update or reference-repository edit was made. The complete package-set/runtime test matrix remains deferred in backlog.
+owner committed the migration; newer staged development is tracked in
+`memory/current.md`. No lockfile update or reference-repository edit was made. The complete package-set/runtime test matrix remains deferred in backlog.
