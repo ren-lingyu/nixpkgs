@@ -84,7 +84,7 @@ Three real writeText checks remain included.
 The owner committed the checks/args implementation and mkOverlays removal as
 `feat(lib): consolidate test assembly in mkChecks`. The complete committed diff
 matches the final reviewed candidate (13 files), and the project worktree was
-clean on inspection. This checkpoint associates that inspected source.
+clean on inspection. An earlier checkpoint associates that inspected source.
 Scoped nix fmt and `timeout 120s nix flake check --no-write-lock-file --show-trace`
 passed after the final public-interface removal and direct API regression
 changes on x86_64-linux,
@@ -94,8 +94,9 @@ testApi's report changes with the new assertions. No lockfile or downstream
 repository was modified. Validation ran before commit against the same source;
 no checks were rerun for grounding. See `memory/overlay-tests-design.md` for the
 current contract and earlier migration evidence. The tests-side revision is
-complete; await the owner's next objective. Broader package-set/runtime work
-remains deferred.
+complete. The next supplied objective is review of parameterized package
+overlay construction; see the proposal section below. Broader package-set/runtime
+work remains deferred.
 
 ## Package-side design boundary
 
@@ -105,6 +106,18 @@ an entire extended pkgs as legacyPackages. No redesign was adopted: the owner
 explicitly deferred the package side. Keep packages.mkOverlays public and
 mkLegacyPackages as extraction from already extended pkgs. Do not apply the
 test API simplification or inferred extraArgs/pkgs parameters to packages.
+
+## Parameterized overlay proposal: review only
+
+The owner supplied a guide to add optional packages.mkOverlays.extraArgs and
+propagate it through internal overlay construction. This is a bounded additive
+proposal, not adoption of the deferred package-consumption redesign above.
+Read memory/parameterized-overlays.md for the proposed contract and review
+findings. No implementation or command execution was requested; the project
+worktree remains at the committed checks-only baseline and was clean on review.
+The guide is feasible, but its tests-no-new-recognition wording conflicts with
+shared default-empty construction support. Review recommendations are not yet
+owner-adopted decisions. Next: resolve the guide wording and await direction.
 
 ## Built-in aggregation rules: implemented and validated
 
