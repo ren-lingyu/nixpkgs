@@ -81,17 +81,21 @@ argument derivations, defaults, invalid retained values and packages-name
 resolution. It no longer builds caller scopes via public tests.mkOverlays.
 Three real writeText checks remain included.
 
-The new checks/args implementation is staged and validated, not committed.
+The owner committed the checks/args implementation and mkOverlays removal as
+`feat(lib): consolidate test assembly in mkChecks`. The complete committed diff
+matches the final reviewed candidate (13 files), and the project worktree was
+clean on inspection. This checkpoint associates that inspected source.
 Scoped nix fmt and `timeout 120s nix flake check --no-write-lock-file --show-trace`
 passed after the final public-interface removal and direct API regression
 changes on x86_64-linux,
 including all reports, three real checks and treefmt. Other systems were skipped.
 The three ordinary report drvPaths and three real check drvPaths are unchanged;
 testApi's report changes with the new assertions. No lockfile or downstream
-repository was modified. No new project parent is attached for uncommitted work.
-See `memory/overlay-tests-design.md` for the current contract and earlier
-migration evidence. Next: owner review/project commit, which the agent must
-not create. Broader package-set/runtime work remains deferred.
+repository was modified. Validation ran before commit against the same source;
+no checks were rerun for grounding. See `memory/overlay-tests-design.md` for the
+current contract and earlier migration evidence. The tests-side revision is
+complete; await the owner's next objective. Broader package-set/runtime work
+remains deferred.
 
 ## Package-side design boundary
 
@@ -144,11 +148,11 @@ root import as `refactor(lib): flatten tests module into a single file`. Inspect
 confirmed only that move and import changed, with a clean project worktree.
 An earlier checkpoint associates the inspected refactor; tests were not rerun for this
 path-only change. Root library assembly injects lib and overlayTree.
-The staged lib.tests namespace now exposes only mkChecks; the owner requested
+The committed lib.tests namespace now exposes only mkChecks; the owner requested
 removing public tests.mkOverlays because tests need a controlled checks entry,
 while overlay discovery/composition remains internal.
 The owner then requested replacing mkChecks.scope with checks and args, both
-defaulting to empty attrsets. The implemented staged API now builds its own
+defaulting to empty attrsets. The implemented API now builds its own
 independent test fixed point, applies discovered overlays and preserves initial
 check names using final values, alongside directory-selected derivations.
 separator still defaults to "/". Dependencies must be passed explicitly in args,
@@ -166,8 +170,8 @@ lib.tests, while testApi acceptance remains independently loaded. The flake now
 imports the complete check set without per-suite wrapping. README documents the
 new local layout, root guard and preserved standalone merge entry. No public
 API or assertions were changed in that completed migration. The subsequent
-checks/args API revision and related caller/test updates are now staged and
-validated, awaiting owner review and project commit. Broader package-set/runtime
+checks/args API revision, public mkOverlays removal and related caller/test
+updates are also validated and committed by the owner. Broader package-set/runtime
 tests remain deferred.
 
 ## Memory conventions

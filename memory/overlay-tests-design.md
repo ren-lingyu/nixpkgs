@@ -5,7 +5,7 @@
 The owner has superseded the original scope-taking mkChecks API with the
 checks/args assembly contract below and removed public tests.mkOverlays.
 The final section records the subsequent public-surface and logic review. That revision is
-implemented and validated in the staged worktree, awaiting owner commit.
+implemented, validated and committed by the owner.
 Earlier delivery sections preserve the motivation and evidence for those
 completed phases; their caller-built scope requirement is no longer current.
 
@@ -299,15 +299,15 @@ passed after final changes on x86_64-linux: 184 named cases, three real checks
 and treefmt. Other platforms were skipped. All six ordinary-report/real-check
 drvPaths are unchanged; testApi's JSON report reflects its changed assertions.
 README documents the new API, precedence, explicit dependencies and export
-boundaries. All intended changes are staged with no ordinary project commit
-created. The associated source is the uncommitted candidate, so this memory
-checkpoint has no new project parent. Next: owner review and commit. The two
-reference repositories were only read and remain untouched.
+boundaries. An earlier checkpoint recorded this implementation before a project
+commit existed. It was subsequently finalized with public-interface removal
+and committed as described below. The two reference repositories were only read
+and remain untouched.
 
 ## Final tests-side review: only mkChecks is public
 
 The owner deferred all package-side redesign, then requested completing the
-tests side by removing mkOverlays and reviewing mkChecks. The staged module
+tests side by removing mkOverlays and reviewing mkChecks. The committed module
 now exposes exactly mkChecks. Generic overlay discovery/composition remains
 internal; packages.mkOverlays, package extraction and overlay-tree.nix are
 unchanged. The prior scope-taking interface and public test-overlay discovery
@@ -340,7 +340,11 @@ passed on x86_64-linux after all final changes. Counts remain 58 API cases and
 184 total named cases, with three real checks and treefmt. Other platforms were
 skipped; the three ordinary report and three real check drvPaths are unchanged.
 README now describes the single public entry and internal overlay lifecycle.
-All intended project edits are staged, with no unstaged edits or project commit
-created. This checkpoint records the validated uncommitted candidate, without
-a new project parent. Next is owner review/project commit; the earlier commit
-message draft must be refreshed to include removal of tests.mkOverlays.
+The commit message was refreshed to include removal of tests.mkOverlays, and
+the owner committed the final candidate as
+`feat(lib): consolidate test assembly in mkChecks`. The complete committed diff
+was inspected against the reviewed candidate: all 13 changed paths and their
+changes agree, with a clean project worktree. This checkpoint associates that
+inspected commit. The validation above ran before commit against identical
+source; no post-commit test rerun is claimed. This tests-side revision is complete.
+Await the owner's next objective; package-side design changes remain deferred.
