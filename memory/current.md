@@ -29,9 +29,11 @@ The owner has also committed public lib.tests as
 `feat(lib): add test overlay aggregation and check extraction`. After detecting
 HEAD movement, every file's blob and mode in the committed tree matched the
 reviewed staged snapshot exactly (90 files), and the project worktree was clean.
-This checkpoint associates that inspected feature commit. Validation ran before
-commit against the same content; no ordinary project commit was created by the
-agent.
+An earlier checkpoint associates that inspected feature commit. Validation ran
+before commit against the same content. The test-suite migration below is now
+staged and validated on top of it, without a project commit; no new project parent
+is attached for those worktree changes. No ordinary project commit was created
+by the agent.
 
 `lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
 `mkHomeModule`. README.org documents their interfaces and directory conventions.
@@ -55,43 +57,44 @@ not restricted to functions. The implementation uses builtins only.
 
 ## Tests and dependency boundary
 
-`tests/default.nix` accepts `{ llib, lib, pkgs, overlayTree }` and forwards
-only used dependencies: merge takes `{ llib }`, packages takes `{ llib, lib,
-pkgs }`, overlays takes `{ lib, overlayTree }`, and testApi takes `{ llib, lib,
-pkgs }`. The root injects the internal
-aggregator for independent tests without exposing it through the public library.
-Cross-parent-directory dependencies must be passed
-exclusively as function parameters. Parent-relative imports and equivalent
-ancestor traversal are forbidden; downward and same-directory imports are used.
+`tests/default.nix` accepts `{ llib, lib, pkgs, overlayTree }` and now returns
+check derivations directly. Ordinary suites live under tests/suites/{mergeAttrsRecursive,
+overlays,packages}, with cases.nix, test-overlay.nix and any local fixtures.
+The entry discovers only test-overlay.nix, constructs a scope, and uses lib.tests
+to extract the reports. A shared local mkResultCheck wraps raw case results;
+callPackage supplies report-wrapper arguments, not raw case results.
 
-The merge suite contains 43 named evaluation cases covering recursive merging,
-strict conflicts, input/options validation, functions, lists, laziness,
-derivation-shaped leaves and later-entry precedence. The packages suite has
-54 cases on x86_64-linux: 48 generic/mock cases and six real package-set
-evaluations. The generic overlays suite adds 29 independent evaluation cases,
-and the new public test API suite adds 47 cases. Three real writeText checks
-are separately extracted by that API and built directly through flake checks.
-See `memory/overlay-tests-design.md` for API/aggregation status and
-`memory/package-aggregation-rules.md` for package coverage. Suites return boolean
-results or throw failed case names. The flake injects
-library and package dependencies and maps suites to per-system JSON checks via
-`pkgs.writeText`. The existing treefmt/nixfmt check remains integrated.
+The root independently requires exactly mergeAttrsRecursive, overlays and
+packages from discovery. testApi and three real API checks remain directly
+wired, so collection failures cannot silently omit their own acceptance tests.
+The merge standalone path remains a thin downward import of its moved cases.
+All cross-parent dependencies use parameters/scope; no ancestor-relative imports.
 
-Authorized validation passed before the public test API commit, including final formatting:
+Coverage remains 173 named cases on x86_64-linux: 43 merge, 54 packages (including
+six real package-set evaluations), 29 generic overlays and 47 test API cases.
+Three real writeText checks remain directly included. See
+`memory/overlay-tests-design.md` for migration details and important scope findings.
 
-- `timeout 120s nix fmt -- flake.nix lib/default.nix lib/tests tests/default.nix tests/test-api.nix tests/test-checks.nix tests/fixtures/test-api`
-- `timeout 120s nix build --show-trace --no-link --no-write-lock-file .#checks.x86_64-linux.testApi .#checks.x86_64-linux.testApi/checks/alpha .#checks.x86_64-linux.testApi/checks/nested/beta .#checks.x86_64-linux.testApi/validators`
-- `timeout 120s nix flake check --no-write-lock-file --show-trace`
+Validation of the staged migration passed after final code fixes and formatting:
 
-The full check passed four evaluation suites (173 named cases), three real
-extracted writeText checks and formatting on x86_64-linux. Original package,
-merge and generic-overlay report derivations are unchanged. Other systems were
-skipped. No lockfile update, large Emacs/TeX build or runtime ecosystem smoke
-test was performed. Static review found no ancestor-relative dependencies or
-whitespace errors. The owner independently ran nix flake check before committing;
-it passed with the same derivations and no pending builds. The committed tree
-matches that validated worktree; the project worktree is now clean. Checks were
-not rerun after commit solely to create a provenance association.
+- Scoped nix fmt over flake.nix, tests/default.nix, the standalone merge shim and
+  tests/suites; no public library source changed.
+- Targeted nix build of the four JSON report checks.
+- `timeout 10s nix-instantiate --eval --strict --readonly-mode --expr 'import ./tests/merge-attrs-recursive.nix { llib = import ./lib { lib = {}; }; }'`
+- Pinned-baseline comparison against the committed public test API snapshot:
+  all seven test check names and drvPaths are exactly unchanged (treefmt excluded).
+- An injected testEntry verifier confirms normal assembly succeeds, while empty,
+  missing-package and extra-check mkChecks results fail at the root name guard.
+- `timeout 120s nix flake check --no-write-lock-file --show-trace` passed all
+  suites, the three real checks and treefmt on x86_64-linux. Other systems skipped.
+
+Static comparison confirmed original case logic unchanged except fixture paths
+and formatting, and all 44 moved fixtures byte-identical. No lockfile update,
+large ecosystem build, downstream edit or ancestor-relative import was introduced.
+The verification script in ignored tmp/ takes all dependencies as function
+parameters; its results are distilled above, not needed as a lasting test input.
+All intended project changes are staged, with no unstaged project edits. These
+results describe the worktree, not an uncreated migration commit.
 
 ## Built-in aggregation rules: implemented and validated
 
@@ -136,12 +139,13 @@ leaves are skipped; discovered namespaces must exist as non-derivation attrsets.
 Factory relocation has no implicit path mapping. No registry, runner, helper
 filter or arbitrary scope enumeration was added.
 
-Existing boolean-to-JSON suites retain their wiring and assertions. Independent
-API tests and three real extracted checks are added alongside them. Migrating
-the repository's own suites to lib.tests remains explicitly deferred in backlog.
-Both planned deliveries are complete. No implementation or validation remains
-within this bounded feature scope; other platforms remain unverified. Further
-work, including the deferred suite migration, needs its own task selection.
+The owner approved and requested the subsequent own-suite migration. It is now
+implemented and validated in the staged worktree: three ordinary suites use
+lib.tests, while testApi acceptance remains independently loaded. The flake now
+imports the complete check set without per-suite wrapping. README documents the
+new local layout, root guard and preserved standalone merge entry. No public
+API or assertions were changed. Next is owner review/project commit; the agent
+must not create that commit. Broader package-set/runtime tests remain deferred.
 
 ## Memory conventions
 

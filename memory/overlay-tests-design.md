@@ -15,8 +15,9 @@ checks and full flake check have passed on x86_64-linux after explicit command
 authorization. The owner committed that delivery as
 `refactor(lib): extract generic overlay tree aggregation`; its committed diff
 matches the reviewed candidate. Public lib.tests has subsequently been completed
-and committed as well (see the second delivery outcome below), with own-suite
-migration still deferred.
+and committed as well (see the second delivery outcome below). The owner later
+approved migrating ordinary suites while retaining direct API acceptance; that
+migration is now staged and validated (see the final section).
 Existing committed aggregation functionality and its validation remain
 as described in `memory/package-aggregation-rules.md`.
 
@@ -101,8 +102,8 @@ implementation must follow the table above, and treat the guide's own-suite
 migration references (section 8.4, phase four and completion criterion 7) as
 deferred work. The owner authorized implementing the plan, then narrowed the
 first delivery to generic-layer extraction and its tests. That delivery is now
-committed; the owner explicitly requests the next delivery, public lib.tests.
-Own-suite migration remains deferred. Execution commands still require scoped
+committed, as is the subsequent public lib.tests delivery. Own-suite migration
+was deferred during those deliveries and is now implemented in the worktree. Execution commands still require scoped
 authorization under project policy.
 
 ## First delivery outcome: generic extraction
@@ -114,7 +115,7 @@ supplies its implicit rules through ordinary closures. The generic layer has
 no domain names. Namespace diagnostics now use `overlays.mkOverlay` instead of
 the former package prefix; failure conditions remain unchanged.
 
-`tests/overlays.nix` takes `{ lib, overlayTree }` and uses dedicated downward
+`tests/suites/overlays/cases.nix` takes `{ lib, overlayTree }` and uses dedicated downward
 fixtures for generic ordinary/implicit/factory rules, existing scopes and
 attrsets, dependency resolution, discovery boundaries, custom filenames and
 invalid namespace collisions. The 29 cases pass alongside all original 54
@@ -175,7 +176,54 @@ The owner committed the feature as
 `feat(lib): add test overlay aggregation and check extraction`. The agent polled
 HEAD after preparing the message, then compared the complete committed tree's
 blob IDs and modes to the reviewed index snapshot: all 90 files match exactly.
-The project worktree is clean. This checkpoint associates the inspected feature
-commit. Agent checks and the owner's independent nix flake check passed before
+The project worktree was clean then. An earlier checkpoint associates the
+inspected feature commit. Agent checks and the owner's independent nix flake check passed before
 commit against that content; no claim is made that checks were rerun after commit.
-Both deliveries are complete. Own-suite migration remains deferred.
+Both API deliveries are complete. Own-suite migration is covered below.
+
+## Repository suite migration: implemented, staged and validated
+
+The owner selected per-suite source/fixture consolidation and requested the
+migration plan be implemented. tests/suites contains mergeAttrsRecursive,
+overlays and packages. Each directory has raw cases.nix and test-overlay.nix;
+overlay/package fixture trees moved beneath their corresponding suite. The root
+uses test-overlay.nix to avoid collecting fixture overlay.nix files. The old
+merge expression path remains a one-line downward import for standalone use.
+
+The root entry returns checks directly, constructing a makeScope/overrideScope
+scope with lib, pkgs, llib, overlayTree and local mkResultCheck. Per-suite
+callPackage report wrappers evaluate cases via same-directory import and turn
+results into the original named writeText JSON report. Flake checks simply
+imports this entry. testApi and its three real checks remain directly loaded.
+An independent root guard requires exactly the three ordinary suite names;
+adding a suite requires updating that expectation intentionally.
+
+Two implementation findings affect correct future use:
+
+- callPackage adds makeOverridable metadata to attrset results, including override
+  functions, which prevents JSON serialization and can overwrite a same-named
+  assertion such as merge's overrideDerivation case. Apply callPackage to the
+  report constructor returning a derivation; import raw cases with wrapper
+  arguments directly. Do not strip metadata from raw results and lose assertions.
+- makeScope reserves its packages member for the definition function. A packages
+  suite is therefore masked in the managed scope object. The root passes
+  scope.packages scope (the applied definitions) to mkChecks, preserving the
+  suite name without altering public APIs or the scope implementation. This was
+  confirmed against the locked Nixpkgs before applying the adaptation.
+
+All 173 original assertions and the three real checks pass, with no new permanent
+assertion cases. Scoped formatting, the four report builds, standalone merge
+readonly evaluation and full flake check passed on x86_64-linux; other systems
+were skipped. Comparison with the committed public API baseline confirms all
+seven test check names and drvPaths unchanged (treefmt changes with source layout).
+A temporary injected-entry verifier confirms normal assembly and root rejection
+of empty, missing-package and extra-check collections. It accepts testEntry,
+previousChecks, llib, lib, pkgs and overlayTree by parameter, using a pinned
+baseline flake for comparison; no tracked implementation is mutated for negatives.
+
+The 44 moved fixture files are byte-identical. Case expressions differ only in
+fixture paths and formatting. README matches the new wiring, and no library API,
+lockfile or downstream repository was changed. All migration changes are staged,
+not committed; this checkpoint makes no new project-source parent association.
+Next: owner review and project commit. Broader runtime/platform work remains in
+backlog, not part of this migration's completion.

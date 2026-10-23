@@ -181,7 +181,7 @@ The Emacs rule lives at `lib/packages/rules/emacsPackages.nix`. The TeX rule at
 the package adapter, and retains the original wrappers, guards and environment list.
 No rule registry, public overlay output or new configuration was added.
 
-`tests/packages.nix` and downward-loaded fixtures cover discovery, empty and nested
+`tests/suites/packages/cases.nix` and downward-loaded fixtures cover discovery, empty and nested
 special names, custom overlayFile, root-overlay exclusion, explicit ordinary and
 factory precedence, local-before-namespace order, one-time descendant application,
 new/existing scopes, parent and sibling dependency binding, plain attrsets,

@@ -110,11 +110,12 @@ behavior. See `memory/package-aggregation-rules.md` for the implemented subset.
 
 ## Migrate this repository's suites to lib.tests
 
-Status: explicitly deferred by the owner during review of the shared overlay
-aggregation/lib.tests guide. The public API is now implemented, validated and
-committed with independent fixtures; existing test entries/checks are
-retained. This does not authorize starting the deferred suite migration.
-After the APIs exist, assess moving boolean suites into caller-built test scopes
-and lightweight check derivations. Choose a discovery filename or source layout
-that does not aggregate overlay.nix fixtures under test. See
-`memory/overlay-tests-design.md` for the API contract and implemented coverage.
+Status: implemented and validated in the staged worktree after the owner approved
+a concrete migration plan. Awaiting owner review/project commit.
+
+Merge, generic overlay and package suites now use a shared caller-built scope
+and test-overlay.nix discovery. Cases/fixtures are consolidated by suite; testApi
+and real API checks remain independently wired. An exact-name guard rejects
+empty, missing and extra ordinary-suite collections. Existing assertions, all
+seven test check drvPaths, and the standalone merge entry are preserved.
+See `memory/overlay-tests-design.md` for implementation findings and validation.
