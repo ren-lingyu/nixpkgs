@@ -72,7 +72,7 @@ real API checks are defined independently of ordinary-suite discovery, then
 supplied as existing checks. The standalone merge path remains a downward shim.
 Cross-parent dependencies use parameters/scope; no ancestor-relative imports.
 
-The validated constructor candidate now has 217 named cases on x86_64-linux:
+The committed constructor implementation has 217 named cases on x86_64-linux:
 43 merge, 62 packages (including six real package-set evaluations), 51 generic
 overlays and 61 tests API cases. The committed checks-only baseline had 184.
 The expanded API suite directly exercises mkChecks, including its exact public
@@ -86,16 +86,20 @@ The owner committed the checks/args implementation and mkOverlays removal as
 `feat(lib): consolidate test assembly in mkChecks`. The complete committed diff
 matches the final reviewed candidate (13 files), and the project worktree was
 clean on inspection. An earlier checkpoint associates that inspected source.
-The subsequent constructor candidate passed scoped nix fmt and
+The constructor implementation passed scoped nix fmt and
 `timeout 120s nix flake check --no-write-lock-file --show-trace` after source
 migration and the final fixture correction on x86_64-linux. All reports, three
 real checks and treefmt passed; other systems were skipped. The merge report
 and three real check drvPaths are unchanged, while overlay/package/API reports
 reflect additional assertions. No lockfile or downstream repository changed.
-See `memory/parameterized-overlays.md` for current candidate evidence and
+See `memory/parameterized-overlays.md` for constructor implementation evidence and
 `memory/overlay-tests-design.md` for the committed tests-side API history.
-The constructor implementation is staged, not committed; owner review/project
-commit is next. Broader package-set/runtime work remains deferred.
+The owner committed it as `feat(lib): add parameterized overlay constructors`.
+All 117 committed file blobs and modes match the reviewed index snapshot exactly;
+the project worktree was clean on inspection. Validation ran before commit
+against the same content, with no post-commit test rerun. This checkpoint
+associates the inspected constructor commit. The implementation is complete;
+await the owner's next objective. Broader package-set/runtime work remains deferred.
 
 ## Package-side design boundary
 
@@ -107,7 +111,7 @@ mkLegacyPackages as extraction from already extended pkgs. Do not apply the
 test API simplification or inferred extraArgs/pkgs parameters to packages.
 The separately approved constructor extraArgs extension below is in scope.
 
-## Overlay constructors: staged and validated
+## Overlay constructors: committed and validated
 
 The owner superseded the mixed-format proposal and all four prior review
 recommendations with a uniform constructor protocol. Every overlayTree-loaded
@@ -125,7 +129,7 @@ public API and args semantics, with constructor extraArgs defaulting to {}.
 The earlier package-consumption redesign remains deferred.
 
 The owner requested implementation and authorized staging/formatting/checks.
-The candidate implements recursive selective injection and unknown-name errors,
+The implementation provides recursive selective injection and unknown-name errors,
 public forwarding, 49 mechanical source migrations, 19 new fixture files and
 33 new cases. TeX is wrapped at registration; extraction, namespace algorithms
 and test scope semantics are unchanged. Runtime validation remains limited to
@@ -136,8 +140,10 @@ assembly. That fixture now uses a concrete final value; this is ordinary Nix
 strictness, not a restriction or workaround in the aggregator. After correction,
 217 cases, three real checks and treefmt passed on x86_64-linux. README records
 the source-protocol migration and the fixed-point caveat. All 74 intended paths
-are staged with no unstaged project edits. No project commit for this candidate exists;
-this checkpoint has no new project parent. Next: owner review/project commit.
+were committed by the owner. Complete committed-tree comparison matched the
+reviewed 117-file index snapshot, with a clean worktree. This checkpoint
+associates that commit; the preceding tests ran before commit against identical
+content. No implementation work remains in this scope.
 
 ## Built-in aggregation rules: implemented and validated
 
@@ -168,7 +174,7 @@ remain unverified.
 
 The generic layer is committed at `lib/overlay-tree.nix`; the package adapter
 supplies implicit Emacs/TeX rules and a directory-capturing selector. The current
-constructor candidate adds mkOverlays.extraArgs; extraction/module algorithms
+constructor implementation adds mkOverlays.extraArgs; extraction/module algorithms
 remain unchanged. Namespace diagnostics use
 the domain-neutral `overlays.mkOverlay` prefix.
 

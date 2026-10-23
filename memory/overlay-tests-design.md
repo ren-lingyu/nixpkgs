@@ -8,7 +8,7 @@ The final section records the subsequent public-surface and logic review. That r
 implemented, validated and committed by the owner.
 Earlier delivery sections preserve the motivation and evidence for those
 completed phases; their caller-built scope requirement is no longer current.
-The subsequent staged uniform constructor migration is recorded in
+The subsequent committed uniform constructor migration is recorded in
 memory/parameterized-overlays.md. It migrates test sources and adds coverage
 without changing the checks/args API and test scope semantics below.
 
@@ -347,7 +347,7 @@ The commit message was refreshed to include removal of tests.mkOverlays, and
 the owner committed the final candidate as
 `feat(lib): consolidate test assembly in mkChecks`. The complete committed diff
 was inspected against the reviewed candidate: all 13 changed paths and their
-changes agree, with a clean project worktree. This checkpoint associates that
+changes agree, with a clean project worktree. An earlier checkpoint associates that
 inspected commit. The validation above ran before commit against identical
 source; no post-commit test rerun is claimed. This tests-side revision is complete.
 Await the owner's next objective; package-side design changes remain deferred.

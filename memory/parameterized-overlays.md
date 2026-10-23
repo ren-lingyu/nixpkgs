@@ -9,9 +9,12 @@ remains applicable only where not overridden. The owner requested implementation
 and authorized the exact staging, scoped
 formatting and full-check commands for this task. The constructor mechanism,
 package forwarding, source migration, README and focused tests are implemented,
-staged and validated in the worktree. No project commit for this candidate
-exists yet. Earlier GAW history associates the committed checks-only baseline;
-this checkpoint has no new project parent for uncommitted implementation.
+validated and committed by the owner as
+`feat(lib): add parameterized overlay constructors`. The entire committed tree
+matches the reviewed index snapshot: all 117 file blobs and modes agree. The
+project worktree was clean on inspection. This checkpoint associates that
+inspected commit. Tests ran before commit against the same content, not again
+for grounding. Earlier GAW history associates the preceding baseline.
 
 The bounded change extends packages.mkOverlays with extraArgs ? {} and internal
 overlayTree.mkOverlays with the same default. Keep mkLegacyPackages extraction,
@@ -148,8 +151,10 @@ overlay/package/API report paths changed with their added assertions.
 
 Final read-only review confirmed the 49 mechanical migrations, no unstaged
 project changes, diff-check cleanliness and unchanged extraction/scope business
-algorithms. All intended changes are staged (74 paths). This checkpoint
-records verified uncommitted source and therefore has no new project parent.
-Next: owner review/project commit; the agent must not create the project commit.
+algorithms. The owner committed all 74 changed paths. The exact 117-file
+committed-tree comparison confirms that the reviewed and validated source
+content is the committed content. This checkpoint associates the inspected
+commit; no post-commit test rerun is claimed. This implementation is complete.
+Next: await the owner's next objective.
 External consumer repositories remain unmodified and will require a separate
 migration of their loaded two-argument source overlays.
