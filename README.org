@@ -155,35 +155,51 @@ descendants. The module file directly inside =root= is not included.
 
 ** Test organization
 =lib.tests= shares the directory-based overlay aggregation mechanism used by
-=lib.packages=, without package-specific defaults. It exposes two functions:
+=lib.packages=, without package-specific defaults. Its public entry is =mkChecks=:
 
 | Function | Arguments | Result |
 |----------+-----------+--------|
-| =mkOverlays= | =root=, =overlayFile= | Overlays named after the discovered immediate child directories. |
-| =mkChecks= | =root=, =overlayFile=, =scope=, optional =separator= | A flat attribute set of derivations selected along discovered directory paths. |
+| =mkChecks= | =root=, =overlayFile=, optional =checks=, =args=, =separator= | Existing checks extended by test overlays, plus flattened directory-selected derivations. |
 
-=mkOverlays= returns overlays without applying them. The caller chooses which
-to compose, constructs the final scope, and defines how tests become derivations.
-There are no special directory roles or test runner. For example:
+=mkChecks= discovers and composes the overlays internally, constructing an
+independent test scope. Test overlays are an internal organization mechanism;
+there is no public overlay discovery interface in =lib.tests=. Test overlays do
+not extend =pkgs=. For example:
 
 #+begin_src nix
-let
+llib.tests.mkChecks {
   root = ./tests;
-  overlayFile = "overlay.nix";
-  overlays = llib.tests.mkOverlays { inherit root overlayFile; };
-  scope = (lib.makeScope pkgs.newScope (_: { inherit pkgs llib; })).overrideScope
-    (lib.composeManyExtensions (builtins.attrValues overlays));
-in
-llib.tests.mkChecks { inherit root overlayFile scope; }
+  overlayFile = "test-overlay.nix";
+  checks = existingChecks;
+  args = {
+    inherit pkgs llib;
+    inherit (pkgs) writeText;
+  };
+}
 #+end_src
+
+=checks= defaults to ={ }= and supplies existing check names to preserve.
+=args= defaults to ={ }= and supplies dependencies to the test scope and its
+=callPackage=. Dependencies such as =writeText= must be passed explicitly;
+passing =pkgs= does not implicitly inject its members. Initial checks take
+precedence over same-named arguments. Standard overlay semantics apply: =prev=
+sees earlier definitions, =final= sees the final test scope, and later overlays
+can replace existing checks. Existing names are read from the final definitions
+and must remain derivations, even when no corresponding directory exists.
+
+Arguments are not automatically exported, including derivation-valued helpers.
+The output includes final values for existing check names and flattened
+directory-selected derivations (the latter win if output names coincide).
+There are no special directory roles or test runner.
 
 Scope resolution and =callPackage= can supply dependencies from other directories
 without parent-directory imports. The chosen =root= and =overlayFile= determine
 discovery; keep overlay fixtures under test outside that discovery scope, or use
-a different filename. The root's own overlay file is ignored by both functions.
+a different filename. The root's own overlay file is ignored.
 
-=mkChecks= traverses the directory tree, using the scope only for values at the
-corresponding paths. It does not enumerate scope attributes to find extra checks:
+=mkChecks= traverses the directory tree, using the assembled test definitions
+for values at the corresponding paths. It does not enumerate arguments to find
+extra checks:
 
 | Discovered directory | Corresponding scope value | Action |
 |----------------------+---------------------------+--------|
@@ -194,13 +210,15 @@ corresponding paths. It does not enumerate scope attributes to find extra checks
 | Has descendant overlays | Missing, derivation, or other value | Report an invalid namespace path. |
 
 Directories with no matching overlay or descendant overlays are ignored.
-A scope may contain helper functions, evaluation results and other values;
-only directory-selected derivations are exported. Factory ownership of
+The internal scope may contain helper functions, evaluation results and other
+values; only existing check names and directory-selected derivations are
+exported. Factory ownership of
 =descendantOverlay= does not provide a path mapping to =mkChecks=. If a factory
 relocates results, the caller must arrange their export.
 
 The optional =separator= defaults to ="/"=. A selected derivation at
-=scope.packages.aggregation= becomes the flat check ="packages/aggregation"=.
+=packages.aggregation= in the assembled definitions becomes the flat check
+="packages/aggregation"=.
 Passing =separator = "-"= or =separator = "."= changes that name to
 ="packages-aggregation"= or ="packages.aggregation"=. Callers are responsible
 for name collisions introduced by their chosen separator.
@@ -209,8 +227,9 @@ for name collisions introduced by their chosen separator.
 =tests/default.nix= accepts ={ llib, lib, pkgs, overlayTree }= and returns the
 complete check derivation set. Ordinary suites live under =tests/suites/=, each
 with a =cases.nix= expression, a =test-overlay.nix= entry, and any local fixtures.
-The entry builds a shared scope, discovers these overlays with =lib.tests=, and
-extracts the checks. =callPackage= supplies each report wrapper's arguments;
+The entry passes existing API checks and shared arguments to =lib.tests.mkChecks=,
+which builds the test scope, applies discovered overlays, and extracts checks.
+=callPackage= supplies each report wrapper's arguments;
 the wrapper evaluates its local cases and uses the shared =mkResultCheck= helper
 to produce a JSON derivation.
 
@@ -240,12 +259,13 @@ systems, with additional real Emacs and TeX package-set evaluation on
 The =testApi= suite verifies the public test helpers with independent fixtures,
 including scope dependencies, extraction boundaries, separators and factory
 paths. Three extracted =pkgs.writeText= checks under =testApi/= are also built
-through the flake. The API suite and these real checks remain directly wired
-at the root, independently of ordinary-suite discovery. The root also requires
-the discovered ordinary check names to be exactly =mergeAttrsRecursive=,
-=overlays= and =packages=, so missing or unexpected suites fail evaluation.
+through the flake. The API suite and these real checks are supplied as existing
+=checks= at the root, independently of ordinary-suite discovery. The root also requires
+the complete output names to match the existing API checks plus =mergeAttrsRecursive=,
+=overlays= and =packages=, so missing or unexpected checks fail evaluation.
 Adding an ordinary suite also requires updating this expected-name set.
-All suites retain their existing assertions and report/check names.
+Existing aggregation assertions and report/check names are retained; API tests
+track the current assembly and extraction contract.
 
 Run the merge suite alone from the repository root without loading flake inputs:
 

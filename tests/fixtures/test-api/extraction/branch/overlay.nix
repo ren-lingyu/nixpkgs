@@ -1,1 +1,1 @@
-throw "mkChecks must not import namespace overlays"
+{ descendantOverlay }: final: prev: { }

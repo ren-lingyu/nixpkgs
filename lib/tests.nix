@@ -32,14 +32,43 @@ let
     );
 in
 {
-  mkOverlays = { root, overlayFile }: overlayTree.mkOverlays { inherit root overlayFile; };
-
   mkChecks =
     {
       root,
       overlayFile,
-      scope,
+      checks ? { },
+      args ? { },
       separator ? "/",
     }:
-    builtins.listToAttrs (collect_ overlayFile separator [ ] root scope);
+    let
+      overlays_ = overlayTree.mkOverlays { inherit root overlayFile; };
+      newScope_ = extra_: lib.callPackageWith (args // extra_);
+      overlay_ = lib.composeManyExtensions (builtins.attrValues overlays_);
+      # Keep the test definitions in the fixed point, without makeScope's
+      # reserved `packages` member masking a same-named check.
+      scope_ = lib.fix (
+        final_:
+        let
+          initial_ = {
+            callPackage = newScope_ final_;
+            newScope = extra_: newScope_ (final_ // extra_);
+          }
+          // args
+          // checks;
+        in
+        initial_ // overlay_ final_ initial_
+      );
+      existing_ = builtins.mapAttrs (
+        name_: unused_:
+        let
+          value_ = scope_.${name_};
+        in
+        if lib.isDerivation value_ then
+          value_
+        else
+          builtins.throw "tests.mkChecks: existing check `${name_}` is not a derivation after overlays"
+      ) checks;
+      discovered_ = builtins.listToAttrs (collect_ overlayFile separator [ ] root scope_);
+    in
+    existing_ // discovered_;
 }

@@ -5,32 +5,23 @@
 }:
 let
   helpers_ = llib.tests;
+  args_ = {
+    inherit lib pkgs llib;
+    inherit (pkgs) writeText;
+  };
   basicRoot_ = ./fixtures/test-api/basic;
   extractionRoot_ = ./fixtures/test-api/extraction;
-  makeScope_ =
-    root_: overlayFile_: initial_:
-    (lib.makeScope pkgs.newScope (_: { inherit lib pkgs llib; } // initial_)).overrideScope (
-      lib.composeManyExtensions (
-        builtins.attrValues (
-          helpers_.mkOverlays {
-            root = root_;
-            overlayFile = overlayFile_;
-          }
-        )
-      )
-    );
-  scope_ = makeScope_ basicRoot_ "overlay.nix" { };
   checks_ = helpers_.mkChecks {
     root = basicRoot_;
     overlayFile = "overlay.nix";
-    scope = scope_;
+    args = args_;
   };
   renamed_ =
     separator_:
     helpers_.mkChecks {
       root = basicRoot_;
       overlayFile = "overlay.nix";
-      scope = scope_;
+      args = args_;
       separator = separator_;
     };
   drv_ = pkgs.writeText "test-api-extraction" "extraction";
@@ -39,7 +30,7 @@ let
     helpers_.mkChecks {
       root = extractionRoot_;
       overlayFile = "overlay.nix";
-      scope = scope_;
+      args = scope_;
     };
   branch_ = {
     child = drv_;
@@ -56,49 +47,87 @@ let
     }) == [ "branch/child" ];
   rejects_ = value_: !(builtins.tryEval (builtins.deepSeq value_ true)).success;
   factoryRoot_ = ./fixtures/test-api/factory;
-  factoryScope_ = makeScope_ factoryRoot_ "overlay.nix" { };
   factoryChecks_ = helpers_.mkChecks {
     root = factoryRoot_;
     overlayFile = "overlay.nix";
-    scope = factoryScope_;
+    args = args_;
   };
   relocatedRoot_ = ./fixtures/test-api/relocated;
-  relocatedScope_ = makeScope_ relocatedRoot_ "overlay.nix" { };
   customRoot_ = ./fixtures/test-api/custom;
   customChecks_ = helpers_.mkChecks {
     root = customRoot_;
     overlayFile = "check.nix";
-    scope = makeScope_ customRoot_ "check.nix" { };
+    args = args_;
   };
-  changedScope_ = scope_.overrideScope (final_: prev_: { shared = "replacement"; });
+  changedChecks_ = helpers_.mkChecks {
+    root = basicRoot_;
+    overlayFile = "overlay.nix";
+    args = args_ // {
+      writeText = name_: text_: (pkgs.writeText name_ "injected:${text_}") // { injected = true; };
+    };
+  };
   realChecks_ = import ./test-checks.nix { inherit llib lib pkgs; };
+  initial_ = drv_ // {
+    testMarker = "initial";
+  };
+  assembled_ = helpers_.mkChecks {
+    root = ./fixtures/test-api/assembly;
+    overlayFile = "overlay.nix";
+    checks = {
+      existing = initial_;
+      retained = drv_;
+    };
+    args = args_ // {
+      existing = throw "initial checks must win over args";
+      dependencyDrv = drv_;
+      unused = throw "unselected args must stay lazy";
+    };
+  };
   tests_ = {
-    topLevelOverlays =
-      builtins.attrNames (
-        helpers_.mkOverlays {
-          root = basicRoot_;
-          overlayFile = "overlay.nix";
-        }
-      ) == [
-        "checks"
-        "emacsPackages"
-        "helpers"
-        "missing"
-        "shared"
-        "texlivePackages"
-        "validators"
-        "values"
+    existingCheckRetained = assembled_.retained.drvPath == drv_.drvPath;
+    existingCheckReplacementChangesDerivation = assembled_.existing.drvPath != initial_.drvPath;
+    existingCheckOverriddenInOrder = assembled_.existing.testMarker == "initial:first:second";
+    explicitCallPackageArgumentWins = assembled_.dependent.explicitMarker == "initial";
+    callPackageUsesFinalChecks = assembled_.dependent.testMarker == "initial:first:second";
+    argsDerivationNotExported = !(assembled_ ? dependencyDrv);
+    packagesNameNotMasked = lib.isDerivation assembled_.packages;
+    callPackageResolvesPackagesCheck = assembled_.dependent.packagesPath == assembled_.packages.drvPath;
+    assembledNames =
+      builtins.attrNames assembled_ == [
+        "dependent"
+        "existing"
+        "packages"
+        "retained"
       ];
-    scopeIsCallerConstructed = scope_ ? callPackage && scope_ ? overrideScope && scope_ ? newScope;
-    siblingDependency = scope_.checks.alpha.testMarker == "scope-dependency:alpha";
-    nestedDependency = scope_.checks.nested.beta.testMarker == "scope-dependency:beta";
-    topLevelDependency = scope_.validators.testMarker == "scope-dependency:validators";
-    overriddenDependency = changedScope_.checks.alpha.testMarker == "replacement:alpha";
-    overriddenDependencyChangesDerivation =
-      changedScope_.checks.alpha.drvPath != scope_.checks.alpha.drvPath;
-    emacsNameIsGeneric = scope_.emacsPackages.sample.marker == "generic-emacs-name";
-    texNameIsGeneric = scope_.texlivePackages.sample.marker == "generic-tex-name";
-    noPackageFactories = !(scope_ ? emacsPackagesFor) && !(scope_ ? texlive);
+    defaultChecksAndArgs =
+      helpers_.mkChecks {
+        root = basicRoot_ + "/empty";
+        overlayFile = "overlay.nix";
+      } == { };
+    existingChecksWithoutDirectories =
+      (helpers_.mkChecks {
+        root = basicRoot_ + "/empty";
+        overlayFile = "overlay.nix";
+        checks.retained = drv_;
+      }).retained.drvPath == drv_.drvPath;
+    invalidExistingCheckFails = rejects_ (
+      helpers_.mkChecks {
+        root = basicRoot_ + "/empty";
+        overlayFile = "overlay.nix";
+        checks.invalid = "not a derivation";
+      }
+    );
+    onlyMkChecksPublic = builtins.attrNames helpers_ == [ "mkChecks" ];
+    callPackageAndNewScopeAvailable = checks_.validators.scopeObservation.helpersAvailable;
+    siblingDependency = checks_."checks/alpha".testMarker == "scope-dependency:alpha";
+    nestedDependency = checks_."checks/nested/beta".testMarker == "scope-dependency:beta";
+    topLevelDependency = checks_.validators.testMarker == "scope-dependency:validators";
+    injectedDependency = changedChecks_."checks/alpha".injected;
+    injectedDependencyChangesDerivation =
+      changedChecks_."checks/alpha".drvPath != checks_."checks/alpha".drvPath;
+    emacsNameIsGeneric = checks_.validators.scopeObservation.emacsMarker == "generic-emacs-name";
+    texNameIsGeneric = checks_.validators.scopeObservation.texMarker == "generic-tex-name";
+    noPackageFactories = checks_.validators.scopeObservation.noPackageFactories;
     flatNames =
       builtins.attrNames checks_ == [
         "checks/alpha"
@@ -106,7 +135,9 @@ let
         "validators"
       ];
     allChecksAreDerivations = builtins.all lib.isDerivation (builtins.attrValues checks_);
-    originalDerivationsPreserved = checks_."checks/alpha".drvPath == scope_.checks.alpha.drvPath;
+    originalDerivationsPreserved =
+      checks_."checks/alpha".drvPath == (pkgs.writeText "test-api-alpha" "scope-dependency:alpha")
+      .drvPath;
     defaultSeparator = checks_ ? "checks/nested/beta";
     dashSeparator =
       builtins.attrNames (renamed_ "-") == [
@@ -128,19 +159,22 @@ let
       ];
     managementMembersNotExported =
       !(checks_ ? callPackage) && !(checks_ ? newScope) && !(checks_ ? overrideScope);
-    helperFunctionNotExported = builtins.isFunction scope_.helpers && !(checks_ ? helpers);
-    helperNamedDerivationIsExported =
-      (helpers_.mkChecks {
+    helperFunctionNotExported =
+      checks_.validators.scopeObservation.helperIsFunction && !(checks_ ? helpers);
+    overriddenCheckMustRemainDerivation = rejects_ (
+      helpers_.mkChecks {
         root = basicRoot_;
         overlayFile = "overlay.nix";
-        scope = scope_ // {
-          helpers = drv_;
-        };
-      }).helpers.drvPath == drv_.drvPath;
-    valueAttrsetNotTraversed = lib.isDerivation scope_.values.nested && !(checks_ ? "values/nested");
+        args = args_;
+        checks.helpers = drv_;
+      }
+    );
+    valueAttrsetNotTraversed =
+      checks_.validators.scopeObservation.hiddenValueIsDerivation && !(checks_ ? "values/nested");
     unmatchedOutputNotExported =
-      scope_.unmapped == "not a directory-matched check" && !(checks_ ? unmapped);
-    extractionDoesNotImportOverlays =
+      checks_.validators.scopeObservation.unmapped == "not a directory-matched check"
+      && !(checks_ ? unmapped);
+    directorySelectedExtraction =
       builtins.attrNames extracted_ == [
         "branch/child"
         "leaf"
@@ -187,22 +221,23 @@ let
       helpers_.mkChecks {
         root = extractionRoot_ + "/leaf";
         overlayFile = "overlay.nix";
-        scope = drv_;
+        args = {
+          ignored = drv_;
+        };
       } == { };
     emptyTree =
       helpers_.mkChecks {
         root = basicRoot_ + "/empty";
         overlayFile = "overlay.nix";
-        scope = throw "empty discovery must not force scope";
+        args = throw "empty discovery must not force args";
       } == { };
-    explicitFactoryDescendantsOnce = factoryScope_.group.check.applications == 1;
+    explicitFactoryDescendantsOnce = factoryChecks_."group/check".applications == 1;
     explicitFactoryExtraction = builtins.attrNames factoryChecks_ == [ "group/check" ];
-    relocatedFactoryResultExists = lib.isDerivation relocatedScope_.relocated.check;
     relocatedFactoryDoesNotRemap = rejects_ (
       helpers_.mkChecks {
         root = relocatedRoot_;
         overlayFile = "overlay.nix";
-        scope = relocatedScope_;
+        args = args_;
       }
     );
     customFilename =
