@@ -101,12 +101,15 @@ remain unverified.
 ## Proposed shared overlay layer and lib.tests
 
 The owner requested review of a new guide, not implementation. See
-`memory/overlay-tests-design.md` for its proposed architecture, unresolved
-mkChecks extraction cases and review findings. Migrating this repository's own
-test suites was explicitly deferred; independent fixtures can validate the new
-API while existing checks stay intact. The next step is to settle the extraction
-contract before implementation. The completed package migration above remains
-the current implemented baseline.
+`memory/overlay-tests-design.md` for the proposed architecture and the owner's
+adopted mkChecks extraction contract: skip missing/non-derivation overlay leaves,
+traverse only discovered descendants through non-derivation attrset namespaces,
+and error on missing/incompatible namespace paths. Never enumerate arbitrary
+scope attributes. Factories supply no extraction path mapping; callers handle
+relocated exports. Migrating this repository's own test suites remains deferred;
+independent fixtures can validate the API while existing checks stay intact.
+The contract questions are settled; implementation awaits a separate request.
+The completed package migration above remains the implemented baseline.
 
 ## Memory conventions
 

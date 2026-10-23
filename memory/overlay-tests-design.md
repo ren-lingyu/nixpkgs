@@ -38,24 +38,38 @@ fixtures to demonstrate the new scope/dependency and derivation extraction APIs.
 - Keep package extraction and module API/algorithms stable. Do not force shared
   extraction if it changes behavior. Keep downstream reference repos read only.
 
-## Review findings and unresolved contract
+## Review findings and adopted extraction contract
 
 The extraction is feasible with the current top-level dispatch design; ordinary
 implicit values can close over domain-specific context without extending the
 internal API. New defaults should remain lazy so absent/explicit special trees
 do not unnecessarily evaluate TeX selection.
 
-Before implementing mkChecks, define how each discovered directory behaves when
-its corresponding scope value is missing, non-derivation, or an attrset without
-discovered descendants. Also define a derivation encountered above discovered
-descendants. The guide permits helper values but leaves these cases ambiguous.
-Current mkLegacyPackages skips an overlay-only leaf whose value is missing or
-not a derivation, while requiring namespace structure for discovered descendants.
-Reusing it mechanically would silently adopt those choices. No new choice was
-adopted by this review. Do not recursively enumerate arbitrary scope attributes:
-management members and derivations unrelated to discovered paths must not leak.
-Factories may reshape their results, but extraction follows actual directory
-paths; it cannot infer a remapping from overlay source code.
+The owner adopted the following independent mkChecks contract, intentionally
+close to mkLegacyPackages. This resolves an API ambiguity, not a request for
+additional features. Directory structure determines traversal; scope supplies
+only values at those paths. Never enumerate scope to discover extra checks.
+
+| Discovered directory condition | mkChecks behavior |
+| --- | --- |
+| Overlay leaf with a derivation value | Extract the derivation. |
+| Overlay leaf with a non-derivation value | Skip. |
+| Overlay leaf with a missing corresponding path | Skip. |
+| Ordinary attrset leaf without descendant overlays | Skip; do not enumerate its attributes. |
+| Descendant overlays exist and corresponding value is a non-derivation attrset | Continue along the discovered directory tree. |
+| Descendant overlays exist but corresponding path is missing | Error. |
+| Descendant overlays exist but corresponding value is a derivation or other non-attrset value | Error. |
+
+Derivations are atomic leaves even though represented as Nix attrsets. Apply
+namespace validation to directories with discovered descendants before deciding
+whether any value is an extractable leaf. Directory paths remain the basis for
+flattened check names; scope management members and unrelated derivations are
+not discovered through arbitrary attribute traversal.
+
+The owner also adopted the factory path constraint: a factory owns descendant
+overlay application, but supplies no path-remapping information to mkChecks.
+If it relocates results, the caller must arrange their export; mkChecks cannot
+recover the directory correspondence automatically. No mapping protocol is added.
 
 For later own-suite migration, current tests/fixtures contains many overlay.nix
 files. Scanning tests/ using that filename would aggregate fixtures under test.
@@ -72,6 +86,7 @@ factory ownership, cross-directory scope dependencies and unaffected package
 rules. No runtime framework, global overlay ordering policy or all-derivation
 scope restriction is needed.
 
-Next: settle the extraction contract and revise the guide's own-suite migration
-references (section 8.4, phase four and completion criterion 7) to deferred work.
-Implementation and its command authorization remain a subsequent task.
+The extraction contract and factory path constraint are now settled. Future
+implementation must follow the table above, and treat the guide's own-suite
+migration references (section 8.4, phase four and completion criterion 7) as
+deferred work. Implementation and command authorization remain a subsequent task.
