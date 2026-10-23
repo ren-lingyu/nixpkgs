@@ -1,9 +1,26 @@
 # Backlog
 
+## Additional package-set-specific support
+
+Status: non-blocking deferred work, explicitly requested by the owner.
+
+After the scoped Emacs/TeX Live built-in migration described in
+`memory/package-aggregation-rules.md`, assess native extension/adaptation needs
+for other package sets, such as Python, Haskell and Lua. Select concrete
+representatives and define their contracts before implementing special rules.
+Existing generic namespace aggregation remains available; no special piPackages
+rule is needed. Missing support for other package sets must not block the two
+named built-ins, and this item does not authorize a registry/framework redesign.
+Keep the reference repositories read-only and dependencies parameter-injected.
+
 ## Package aggregation and package-set integration tests
 
 Status: planned; feasibility assessed, implementation and execution pending.
 The owner requested preserving this plan before returning to the work.
+The complete matrix is deferred separately from the bounded built-in rule
+migration in `memory/package-aggregation-rules.md`; only that migration's
+minimal acceptance checks are required for its completion. TeX same-name
+replacement support belongs to the migration itself, not this deferred matrix.
 
 ### Goal and boundaries
 

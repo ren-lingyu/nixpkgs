@@ -15,9 +15,11 @@ Overall migration completeness and historical buildability remain unverified.
 ## Completed shared library
 
 The owner has committed the flake infrastructure, shared library, tests and
-checks integration. The project worktree was clean at checkpoint preparation.
-The associated project snapshot is the final committed state inspected during
-this review; no ordinary project commits were created by the agent.
+checks integration. The previous shared-library checkpoint associated the final
+committed baseline inspected then. The current review observes a user-staged
+100%-identical move from `lib/packages.nix` to `lib/packages/default.nix` and its
+updated import. That preparation is preserved and is not yet a committed source
+snapshot. No ordinary project commits were created by the agent.
 
 `lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
 `mkHomeModule`. README.org documents their interfaces and directory conventions.
@@ -64,22 +66,35 @@ wiring. The final wiring then passed the authorized targeted build:
 `timeout 120s nix build --no-link --no-write-lock-file .#checks.x86_64-linux.mergeAttrsRecursive`.
 That build ran against the integration worktree before the owner's final
 commit. The final committed integration was subsequently inspected; its source
-differs from the built version only in formatting. The checkpoint associates
-that final inspected snapshot, not a claim that the build ran at committed HEAD.
+differs from the built version only in formatting. The earlier shared-library
+checkpoint associates that final inspected snapshot, not a claim that the build
+ran at committed HEAD.
 No full `nix flake check`, formatting check or real ecosystem build was run by
 the agent. Previous single-run command authorizations are consumed.
 
-## Backlog and next action
+## Next scoped development: built-in aggregation rules
 
-Read `memory/backlog.md` for package aggregation and real package-set integration
-tests. That plan covers representative mechanisms, dependency-binding checks,
-internal overlays, staged validation costs and acceptance criteria. It remains
-unimplemented; recording it does not authorize implementation or execution.
-Await the owner's next task or selection of backlog work.
+Read `memory/package-aggregation-rules.md` for the owner's reviewed development
+contract. It introduces root-child-name defaults for Emacs and TeX Live while
+preserving explicit overlay precedence and the existing public APIs. The owner's
+supplement requires TeX same-name package replacements to reach the existing
+selection/environment entry points. The reference rule explicitly forwards only
+new names, so this is an intentional enhancement rather than mechanical copying.
+
+The current request is review and memory organization only. No implementation
+or validation of the built-in rules has started. The next development step is
+reference/loader inspection under that contract when implementation is requested.
+Local `~/nixos` and `~/emarccs` repositories are authorized read-only references.
+
+Read `memory/backlog.md` for broader package-set tests and non-blocking future
+support for package sets beyond the two named built-ins. That broader work must
+not block this bounded migration. Overall historical buildability and the complete
+packaging migration remain unverified.
 
 ## Memory conventions
 
-Start here for current state, follow `memory/backlog.md` for deferred work and
+Start here for current state, follow `memory/package-aggregation-rules.md` for
+the reviewed migration contract, `memory/backlog.md` for deferred work and
 `memory/obsolete-nur.md` for the obsolete NUR history. Entry skills describe only
 how to read memory. Skill changes require separate checkpoints from memory.
 Use `feat(skills)` for a newly available skill; scope library-driven test
