@@ -206,14 +206,19 @@ Passing =separator = "-"= or =separator = "."= changes that name to
 for name collisions introduced by their chosen separator.
 
 * Tests
-=tests/default.nix= accepts ={ llib, lib, pkgs, overlayTree }= and collects the test
-suites. The root injects the internal overlay aggregator for its independent
-regression suite; this does not add a public library output.
-Each suite receives only the arguments it needs: the merge suite uses =llib=,
-while package aggregation tests also use Nixpkgs =lib= and =pkgs=. Dependencies outside a
-test's directory must be passed as function parameters; parent-directory imports
-and equivalent ancestor traversal are forbidden. Additional =lib= or =pkgs=
-arguments can be introduced when a suite needs them.
+=tests/default.nix= accepts ={ llib, lib, pkgs, overlayTree }= and returns the
+complete check derivation set. Ordinary suites live under =tests/suites/=, each
+with a =cases.nix= expression, a =test-overlay.nix= entry, and any local fixtures.
+The entry builds a shared scope, discovers these overlays with =lib.tests=, and
+extracts the checks. =callPackage= supplies each report wrapper's arguments;
+the wrapper evaluates its local cases and uses the shared =mkResultCheck= helper
+to produce a JSON derivation.
+
+The discovery filename is =test-overlay.nix=, so fixture =overlay.nix= files do
+not become suite entries. This layout and filename are repository conventions,
+not special roles in the public API. Cross-parent-directory dependencies must
+be passed as function parameters or through scope; parent-directory imports
+and equivalent ancestor traversal are forbidden.
 
 The =mergeAttrsRecursive= suite contains 43 evaluation cases covering recursive
 merging, strict conflicts, later-entry override precedence, subtree replacement,
@@ -235,8 +240,12 @@ systems, with additional real Emacs and TeX package-set evaluation on
 The =testApi= suite verifies the public test helpers with independent fixtures,
 including scope dependencies, extraction boundaries, separators and factory
 paths. Three extracted =pkgs.writeText= checks under =testApi/= are also built
-through the flake. Existing suites retain their original entry and JSON reports;
-they have not been migrated to the public test aggregation API.
+through the flake. The API suite and these real checks remain directly wired
+at the root, independently of ordinary-suite discovery. The root also requires
+the discovered ordinary check names to be exactly =mergeAttrsRecursive=,
+=overlays= and =packages=, so missing or unexpected suites fail evaluation.
+Adding an ordinary suite also requires updating this expected-name set.
+All suites retain their existing assertions and report/check names.
 
 Run the merge suite alone from the repository root without loading flake inputs:
 
@@ -248,8 +257,8 @@ nix-instantiate --eval --strict --readonly-mode \
 The merge suite needs no Nixpkgs library functions, so this command supplies
 an empty =lib=. The package suite uses the flake's locked Nixpkgs.
 
-The flake passes =llib= into the test entry and exposes each suite under
-=checks.<system>.<suite>= alongside the formatting check. Failed suites stop
+The flake injects the shared dependencies into the test entry and exposes its
+returned checks directly, alongside the formatting check. Failed suites stop
 evaluation; successful evaluation suites produce a JSON report of the named
 results. Extracted check derivations are included directly.
 Run all checks for the current system with =nix flake check=, or build the

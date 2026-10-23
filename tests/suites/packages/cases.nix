@@ -71,11 +71,11 @@ let
         builtins.attrValues (overlays_ root_ overlayFile_) ++ extra_
       )) base_
     );
-  implicitRoot_ = ./fixtures/packages/implicit;
+  implicitRoot_ = ./fixtures/implicit;
   implicit_ = apply_ implicitRoot_ "overlay.nix" [ ];
-  ordinary_ = apply_ ./fixtures/packages/ordinary "overlay.nix" [ ];
-  factory_ = apply_ ./fixtures/packages/factory "overlay.nix" [ ];
-  custom_ = apply_ ./fixtures/packages/custom "custom.nix" [ ];
+  ordinary_ = apply_ ./fixtures/ordinary "overlay.nix" [ ];
+  factory_ = apply_ ./fixtures/factory "overlay.nix" [ ];
+  custom_ = apply_ ./fixtures/custom "custom.nix" [ ];
   outside_ = apply_ implicitRoot_ "overlay.nix" [
     (final_: prev_: {
       texlivePackages = prev_.texlivePackages // {
@@ -122,7 +122,7 @@ let
         "piPackages"
         "texlivePackages"
       ];
-    emptySpecialDirectories = overlays_ ./fixtures/packages/empty "overlay.nix" == { };
+    emptySpecialDirectories = overlays_ ./fixtures/empty "overlay.nix" == { };
     implicitEmacs = (implicit_.emacsPackagesFor { variant = "first"; }).sample.marker == "first:sample";
     emacsVariants =
       (implicit_.emacsPackagesFor { variant = "second"; }).sample.marker == "second:sample";
@@ -240,9 +240,7 @@ let
       }).config.packageAggregationHome;
   };
 
-  realPkgs_ = pkgs.appendOverlays (
-    builtins.attrValues (overlays_ ./fixtures/packages/real "overlay.nix")
-  );
+  realPkgs_ = pkgs.appendOverlays (builtins.attrValues (overlays_ ./fixtures/real "overlay.nix"));
   realSelection_ =
     ps_:
     assert ps_.latex.testMarker == "replacement";
@@ -261,7 +259,7 @@ let
     realEmacsExtraction =
       lib.isDerivation
         (helpers_.mkLegacyPackages {
-          root = ./fixtures/packages/real;
+          root = ./fixtures/real;
           overlayFile = "overlay.nix";
           pkgs = realPkgs_;
         }).emacsPackages.personal-nixpkgs-probe;

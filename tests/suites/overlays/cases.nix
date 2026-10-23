@@ -1,6 +1,6 @@
 { lib, overlayTree }:
 let
-  root_ = ./fixtures/overlays;
+  root_ = ./fixtures;
   overlays_ = overlayTree.mkOverlays {
     root = root_;
     overlayFile = "overlay.nix";
