@@ -33,7 +33,7 @@ An earlier checkpoint associates that inspected feature commit. Validation ran
 before commit against the same content. The owner has now committed the test-suite migration below as
 `test(lib): organize repository suites with lib.tests`. All 94 committed file
 blobs and modes match the reviewed index snapshot exactly; the project worktree
-was clean on inspection. This checkpoint associates that inspected migration
+was clean on inspection. An earlier checkpoint associates that inspected migration
 commit. Validation ran before commit against the same content; no checks were
 rerun just to establish provenance. No ordinary project commit was created by
 the agent.
@@ -60,45 +60,35 @@ not restricted to functions. The implementation uses builtins only.
 
 ## Tests and dependency boundary
 
-`tests/default.nix` accepts `{ llib, lib, pkgs, overlayTree }` and now returns
-check derivations directly. Ordinary suites live under tests/suites/{mergeAttrsRecursive,
-overlays,packages}, with cases.nix, test-overlay.nix and any local fixtures.
-The entry discovers only test-overlay.nix, constructs a scope, and uses lib.tests
-to extract the reports. A shared local mkResultCheck wraps raw case results;
-callPackage supplies report-wrapper arguments, not raw case results.
+`tests/default.nix` accepts `{ llib, lib, pkgs, overlayTree }` and returns
+check derivations directly. Ordinary suites remain under tests/suites with
+cases.nix, test-overlay.nix and local fixtures. The entry now supplies direct
+API checks through mkChecks.checks and dependencies through mkChecks.args;
+it no longer manually constructs a scope or composes overlays.
 
-The root independently requires exactly mergeAttrsRecursive, overlays and
-packages from discovery. testApi and three real API checks remain directly
-wired, so collection failures cannot silently omit their own acceptance tests.
-The merge standalone path remains a thin downward import of its moved cases.
-All cross-parent dependencies use parameters/scope; no ancestor-relative imports.
+The root independently requires the exact complete output name set: existing
+API checks plus mergeAttrsRecursive, overlays and packages. testApi and three
+real API checks are defined independently of ordinary-suite discovery, then
+supplied as existing checks. The standalone merge path remains a downward shim.
+Cross-parent dependencies use parameters/scope; no ancestor-relative imports.
 
-Coverage remains 173 named cases on x86_64-linux: 43 merge, 54 packages (including
-six real package-set evaluations), 29 generic overlays and 47 test API cases.
-Three real writeText checks remain directly included. See
-`memory/overlay-tests-design.md` for migration details and important scope findings.
+Coverage is now 184 named cases on x86_64-linux: 43 merge, 54 packages (including
+six real package-set evaluations), 29 generic overlays and 58 test API cases.
+The expanded API suite covers preserving initial checks, actual replacement
+and prev/final order, final dependency resolution, unexported argument
+derivations, defaults, invalid retained values and packages-name resolution.
+Three real writeText checks remain included.
 
-Validation of the migration passed before commit, after final code fixes and formatting:
-
-- Scoped nix fmt over flake.nix, tests/default.nix, the standalone merge shim and
-  tests/suites; no public library source changed.
-- Targeted nix build of the four JSON report checks.
-- `timeout 10s nix-instantiate --eval --strict --readonly-mode --expr 'import ./tests/merge-attrs-recursive.nix { llib = import ./lib { lib = {}; }; }'`
-- Pinned-baseline comparison against the committed public test API snapshot:
-  all seven test check names and drvPaths are exactly unchanged (treefmt excluded).
-- An injected testEntry verifier confirms normal assembly succeeds, while empty,
-  missing-package and extra-check mkChecks results fail at the root name guard.
-- `timeout 120s nix flake check --no-write-lock-file --show-trace` passed all
-  suites, the three real checks and treefmt on x86_64-linux. Other systems skipped.
-
-Static comparison confirmed original case logic unchanged except fixture paths
-and formatting, and all 44 moved fixtures byte-identical. No lockfile update,
-large ecosystem build, downstream edit or ancestor-relative import was introduced.
-The verification script in ignored tmp/ takes all dependencies as function
-parameters; its results are distilled above, not needed as a lasting test input.
-The owner committed all intended migration changes. The exact committed-tree
-comparison establishes that the pre-commit validation applies to the same source
-content; it does not imply a post-commit test rerun.
+The new checks/args implementation is staged and validated, not committed.
+Scoped nix fmt and `timeout 120s nix flake check --no-write-lock-file --show-trace`
+passed after the final fixed-point and regression changes on x86_64-linux,
+including all reports, three real checks and treefmt. Other systems were skipped.
+The three ordinary report drvPaths and three real check drvPaths are unchanged;
+testApi's report changes with the new assertions. No lockfile or downstream
+repository was modified. No new project parent is attached for uncommitted work.
+See `memory/overlay-tests-design.md` for the current contract and earlier
+migration evidence. Next: owner review/project commit, which the agent must
+not create. Broader package-set/runtime work remains deferred.
 
 ## Built-in aggregation rules: implemented and validated
 
@@ -140,22 +130,30 @@ it has additional rule files; a single-file module should remain flat. The owner
 committed the byte-identical move from `lib/tests/default.nix` and updated the
 root import as `refactor(lib): flatten tests module into a single file`. Inspection
 confirmed only that move and import changed, with a clean project worktree.
-This checkpoint associates the inspected refactor; tests were not rerun for this
+An earlier checkpoint associates the inspected refactor; tests were not rerun for this
 path-only change. Root library assembly injects lib and overlayTree.
-Public tests.mkOverlays returns unapplied overlays without package defaults;
-tests.mkChecks takes a caller-built scope and flattens directory-selected
-derivations with separator defaulting to "/". Missing/non-derivation overlay
+Public tests.mkOverlays still returns unapplied overlays without package defaults.
+The owner then requested replacing mkChecks.scope with checks and args, both
+defaulting to empty attrsets. The implemented staged API now builds its own
+independent test fixed point, applies discovered overlays and preserves initial
+check names using final values, alongside directory-selected derivations.
+separator still defaults to "/". Dependencies must be passed explicitly in args,
+including writeText when needed; pkgs members are not implicitly injected. Missing/non-derivation overlay
 leaves are skipped; discovered namespaces must exist as non-derivation attrsets.
 Factory relocation has no implicit path mapping. No registry, runner, helper
-filter or arbitrary scope enumeration was added.
+filter or arbitrary scope enumeration was added. args values are not exported
+unless selected by a discovered path; initial check names must finish as
+derivations. checks wins initial name collisions with args. Flattened discovered
+checks win output-name collisions with retained initial checks.
 
 The owner approved and requested the subsequent own-suite migration. It is now
 implemented, validated and committed by the owner: three ordinary suites use
 lib.tests, while testApi acceptance remains independently loaded. The flake now
 imports the complete check set without per-suite wrapping. README documents the
 new local layout, root guard and preserved standalone merge entry. No public
-API or assertions were changed. This migration is complete with no outstanding
-actions in its scope. Await the owner's next objective; broader package-set/runtime
+API or assertions were changed in that completed migration. The subsequent
+checks/args API revision and related caller/test updates are now staged and
+validated, awaiting owner review and project commit. Broader package-set/runtime
 tests remain deferred.
 
 ## Memory conventions

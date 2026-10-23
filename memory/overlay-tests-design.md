@@ -1,5 +1,13 @@
 # Shared overlay aggregation and public test APIs: design review
 
+## Current API revision
+
+The owner has superseded the original scope-taking mkChecks API with the
+checks/args assembly contract described in the final section. That revision is
+implemented and validated in the staged worktree, awaiting owner commit.
+Earlier delivery sections preserve the motivation and evidence for those
+completed phases; their caller-built scope requirement is no longer current.
+
 ## Status and motivation
 
 The owner supplied a development guide for review, not implementation. Extract
@@ -145,7 +153,7 @@ mirror packages, then corrected that choice: packages needs a directory for its
 additional rule files, whereas this single-file module should remain flat.
 The owner committed the byte-identical move and root import update as
 `refactor(lib): flatten tests module into a single file`. The inspected commit
-changes only these two paths; the project worktree was clean. This checkpoint
+changes only these two paths; the project worktree was clean. An earlier checkpoint
 associates that source inspection, without claiming a new test run. It exposes exactly mkOverlays and
 mkChecks. The former delegates without package defaults; the latter follows the
 independent extraction table above, flattening only discovered directory paths.
@@ -231,7 +239,66 @@ fixture paths and formatting. README matches the new wiring, and no library API,
 lockfile or downstream repository was changed. The owner committed the migration
 as `test(lib): organize repository suites with lib.tests`. After HEAD moved,
 the complete committed tree matched the reviewed index snapshot exactly: all 94
-file blobs and modes agree. The project worktree was clean on inspection. This
+file blobs and modes agree. The project worktree was clean on inspection. An earlier
 checkpoint associates the inspected migration commit; the validation above ran
 before commit against identical source, with no post-commit rerun. The migration
 is complete. Broader runtime/platform work remains in backlog, outside its scope.
+
+## mkChecks revision: extend initial checks with injected args
+
+Read-only inspection of ~/nixos/tests/default.nix and
+~/emarccs/tests/default.nix showed repeated makeScope, overrideScope and
+composeManyExtensions/attrValues/mkOverlays assembly. Nixos injects pkgs, llib
+and rootPath; emarccs creates one test set per Emacs package and prefixes its
+checks. This repository additionally needs to extend independently defined
+API checks. The owner requested implementing the revised interface:
+
+```
+mkChecks { root, overlayFile, checks ? {}, args ? {}, separator ? "/"; }
+```
+
+checks is the initial check attrset; args is the dependency attrset. The owner
+chose args rather than extraArgs because there is no preceding default group
+of injected dependencies. Only attrset args are implemented; a function-valued
+injection API was not adopted. Initial checks win same-named args. The library
+internally discovers overlays, composes them in directory-name order, and
+applies them to an independent test fixed point. Tests never extend pkgs.
+Standard prev/final semantics apply, including replacing initial checks and
+resolving dependencies against final definitions.
+
+The fixed point provides callPackage and newScope using lib.callPackageWith;
+callers must explicitly inject dependencies such as writeText. Merely passing
+pkgs does not populate its members as arguments. Root construction deliberately
+avoids makeScope's reserved packages member: packages is available as a real
+check both for export and for callPackage dependencies. Existing generic
+namespace/scope/factory machinery is reused without changing overlay-tree.nix.
+
+The result combines final derivations at every original checks key (even without
+a discovered directory) with directory-selected flattened checks. Initial names
+that finish as non-derivations fail. Directory-selected values retain the earlier
+leaf-skip and namespace-error table. Arguments, including derivations, are not
+automatically exported; no whole-scope enumeration or helper filter is added.
+Flattened discovered values win if an output name collides with an initial key.
+Root overlay exclusion, separators and factory relocation limits remain.
+mkChecks now loads/applies overlays; the former extraction-does-not-import
+assertion and throwing extraction fixtures were intentionally replaced. The
+extraction namespace fixture uses a factory that leaves injected paths intact
+so missing/invalid namespace acceptance remains directly testable.
+
+Repository callers now pass checks and args, eliminating manual scope assembly.
+The root's exact-name guard covers existing API names plus ordinary suites.
+Standalone merge and ordinary assertions remain unchanged. API coverage rises
+from 47 to 58 cases, adding defaults, retained initial checks, actual derivation
+replacement, prev/final order, callPackage resolution of final existing and
+packages checks, unexported derivation dependencies and invalid retained checks.
+The three independent real writeText checks still build through the new entry.
+
+Scoped formatting and full nix flake check with --no-write-lock-file --show-trace
+passed after final changes on x86_64-linux: 184 named cases, three real checks
+and treefmt. Other platforms were skipped. All six ordinary-report/real-check
+drvPaths are unchanged; testApi's JSON report reflects its changed assertions.
+README documents the new API, precedence, explicit dependencies and export
+boundaries. All intended changes are staged with no ordinary project commit
+created. The associated source is the uncommitted candidate, so this memory
+checkpoint has no new project parent. Next: owner review and commit. The two
+reference repositories were only read and remain untouched.
