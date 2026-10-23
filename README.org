@@ -111,6 +111,30 @@ overlay. It receives the composed descendant overlay and takes responsibility
 for applying it; automatic namespace handling of those descendants is skipped.
 Within a level, local overlays are composed before automatic namespace overlays.
 
+When an immediate child of =root= has descendant overlays but no explicit
+=overlayFile=, =mkOverlays= selects a built-in rule by its directory name:
+
+| Directory | Default behavior |
+|-----------+------------------|
+| =emacsPackages= | Extend each =emacsPackagesFor emacs= scope through =overrideScope=; the factory owns the descendants. |
+| =texlivePackages= | Aggregate the namespace normally and expose its packages through the existing TeX Live selection interfaces. |
+| Other names | Use the generic namespace behavior above, including =piPackages=. |
+
+Explicit parent overlays always take precedence. An ordinary explicit overlay
+still composes with descendant namespace aggregation; an explicit factory owns
+the descendants. Empty directories do not produce overlays, and special names
+nested below the immediate children do not select built-in rules. The filename
+is always the caller's =overlayFile=, not necessarily =overlay.nix=.
+
+The TeX Live rule wraps =texlive.withPackages=, =texlive.combined=, and the
+previously supported top-level =texlive*= environments. It preserves support
+for newly named packages from other overlays. Packages declared by the current
+=texlivePackages= directory also override same-name packages in selection
+callbacks. Selected replacements are passed to the environment builder;
+prebuilt environments are not rebuilt automatically without using a selection
+entry point. Other overlays' same-name replacements are not explicitly forwarded
+by this rule. Internal rules are not exposed as additional public library APIs.
+
 =mkLegacyPackages= preserves namespace nesting and selects derivations at leaf
 directories with overlay files. A selected derivation cannot have descendant
 overlays; selected namespace paths must exist in the supplied package set.
@@ -130,8 +154,9 @@ A directory with such a module must not also contain matching modules in its
 descendants. The module file directly inside =root= is not included.
 
 * Tests
-=tests/default.nix= accepts ={ llib }= and collects the test suites. Each suite
-receives the repository library through that argument. Dependencies outside a
+=tests/default.nix= accepts ={ llib, lib, pkgs }= and collects the test suites.
+Each suite receives only the arguments it needs: the merge suite uses =llib=,
+while package aggregation tests also use Nixpkgs =lib= and =pkgs=. Dependencies outside a
 test's directory must be passed as function parameters; parent-directory imports
 and equivalent ancestor traversal are forbidden. Additional =lib= or =pkgs=
 arguments can be introduced when a suite needs them.
@@ -142,15 +167,21 @@ function and list values, derivation-shaped leaves, input validation, and
 laziness. It returns named boolean results on success and reports failed case
 names in an error. The derivation cases do not build real packages.
 
-Run the current suites from the repository root, passing the library explicitly:
+The =packages= suite covers implicit and explicit rule selection, namespace and
+module discovery, package extraction, scope dependency resolution, and TeX
+addition/replacement forwarding. It uses small evaluation fixtures on all
+systems, with additional real Emacs and TeX package-set evaluation on
+=x86_64-linux=. It does not build large editor or TeX environments.
+
+Run the merge suite alone from the repository root without loading flake inputs:
 
 #+begin_src sh
 nix-instantiate --eval --strict --readonly-mode \
-  --expr 'import ./tests { llib = import ./lib { lib = {}; }; }'
+  --expr 'import ./tests/merge-attrs-recursive.nix { llib = import ./lib { lib = {}; }; }'
 #+end_src
 
-The current suites need no Nixpkgs library functions, so this command supplies
-an empty =lib= and does not fetch flake inputs.
+The merge suite needs no Nixpkgs library functions, so this command supplies
+an empty =lib=. The package suite uses the flake's locked Nixpkgs.
 
 The flake passes =llib= into the test entry and exposes each suite under
 =checks.<system>.<suite>= alongside the formatting check. Failed suites stop
@@ -160,4 +191,5 @@ merge suite's report directly:
 
 #+begin_src sh
 nix build .#checks.x86_64-linux.mergeAttrsRecursive
+nix build .#checks.x86_64-linux.packages
 #+end_src

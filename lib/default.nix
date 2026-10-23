@@ -2,6 +2,6 @@
 
   mergeAttrsRecursive = import ./merge-attrs-recursive.nix;
 
-  packages = import ./packages.nix { inherit lib; };
+  packages = import ./packages { inherit lib; };
 
 }

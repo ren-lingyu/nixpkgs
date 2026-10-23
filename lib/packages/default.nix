@@ -45,22 +45,25 @@ let
         ) (getDirectories_ root_)
       );
 
+  isFactory_ = overlay_: (builtins.functionArgs overlay_) ? descendantOverlay;
+
   isOverlayFactory_ =
     overlayFile_: root_:
     if hasPath_ overlayFile_ root_ then
-      (builtins.functionArgs (import (resolvePath_ overlayFile_ root_))) ? descendantOverlay
+      isFactory_ (import (resolvePath_ overlayFile_ root_))
     else
       false;
 
-  loadOverlay_ =
-    overlayFile_: root_:
-    let
-      overlay_ = import (resolvePath_ overlayFile_ root_);
-    in
-    if (builtins.functionArgs overlay_) ? descendantOverlay then
+  instantiateOverlay_ =
+    overlayFile_: root_: overlay_:
+    if isFactory_ overlay_ then
       overlay_ { descendantOverlay = mkOverlay_ overlayFile_ root_; }
     else
       overlay_;
+
+  loadOverlay_ =
+    overlayFile_: root_:
+    instantiateOverlay_ overlayFile_ root_ (import (resolvePath_ overlayFile_ root_));
 
   mkAttrsetOverlay_ =
     final_: previous_: overlay_:
@@ -133,12 +136,27 @@ let
     lib.mapAttrs
       (
         name_: child_:
+        let
+          hasDescendants_ = hasEntries_ overlayFile_ child_;
+          localOverlay_ =
+            if hasPath_ overlayFile_ child_ then
+              import (resolvePath_ overlayFile_ child_)
+            else if hasDescendants_ && name_ == "emacsPackages" then
+              import ./rules/emacsPackages.nix
+            else if hasDescendants_ && name_ == "texlivePackages" then
+              import ./rules/texlivePackages.nix {
+                selectPackages = pkgs_: mkLegacyPackages_ overlayFile_ pkgs_ child_;
+              }
+            else
+              null;
+          ownsDescendants_ = localOverlay_ != null && isFactory_ localOverlay_;
+        in
         lib.composeManyExtensions (
           builtins.concatLists [
-            (lib.optional (hasPath_ overlayFile_ child_) (loadOverlay_ overlayFile_ child_))
-            (lib.optional (
-              if isOverlayFactory_ overlayFile_ child_ then false else hasEntries_ overlayFile_ child_
-            ) (mkNamespaceOverlay_ overlayFile_ name_ child_))
+            (lib.optional (localOverlay_ != null) (instantiateOverlay_ overlayFile_ child_ localOverlay_))
+            (lib.optional (hasDescendants_ && !ownsDescendants_) (
+              mkNamespaceOverlay_ overlayFile_ name_ child_
+            ))
           ]
         )
       )

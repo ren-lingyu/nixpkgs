@@ -55,10 +55,18 @@
                 ...
               }:
               {
-                checks = builtins.mapAttrs (
-                  name_: results_:
-                  builtins.seq results_ (pkgs.writeText "${name_}-tests.json" (builtins.toJSON results_))
-                ) (import ./tests { inherit llib; });
+                checks =
+                  builtins.mapAttrs
+                    (
+                      name_: results_:
+                      builtins.seq results_ (pkgs.writeText "${name_}-tests.json" (builtins.toJSON results_))
+                    )
+                    (
+                      import ./tests {
+                        inherit llib pkgs;
+                        lib = pkgs.lib;
+                      }
+                    );
 
                 treefmt = {
                   flakeFormatter = true;
