@@ -74,14 +74,17 @@ Cross-parent dependencies use parameters/scope; no ancestor-relative imports.
 
 Coverage is now 184 named cases on x86_64-linux: 43 merge, 54 packages (including
 six real package-set evaluations), 29 generic overlays and 58 test API cases.
-The expanded API suite covers preserving initial checks, actual replacement
-and prev/final order, final dependency resolution, unexported argument
-derivations, defaults, invalid retained values and packages-name resolution.
+The expanded API suite directly exercises mkChecks, including its exact public
+namespace, preserving initial checks, actual replacement and prev/final order,
+final dependency resolution, explicit callPackage argument precedence, unexported
+argument derivations, defaults, invalid retained values and packages-name
+resolution. It no longer builds caller scopes via public tests.mkOverlays.
 Three real writeText checks remain included.
 
 The new checks/args implementation is staged and validated, not committed.
 Scoped nix fmt and `timeout 120s nix flake check --no-write-lock-file --show-trace`
-passed after the final fixed-point and regression changes on x86_64-linux,
+passed after the final public-interface removal and direct API regression
+changes on x86_64-linux,
 including all reports, three real checks and treefmt. Other systems were skipped.
 The three ordinary report drvPaths and three real check drvPaths are unchanged;
 testApi's report changes with the new assertions. No lockfile or downstream
@@ -89,6 +92,15 @@ repository was modified. No new project parent is attached for uncommitted work.
 See `memory/overlay-tests-design.md` for the current contract and earlier
 migration evidence. Next: owner review/project commit, which the agent must
 not create. Broader package-set/runtime work remains deferred.
+
+## Package-side design boundary
+
+The owner considered moving overlay application into mkLegacyPackages,
+passing external overlay inputs, retaining discovery metadata and exporting
+an entire extended pkgs as legacyPackages. No redesign was adopted: the owner
+explicitly deferred the package side. Keep packages.mkOverlays public and
+mkLegacyPackages as extraction from already extended pkgs. Do not apply the
+test API simplification or inferred extraArgs/pkgs parameters to packages.
 
 ## Built-in aggregation rules: implemented and validated
 
@@ -132,7 +144,9 @@ root import as `refactor(lib): flatten tests module into a single file`. Inspect
 confirmed only that move and import changed, with a clean project worktree.
 An earlier checkpoint associates the inspected refactor; tests were not rerun for this
 path-only change. Root library assembly injects lib and overlayTree.
-Public tests.mkOverlays still returns unapplied overlays without package defaults.
+The staged lib.tests namespace now exposes only mkChecks; the owner requested
+removing public tests.mkOverlays because tests need a controlled checks entry,
+while overlay discovery/composition remains internal.
 The owner then requested replacing mkChecks.scope with checks and args, both
 defaulting to empty attrsets. The implemented staged API now builds its own
 independent test fixed point, applies discovered overlays and preserves initial

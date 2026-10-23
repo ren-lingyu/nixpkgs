@@ -3,7 +3,8 @@
 ## Current API revision
 
 The owner has superseded the original scope-taking mkChecks API with the
-checks/args assembly contract described in the final section. That revision is
+checks/args assembly contract below and removed public tests.mkOverlays.
+The final section records the subsequent public-surface and logic review. That revision is
 implemented and validated in the staged worktree, awaiting owner commit.
 Earlier delivery sections preserve the motivation and evidence for those
 completed phases; their caller-built scope requirement is no longer current.
@@ -302,3 +303,44 @@ boundaries. All intended changes are staged with no ordinary project commit
 created. The associated source is the uncommitted candidate, so this memory
 checkpoint has no new project parent. Next: owner review and commit. The two
 reference repositories were only read and remain untouched.
+
+## Final tests-side review: only mkChecks is public
+
+The owner deferred all package-side redesign, then requested completing the
+tests side by removing mkOverlays and reviewing mkChecks. The staged module
+now exposes exactly mkChecks. Generic overlay discovery/composition remains
+internal; packages.mkOverlays, package extraction and overlay-tree.nix are
+unchanged. The prior scope-taking interface and public test-overlay discovery
+are both retired by this candidate.
+
+Review found no additional logic defect requiring a change beyond the public
+entry removal. The existing fixed point supplies final dependency resolution,
+standard ordered prev/final behavior and package-name-safe root definitions.
+checks and args remain default-empty attrsets; dependencies are explicitly
+provided as direct args members. In particular, args.pkgs is an ordinary named
+argument, not an implicit source of package defaults. Discussions of pkgs,
+newScope, extraArgs, function-valued injection and implicit args.pkgs expansion
+did not become adopted changes. Helper definitions can deliberately be
+replaced by supplied attrs/overlays under the existing precedence rules.
+
+API tests now invoke mkChecks directly rather than manually constructing a
+scope via tests.mkOverlays. The validator fixture returns observations about
+the internal scope as derivation metadata, preserving the underlying real
+check drvPath. Tests cover generic Emacs/TeX directory names, helper availability,
+non-exported values, sibling/nested dependencies and explicit dependency
+injection through actual returned checks. The factory-once assertion now
+checks the derivation returned by mkChecks itself. The old relocated-result
+existence assertion on a separately built scope was removed; mkChecks still
+must reject that factory's missing directory namespace. An added regression
+confirms explicit callPackage parameters override automatic final-scope args.
+The exact-public-namespace assertion enforces that only mkChecks is exported.
+
+Scoped formatting and full flake check with --no-write-lock-file --show-trace
+passed on x86_64-linux after all final changes. Counts remain 58 API cases and
+184 total named cases, with three real checks and treefmt. Other platforms were
+skipped; the three ordinary report and three real check drvPaths are unchanged.
+README now describes the single public entry and internal overlay lifecycle.
+All intended project edits are staged, with no unstaged edits or project commit
+created. This checkpoint records the validated uncommitted candidate, without
+a new project parent. Next is owner review/project commit; the earlier commit
+message draft must be refreshed to include removal of tests.mkOverlays.
