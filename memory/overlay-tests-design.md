@@ -8,6 +8,9 @@ The final section records the subsequent public-surface and logic review. That r
 implemented, validated and committed by the owner.
 Earlier delivery sections preserve the motivation and evidence for those
 completed phases; their caller-built scope requirement is no longer current.
+The subsequent staged uniform constructor migration is recorded in
+memory/parameterized-overlays.md. It migrates test sources and adds coverage
+without changing the checks/args API and test scope semantics below.
 
 ## Status and motivation
 

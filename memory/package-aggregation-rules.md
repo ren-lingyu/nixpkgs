@@ -2,6 +2,12 @@
 
 ## Status, purpose and source boundary
 
+This file preserves the built-in-rule delivery contract below. The subsequent
+uniform constructor source protocol and optional mkOverlays.extraArgs supersede
+its original source-format/signature descriptions; see
+memory/parameterized-overlays.md for that staged, validated extension. Rule
+business behavior and extraction/module semantics below remain applicable.
+
 This is the owner's scoped development contract and implementation outcome.
 Implementation, README updates and minimal validation are complete. The owner
 committed the implementation after authorizing scoped staging, formatting,

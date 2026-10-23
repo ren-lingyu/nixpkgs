@@ -5,11 +5,13 @@
 The owner replaced the earlier mixed two-/three-layer input proposal with a
 uniform constructor protocol. This revision supersedes all four earlier review
 recommendations and the mixed-format compatibility plan. Original guidance
-remains applicable only where not overridden. The decision is adopted, not
-implemented: project source remains at the clean committed checks-only baseline.
-No Nix validation or project-file mutation occurred in this decision turn.
-Earlier GAW history already associates that baseline; this planning checkpoint
-has no additional project parent.
+remains applicable only where not overridden. The owner requested implementation
+and authorized the exact staging, scoped
+formatting and full-check commands for this task. The constructor mechanism,
+package forwarding, source migration, README and focused tests are implemented,
+staged and validated in the worktree. No project commit for this candidate
+exists yet. Earlier GAW history associates the committed checks-only baseline;
+this checkpoint has no new project parent for uncommitted implementation.
 
 The bounded change extends packages.mkOverlays with extraArgs ? {} and internal
 overlayTree.mkOverlays with the same default. Keep mkLegacyPackages extraction,
@@ -46,9 +48,11 @@ The public mkOverlays return values remain standard final: prev overlay function
 functionArgs cannot distinguish empty/open attrset patterns from positional
 lambda arguments; do not pretend to statically enforce the first pattern shape
 or implement arity inference. Always apply the first function as a constructor.
-Malformed old-style inputs may fail only on instantiation/application. Type
-checks may validate returned function and eventual non-derivation attrset, but
-full static detection of every malformed function shape is not promised.
+Malformed old-style inputs may fail only on instantiation/application. The owner
+selected tests-only return-type validation during planning: do not
+add runtime return-shape wrappers or arity inference. Tests verify resulting
+functions and non-derivation attribute sets; malformed values use native Nix
+errors. Runtime validation is limited to allowed constructor argument names.
 
 ## Propagation, isolation and laziness
 
@@ -102,8 +106,50 @@ and fixture constructors, and README.org. Do not change mkLegacyPackages,
 namespace/scope algorithms or concrete package build logic. Update README for
 the new source contract, extraArgs and its distinction from mkChecks.args.
 
-Next: implement this adopted revision when implementation is requested, then
-obtain command authorization for its exact staging/formatting/validation scope.
-Prior checks (184 named cases on x86_64-linux) validate the old source snapshot,
-not this unimplemented protocol. No project code or test results are claimed
-for the new design yet.
+Implementation uses optionalAttrs to build only declared constructor keys and
+threads extraArgs through the existing recursion. TeX is wrapped at registration.
+Ordinary fixture/source migration adds only an empty constructor; existing
+factories and ignored throwing fixtures retain their roles. Added local fixture
+trees exercise the new protocol and package adapter without parent traversal.
+
+## Implementation outcome and verification
+
+All 49 modified pre-existing source/fixture overlay files are byte-identical to
+baseline after accounting for the added empty constructor prefix. Existing
+factories and intentionally ignored throwing files remain intact. TeX was
+wrapped at registration; rules business implementations, lib/tests.nix,
+mkLegacyPackages and module extraction algorithms were not changed.
+
+Nineteen new local fixture files and focused cases cover selective constructor
+injection, defaulted and open patterns, nested factory-owned scope propagation,
+unknown arguments alone/mixed, function/path values, whole-environment/member
+laziness, explicit callPackage forwarding and absence of package-set pollution.
+Public package adapter tests cover generic, Emacs variants and TeX selection,
+plus extraction of the parameterized results. API tests prove default-empty
+constructor environment and separation from scope args, even if args contains
+an extraArgs-named member. No parent-directory imports were introduced.
+
+The first full check exposed infinite recursion in the new final-destructuring
+fixture because attrset argument matching strictly forces final during its own
+fixed-point construction. The fixture was corrected to apply that standard
+overlay to a concrete final attrset; fixed-point tests exclude that one entry.
+This preserves ordinary Nix strictness instead of adding a special runtime
+wrapper. README and the case comment explain the limitation. It is not evidence
+that destructured final always works inside a recursive package fixed point.
+
+After that test correction, scoped nix fmt and
+`timeout 120s nix flake check --no-write-lock-file --show-trace` passed on
+x86_64-linux: 217 named cases (43 merge, 62 packages, 51 generic overlays,
+61 tests API), three real extracted writeText checks and treefmt. This adds
+33 cases to the prior baseline; package tests still include six real Emacs/TeX
+evaluations. Other systems were skipped. No large ecosystem build or lockfile
+update occurred. The merge report and three real check drvPaths are unchanged;
+overlay/package/API report paths changed with their added assertions.
+
+Final read-only review confirmed the 49 mechanical migrations, no unstaged
+project changes, diff-check cleanliness and unchanged extraction/scope business
+algorithms. All intended changes are staged (74 paths). This checkpoint
+records verified uncommitted source and therefore has no new project parent.
+Next: owner review/project commit; the agent must not create the project commit.
+External consumer repositories remain unmodified and will require a separate
+migration of their loaded two-argument source overlays.

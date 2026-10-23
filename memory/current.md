@@ -72,8 +72,9 @@ real API checks are defined independently of ordinary-suite discovery, then
 supplied as existing checks. The standalone merge path remains a downward shim.
 Cross-parent dependencies use parameters/scope; no ancestor-relative imports.
 
-Coverage is now 184 named cases on x86_64-linux: 43 merge, 54 packages (including
-six real package-set evaluations), 29 generic overlays and 58 test API cases.
+The validated constructor candidate now has 217 named cases on x86_64-linux:
+43 merge, 62 packages (including six real package-set evaluations), 51 generic
+overlays and 61 tests API cases. The committed checks-only baseline had 184.
 The expanded API suite directly exercises mkChecks, including its exact public
 namespace, preserving initial checks, actual replacement and prev/final order,
 final dependency resolution, explicit callPackage argument precedence, unexported
@@ -85,18 +86,16 @@ The owner committed the checks/args implementation and mkOverlays removal as
 `feat(lib): consolidate test assembly in mkChecks`. The complete committed diff
 matches the final reviewed candidate (13 files), and the project worktree was
 clean on inspection. An earlier checkpoint associates that inspected source.
-Scoped nix fmt and `timeout 120s nix flake check --no-write-lock-file --show-trace`
-passed after the final public-interface removal and direct API regression
-changes on x86_64-linux,
-including all reports, three real checks and treefmt. Other systems were skipped.
-The three ordinary report drvPaths and three real check drvPaths are unchanged;
-testApi's report changes with the new assertions. No lockfile or downstream
-repository was modified. Validation ran before commit against the same source;
-no checks were rerun for grounding. See `memory/overlay-tests-design.md` for the
-current contract and earlier migration evidence. The tests-side revision is
-complete. The owner has adopted a uniform overlay constructor design for the
-next development; see the constructor section below. Broader package-set/runtime
-work remains deferred.
+The subsequent constructor candidate passed scoped nix fmt and
+`timeout 120s nix flake check --no-write-lock-file --show-trace` after source
+migration and the final fixture correction on x86_64-linux. All reports, three
+real checks and treefmt passed; other systems were skipped. The merge report
+and three real check drvPaths are unchanged, while overlay/package/API reports
+reflect additional assertions. No lockfile or downstream repository changed.
+See `memory/parameterized-overlays.md` for current candidate evidence and
+`memory/overlay-tests-design.md` for the committed tests-side API history.
+The constructor implementation is staged, not committed; owner review/project
+commit is next. Broader package-set/runtime work remains deferred.
 
 ## Package-side design boundary
 
@@ -106,8 +105,9 @@ an entire extended pkgs as legacyPackages. No redesign was adopted: the owner
 explicitly deferred the package side. Keep packages.mkOverlays public and
 mkLegacyPackages as extraction from already extended pkgs. Do not apply the
 test API simplification or inferred extraArgs/pkgs parameters to packages.
+The separately approved constructor extraArgs extension below is in scope.
 
-## Overlay constructors: adopted revision, implementation pending
+## Overlay constructors: staged and validated
 
 The owner superseded the mixed-format proposal and all four prior review
 recommendations with a uniform constructor protocol. Every overlayTree-loaded
@@ -124,16 +124,26 @@ implicit definitions are migrated, including test entries. mkChecks keeps its
 public API and args semantics, with constructor extraArgs defaulting to {}.
 The earlier package-consumption redesign remains deferred.
 
-This turn records the decision amendment. Source remains at the clean committed
-checks-only baseline; no implementation or Nix validation of the new protocol
-has occurred. Next: implementation under the revised scope when requested,
-with separate exact-command authorization for staging, formatting and checks.
+The owner requested implementation and authorized staging/formatting/checks.
+The candidate implements recursive selective injection and unknown-name errors,
+public forwarding, 49 mechanical source migrations, 19 new fixture files and
+33 new cases. TeX is wrapped at registration; extraction, namespace algorithms
+and test scope semantics are unchanged. Runtime validation remains limited to
+constructor argument names, with return shapes verified only by tests as chosen.
+
+The first check found strict final destructuring recursing during fixed-point
+assembly. That fixture now uses a concrete final value; this is ordinary Nix
+strictness, not a restriction or workaround in the aggregator. After correction,
+217 cases, three real checks and treefmt passed on x86_64-linux. README records
+the source-protocol migration and the fixed-point caveat. All 74 intended paths
+are staged with no unstaged project edits. No project commit for this candidate exists;
+this checkpoint has no new project parent. Next: owner review/project commit.
 
 ## Built-in aggregation rules: implemented and validated
 
 Read `memory/package-aggregation-rules.md` for the contract and implementation
 outcome. Root-child-name defaults now provide Emacs and TeX Live rules, with
-explicit overlay precedence, unchanged public APIs and unchanged generic scope,
+explicit overlay precedence and unchanged generic scope,
 extraction and module-discovery algorithms. Emacs owns descendant application;
 TeX uses a local integration overlay followed by the generic namespace overlay.
 
@@ -157,8 +167,9 @@ remain unverified.
 ## Shared overlay layer and lib.tests
 
 The generic layer is committed at `lib/overlay-tree.nix`; the package adapter
-supplies implicit Emacs/TeX rules and a directory-capturing selector. Its public
-APIs and extraction/module algorithms are unchanged. Namespace diagnostics use
+supplies implicit Emacs/TeX rules and a directory-capturing selector. The current
+constructor candidate adds mkOverlays.extraArgs; extraction/module algorithms
+remain unchanged. Namespace diagnostics use
 the domain-neutral `overlays.mkOverlay` prefix.
 
 The second delivery, public lib.tests, is implemented, documented, validated
