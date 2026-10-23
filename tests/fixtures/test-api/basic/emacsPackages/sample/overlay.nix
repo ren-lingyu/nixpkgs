@@ -1,1 +1,1 @@
-final: prev: { sample.marker = "generic-emacs-name"; }
+{ }: final: prev: { sample.marker = "generic-emacs-name"; }

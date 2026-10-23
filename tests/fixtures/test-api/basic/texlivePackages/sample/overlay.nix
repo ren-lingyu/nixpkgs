@@ -1,1 +1,1 @@
-final: prev: { sample.marker = "generic-tex-name"; }
+{ }: final: prev: { sample.marker = "generic-tex-name"; }

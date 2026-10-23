@@ -115,7 +115,40 @@ let
   };
   rejects_ = value_: !(builtins.tryEval (builtins.seq value_ true)).success;
 
+  parameterized_ = lib.fix (
+    lib.extends (lib.composeManyExtensions (
+      builtins.attrValues (
+        helpers_.mkOverlays {
+          root = ./constructor-fixtures;
+          overlayFile = "overlay.nix";
+          extraArgs = {
+            marker = "public-parameter";
+            unused = throw "public unused constructor arg";
+          };
+        }
+      )
+    )) base_
+  );
   tests_ = {
+    publicConstructorArgument = parameterized_.piPackages.sample.marker == "public-parameter";
+    emacsConstructorArgument =
+      (parameterized_.emacsPackagesFor { variant = "first"; }).sample.marker == "first:public-parameter";
+    emacsConstructorVariants =
+      (parameterized_.emacsPackagesFor { variant = "second"; }).sample.marker
+      == "second:public-parameter";
+    emacsParameterizedDescendantsOnce = parameterized_.emacsPackages.sample.applications == 1;
+    texConstructorArgument =
+      parameterized_.texlive.withPackages (ps_: ps_.added.marker) == "public-parameter";
+    texConstructorPreservesExisting =
+      parameterized_.texlive.withPackages (ps_: ps_.existing.marker) == "original";
+    parameterizedExtraction =
+      (helpers_.mkLegacyPackages {
+        root = ./constructor-fixtures;
+        overlayFile = "overlay.nix";
+        pkgs = parameterized_;
+      }).piPackages.sample.marker == "public-parameter";
+    publicArgsNotInPackageSet = !(parameterized_ ? extraArgs) && !(parameterized_ ? marker);
+
     immediateChildren =
       builtins.attrNames (overlays_ implicitRoot_ "overlay.nix") == [
         "emacsPackages"

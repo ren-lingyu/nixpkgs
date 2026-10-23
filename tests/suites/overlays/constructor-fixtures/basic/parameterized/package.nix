@@ -1,0 +1,6 @@
+{
+  token ? "default",
+}:
+{
+  marker = token;
+}

@@ -1,1 +1,1 @@
-final: prev: { item = "custom"; }
+{ }: final: prev: { item = "custom"; }

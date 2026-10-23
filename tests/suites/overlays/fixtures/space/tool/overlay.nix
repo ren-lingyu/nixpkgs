@@ -1,1 +1,1 @@
-final: prev: { tool = final.callPackage ./package.nix { }; }
+{ }: final: prev: { tool = final.callPackage ./package.nix { }; }

@@ -1,4 +1,4 @@
-final: prev: {
+{ }: final: prev: {
   explicitTex = true;
   texlivePackages = prev.texlivePackages // {
     fromParent = {

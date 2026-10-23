@@ -1,4 +1,4 @@
-final: prev: {
+{ }: final: prev: {
   validators = (final.callPackage ./package.nix { }) // {
     scopeObservation = {
       helpersAvailable = final ? callPackage && final ? newScope;

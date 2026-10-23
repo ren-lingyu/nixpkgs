@@ -1,0 +1,1 @@
+{ }: { parentMarker, ... }: prev: { destructuredMarker = parentMarker; }

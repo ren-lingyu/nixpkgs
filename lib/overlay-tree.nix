@@ -26,15 +26,26 @@ let
       false;
 
   instantiateOverlay_ =
-    overlayFile_: root_: overlay_:
-    if isFactory_ overlay_ then
-      overlay_ { descendantOverlay = mkOverlay_ overlayFile_ root_; }
+    overlayFile_: extraArgs_: root_: constructor_:
+    let
+      formalArgs_ = builtins.functionArgs constructor_;
+      unknownArgs_ = lib.subtractLists [ "extraArgs" "descendantOverlay" ] (
+        builtins.attrNames formalArgs_
+      );
+      constructorArgs_ =
+        lib.optionalAttrs (formalArgs_ ? extraArgs) { extraArgs = extraArgs_; }
+        // lib.optionalAttrs (formalArgs_ ? descendantOverlay) {
+          descendantOverlay = mkOverlay_ overlayFile_ extraArgs_ root_;
+        };
+    in
+    if unknownArgs_ != [ ] then
+      builtins.throw "overlays.mkOverlay: unknown constructor arguments ${builtins.toJSON unknownArgs_} at `${toString root_}`"
     else
-      overlay_;
+      constructor_ constructorArgs_;
 
   loadOverlay_ =
-    overlayFile_: root_:
-    instantiateOverlay_ overlayFile_ root_ (import (resolvePath_ overlayFile_ root_));
+    overlayFile_: extraArgs_: root_:
+    instantiateOverlay_ overlayFile_ extraArgs_ root_ (import (resolvePath_ overlayFile_ root_));
 
   mkAttrsetOverlay_ =
     final_: previous_: overlay_:
@@ -56,9 +67,9 @@ let
       ];
 
   mkNamespaceOverlay_ =
-    overlayFile_: name_: root_:
+    overlayFile_: extraArgs_: name_: root_:
     let
-      overlay_ = mkOverlay_ overlayFile_ root_;
+      overlay_ = mkOverlay_ overlayFile_ extraArgs_ root_;
     in
     final_: prev_:
     lib.setAttrByPath [ name_ ] (
@@ -78,16 +89,16 @@ let
     );
 
   mkOverlay_ =
-    overlayFile_: root_:
+    overlayFile_: extraArgs_: root_:
     let
       directories_ = getDirectories_ root_;
 
-      localOverlays_ = lib.mapAttrsToList (unused_name_: child_: loadOverlay_ overlayFile_ child_) (
-        lib.filterAttrs (unused_name_: child_: hasPath_ overlayFile_ child_) directories_
-      );
+      localOverlays_ = lib.mapAttrsToList (
+        unused_name_: child_: loadOverlay_ overlayFile_ extraArgs_ child_
+      ) (lib.filterAttrs (unused_name_: child_: hasPath_ overlayFile_ child_) directories_);
 
       namespaceOverlays_ =
-        lib.mapAttrsToList (name_: child_: mkNamespaceOverlay_ overlayFile_ name_ child_)
+        lib.mapAttrsToList (name_: child_: mkNamespaceOverlay_ overlayFile_ extraArgs_ name_ child_)
           (
             lib.filterAttrs (
               unused_name_: child_:
@@ -103,7 +114,7 @@ let
     );
 
   mkOverlays_ =
-    overlayFile_: root_: implicitOverlays_:
+    overlayFile_: extraArgs_: root_: implicitOverlays_:
     lib.mapAttrs
       (
         name_: child_:
@@ -120,9 +131,11 @@ let
         in
         lib.composeManyExtensions (
           builtins.concatLists [
-            (lib.optional (localOverlay_ != null) (instantiateOverlay_ overlayFile_ child_ localOverlay_))
+            (lib.optional (localOverlay_ != null) (
+              instantiateOverlay_ overlayFile_ extraArgs_ child_ localOverlay_
+            ))
             (lib.optional (hasDescendants_ && !ownsDescendants_) (
-              mkNamespaceOverlay_ overlayFile_ name_ child_
+              mkNamespaceOverlay_ overlayFile_ extraArgs_ name_ child_
             ))
           ]
         )
@@ -151,6 +164,7 @@ in
       root,
       overlayFile,
       implicitOverlays ? { },
+      extraArgs ? { },
     }:
-    mkOverlays_ overlayFile root implicitOverlays;
+    mkOverlays_ overlayFile extraArgs root implicitOverlays;
 }

@@ -1,1 +1,1 @@
-final: prev: { explicitEmacs = true; }
+{ }: final: prev: { explicitEmacs = true; }

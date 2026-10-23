@@ -1,1 +1,1 @@
-final: prev: { values.nested = prev.pkgs.writeText "unselected" "unselected"; }
+{ }: final: prev: { values.nested = prev.pkgs.writeText "unselected" "unselected"; }

@@ -1,4 +1,4 @@
-final: prev: {
+{ }: final: prev: {
   dependent = final.callPackage (
     {
       writeText,

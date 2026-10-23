@@ -1,1 +1,1 @@
-final: prev: { helpers = value: value; }
+{ }: final: prev: { helpers = value: value; }

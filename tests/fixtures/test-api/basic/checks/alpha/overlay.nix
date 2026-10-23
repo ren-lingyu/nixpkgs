@@ -1,1 +1,1 @@
-final: prev: { alpha = final.callPackage ./package.nix { }; }
+{ }: final: prev: { alpha = final.callPackage ./package.nix { }; }

@@ -1,1 +1,1 @@
-final: prev: { personal-nixpkgs-probe = final.callPackage ./package.nix { }; }
+{ }: final: prev: { personal-nixpkgs-probe = final.callPackage ./package.nix { }; }

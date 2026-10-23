@@ -1,1 +1,1 @@
-final: prev: { shared = "scope-dependency"; }
+{ }: final: prev: { shared = "scope-dependency"; }

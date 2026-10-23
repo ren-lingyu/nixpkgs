@@ -61,14 +61,20 @@ in
     mkLegacyPackages_ overlayFile pkgs root;
 
   mkOverlays =
-    { root, overlayFile }:
+    {
+      root,
+      overlayFile,
+      extraArgs ? { },
+    }:
     overlayTree.mkOverlays {
-      inherit root overlayFile;
+      inherit root overlayFile extraArgs;
       implicitOverlays = {
         emacsPackages = import ./rules/emacsPackages.nix;
-        texlivePackages = import ./rules/texlivePackages.nix {
-          selectPackages = pkgs_: mkLegacyPackages_ overlayFile pkgs_ (resolvePath_ "texlivePackages" root);
-        };
+        texlivePackages =
+          { }:
+          import ./rules/texlivePackages.nix {
+            selectPackages = pkgs_: mkLegacyPackages_ overlayFile pkgs_ (resolvePath_ "texlivePackages" root);
+          };
       };
     };
 

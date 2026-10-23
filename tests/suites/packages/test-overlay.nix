@@ -1,4 +1,4 @@
-final: prev: {
+{ }: final: prev: {
   packages = final.callPackage (
     {
       llib,

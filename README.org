@@ -65,7 +65,7 @@ tree. All functions take an attribute set; paths such as =overlayFile= and
 
 | Function | Arguments | Result |
 |----------+-----------+--------|
-| =mkOverlays= | =root=, =overlayFile= | An attribute set of overlays named after the immediate child directories containing overlays or descendant overlays. |
+| =mkOverlays= | =root=, =overlayFile=, optional =extraArgs= | An attribute set of overlays named after the immediate child directories containing overlays or descendant overlays. |
 | =mkLegacyPackages= | =root=, =overlayFile=, =pkgs= | A package tree selected from an existing package set using the overlay directory layout. |
 | =mkNixosModule= | =root=, =modulePath= | A module whose =imports= collect the discovered NixOS modules. |
 | =mkHomeModule= | =root=, =modulePath= | A module whose =imports= collect the discovered Home Manager modules. |
@@ -97,8 +97,53 @@ the resulting =pkgs=; it does not apply overlays itself.
 
 *** Overlay conventions
 Discovery starts with the children of =root=. An overlay file directly inside
-=root= is not loaded. A regular overlay has the form =final: prev: { ... }=;
-its returned attributes determine the package names at that level.
+=root= is not loaded. Every definition loaded by the aggregator is an overlay
+constructor. A definition with no construction dependencies uses:
+
+#+begin_src nix
+{ }:
+final: prev: {
+  example = final.callPackage ./package.nix { };
+}
+#+end_src
+
+The constructor returns a standard two-argument Nixpkgs overlay; its returned
+attributes determine package names at that level. Existing two-argument source
+files must add the constructor layer. Overlays returned by =mkOverlays= remain
+standard two-argument functions and are consumed normally by Nixpkgs.
+
+=mkOverlays= accepts =extraArgs ? { }= as a constructor environment. For example:
+
+#+begin_src nix
+helpers.mkOverlays {
+  inherit root overlayFile;
+  extraArgs = { inherit inputs; };
+}
+#+end_src
+
+A source can receive this environment explicitly and forward selected values:
+
+#+begin_src nix
+{ extraArgs }:
+final: prev: {
+  example = final.callPackage ./package.nix {
+    source = extraArgs.inputs.example;
+  };
+}
+#+end_src
+
+Only =extraArgs= and =descendantOverlay= may be explicitly declared in the
+constructor parameter set. Unknown names are errors. Only declared parameters
+are supplied, including those with defaults. ={ ... }:= is accepted, while
+={ }:= is preferred when no parameters are needed. Standard overlay parameters
+may still destructure =final=; constructor name validation applies only to the
+first function layer. As with ordinary Nix overlays, destructuring =final=
+forces that value and may cause recursion when constructing a fixed point.
+
+The same environment reaches nested constructors and factory-owned descendants.
+Unused environments and members remain lazy. Parameters are captured by lexical
+closure; the aggregator does not add them to =pkgs=, =final=, =prev= or the
+=callPackage= environment. Package arguments must be forwarded explicitly.
 
 Descendant overlays are grouped under the containing directory's name as a
 package namespace. Existing scopes are extended through =overrideScope=;
@@ -106,10 +151,12 @@ ordinary attribute sets and new namespaces use =lib.makeScope= and require
 the parent package set to provide =newScope=. A namespace cannot replace a
 derivation or a non-attribute value.
 
-An overlay factory can explicitly accept ={ descendantOverlay }= and return an
-overlay. It receives the composed descendant overlay and takes responsibility
-for applying it; automatic namespace handling of those descendants is skipped.
-Within a level, local overlays are composed before automatic namespace overlays.
+A constructor declaring =descendantOverlay= owns its descendants. It can use
+={ descendantOverlay }:= or ={ extraArgs, descendantOverlay }:=. It receives
+the composed descendant overlay and takes responsibility for applying it; automatic namespace handling of those descendants is skipped.
+Declaring only =extraArgs= does not take ownership. Explicit definitions and
+implicit rules use the same constructor protocol. Within a level, local overlays
+are composed before automatic namespace overlays.
 
 When an immediate child of =root= has descendant overlays but no explicit
 =overlayFile=, =mkOverlays= selects a built-in rule by its directory name:
@@ -164,7 +211,10 @@ descendants. The module file directly inside =root= is not included.
 =mkChecks= discovers and composes the overlays internally, constructing an
 independent test scope. Test overlays are an internal organization mechanism;
 there is no public overlay discovery interface in =lib.tests=. Test overlays do
-not extend =pkgs=. For example:
+not extend =pkgs=. Test source files use the same constructor protocol, including
+={ }: final: prev: { ... }=. Their constructor =extraArgs= defaults to ={ }=;
+=mkChecks.args= supplies scope dependencies and is not mapped to that environment.
+For example:
 
 #+begin_src nix
 llib.tests.mkChecks {

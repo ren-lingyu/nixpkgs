@@ -83,7 +83,21 @@ let
       unused = throw "unselected args must stay lazy";
     };
   };
+  constructorChecks_ = helpers_.mkChecks {
+    root = ./fixtures/test-api/constructor;
+    overlayFile = "overlay.nix";
+    args = args_ // {
+      projectMarker = "scope-only";
+      extraArgs.marker = "args-member";
+    };
+  };
   tests_ = {
+    constructorEnvironmentDefaultsEmpty = constructorChecks_.probe.constructorIsEmpty;
+    constructorDoesNotConsumeScopeArgs = constructorChecks_.probe.scopeMarker == "scope-only";
+    argsExtraArgsDoesNotBecomeConstructorArgs =
+      constructorChecks_.probe.scopeExtraArgs == "args-member"
+      && constructorChecks_.probe.constructorIsEmpty;
+
     existingCheckRetained = assembled_.retained.drvPath == drv_.drvPath;
     existingCheckReplacementChangesDerivation = assembled_.existing.drvPath != initial_.drvPath;
     existingCheckOverriddenInOrder = assembled_.existing.testMarker == "initial:first:second";

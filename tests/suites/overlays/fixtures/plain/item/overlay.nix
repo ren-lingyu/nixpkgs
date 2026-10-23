@@ -1,4 +1,4 @@
-final: prev: {
+{ }: final: prev: {
   item = {
     marker = prev.seed;
   };

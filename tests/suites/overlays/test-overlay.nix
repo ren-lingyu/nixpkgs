@@ -1,4 +1,4 @@
-final: prev: {
+{ }: final: prev: {
   overlays = final.callPackage (
     {
       lib,

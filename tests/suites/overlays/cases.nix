@@ -28,7 +28,7 @@ let
   }) combined_;
   attrset_ = apply_ (_: { space.kept = "attrset-kept"; }) combined_;
   implicitOverlays_ = {
-    implicit = final_: prev_: {
+    implicit = { }: final_: prev_: {
       implicitSelected = true;
       implicit = {
         seed = "implicit-local";
@@ -79,8 +79,93 @@ let
       )
     )
   );
+  constructorRoot_ = ./constructor-fixtures;
+  constructorArgs_ = {
+    marker = "injected";
+    token = "explicit-token";
+    source = ./constructor-fixtures;
+    transform = value_: "transformed:${value_}";
+    unused = throw "unused constructor member must stay lazy";
+  };
+  constructorOverlays_ =
+    extraArgs_:
+    overlayTree.mkOverlays {
+      root = constructorRoot_ + "/basic";
+      overlayFile = "overlay.nix";
+      extraArgs = extraArgs_;
+    };
+  constructorApply_ =
+    root_: extraArgs_:
+    apply_ (final_: { callPackage = lib.callPackageWith final_; }) (
+      lib.composeManyExtensions (
+        builtins.attrValues (
+          builtins.removeAttrs (overlayTree.mkOverlays {
+            root = root_;
+            overlayFile = "overlay.nix";
+            extraArgs = extraArgs_;
+          }) [ "destructured" ]
+        )
+      )
+    );
+  constructed_ = constructorApply_ (constructorRoot_ + "/basic") constructorArgs_;
+  # A destructured final is tested with a concrete value below: its pattern
+  # forces the attrset before a recursive fixed point can be constructed.
+  defaultConstructed_ = apply_ (final_: { callPackage = lib.callPackageWith final_; }) (
+    lib.composeManyExtensions (
+      builtins.attrValues (
+        builtins.removeAttrs (overlayTree.mkOverlays {
+          root = constructorRoot_ + "/basic";
+          overlayFile = "overlay.nix";
+        }) [ "destructured" ]
+      )
+    )
+  );
+  implicitConstructor_ = apply_ (_: { }) (
+    lib.composeManyExtensions (
+      builtins.attrValues (
+        builtins.removeAttrs (overlayTree.mkOverlays {
+          root = root_;
+          overlayFile = "overlay.nix";
+          extraArgs = constructorArgs_;
+          implicitOverlays.implicit = { extraArgs }: final_: prev_: { implicit.seed = extraArgs.marker; };
+        }) [ "custom" ]
+      )
+    )
+  );
   rejects_ = value_: !(builtins.tryEval (builtins.seq value_ true)).success;
   tests_ = {
+    emptyConstructor = constructed_.emptyConstructor;
+    openConstructor = constructed_.openConstructor;
+    finalDestructuring =
+      ((constructorOverlays_ constructorArgs_).destructured { parentMarker = "concrete-final"; } { })
+      .destructuredMarker == "concrete-final";
+    constructorParameter = constructed_.parameter == "injected";
+    constructorPath = constructed_.parameterPath == ./constructor-fixtures;
+    constructorFunction = constructed_.parameterFunction == "transformed:value";
+    defaultedParameterInjected = constructed_.defaulted == "injected";
+    defaultEnvironmentIsEmpty = defaultConstructed_.defaulted == "empty";
+    nestedConstructor = constructed_.namespace.deep.item.marker == "injected";
+    ordinaryConstructorKeepsDescendants = constructed_.local.child.marker == "injected:injected";
+    combinedConstructorReceivesBoth = constructed_.factory.deep.item.marker == "injected:injected";
+    combinedConstructorDescendantsOnce = constructed_.factory.deep.item.applications == 1;
+    implicitConstructorReceivesArgs = implicitConstructor_.implicit.item.marker == "injected";
+    constructorDoesNotExportArgs = !(constructed_ ? extraArgs) && !(constructed_ ? token);
+    callPackageDoesNotInheritConstructorArgs = constructed_.automatic.marker == "default";
+    callPackageExplicitConstructorArgs = constructed_.explicit.marker == "explicit-token";
+    unusedEnvironmentIsLazy =
+      (constructorApply_ (constructorRoot_ + "/unused") (throw "unused environment")).unused;
+    unusedDeclaredEnvironmentIsLazy =
+      (constructorApply_ (constructorRoot_ + "/unused-declared") (throw "unused declared environment"))
+      .unused;
+    unknownConstructorRejected = rejects_ (constructorApply_ (constructorRoot_ + "/unknown") { });
+    mixedUnknownConstructorRejected = rejects_ (
+      constructorApply_ (constructorRoot_ + "/unknown-mixed") { }
+    );
+    constructedOverlaysAreFunctions = builtins.all builtins.isFunction (
+      builtins.attrValues (constructorOverlays_ constructorArgs_)
+    );
+    appliedConstructorIsAttrset = builtins.isAttrs constructed_ && !(lib.isDerivation constructed_);
+
     discoveredChildren =
       builtins.attrNames overlays_ == [
         "custom"
