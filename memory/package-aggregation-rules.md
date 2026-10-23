@@ -170,12 +170,15 @@ this work does not delete them or modify the reference repositories.
 
 ## Implemented structure and validation outcome
 
-`lib/packages/default.nix` classifies and instantiates both explicit and implicit
-factories through shared helpers. Only top-level dispatch selects built-ins;
-ordinary recursive discovery, extraction and module aggregation remain generic.
+The original implementation classified explicit/implicit factories inside
+`lib/packages/default.nix`. The newly staged generic extraction moves overlay
+classification, recursion and namespace handling into the injected internal
+aggregator; the package adapter still supplies top-level built-ins. Extraction
+and module algorithms are unchanged. See `memory/overlay-tests-design.md` for
+this first refactoring delivery and its separate validation state.
 The Emacs rule lives at `lib/packages/rules/emacsPackages.nix`. The TeX rule at
 `lib/packages/rules/texlivePackages.nix` accepts `{ selectPackages }`, injected by
-the aggregator, and retains the original wrappers, guards and environment list.
+the package adapter, and retains the original wrappers, guards and environment list.
 No rule registry, public overlay output or new configuration was added.
 
 `tests/packages.nix` and downward-loaded fixtures cover discovery, empty and nested
