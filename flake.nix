@@ -68,7 +68,11 @@
                         inherit llib pkgs overlayTree;
                         lib = pkgs.lib;
                       }
-                    );
+                    )
+                  // (import ./tests/test-checks.nix {
+                    inherit llib pkgs;
+                    lib = pkgs.lib;
+                  });
 
                 treefmt = {
                   flakeFormatter = true;

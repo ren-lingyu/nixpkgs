@@ -153,6 +153,58 @@ The helper recursively searches child directories for the chosen =modulePath=.
 A directory with such a module must not also contain matching modules in its
 descendants. The module file directly inside =root= is not included.
 
+** Test organization
+=lib.tests= shares the directory-based overlay aggregation mechanism used by
+=lib.packages=, without package-specific defaults. It exposes two functions:
+
+| Function | Arguments | Result |
+|----------+-----------+--------|
+| =mkOverlays= | =root=, =overlayFile= | Overlays named after the discovered immediate child directories. |
+| =mkChecks= | =root=, =overlayFile=, =scope=, optional =separator= | A flat attribute set of derivations selected along discovered directory paths. |
+
+=mkOverlays= returns overlays without applying them. The caller chooses which
+to compose, constructs the final scope, and defines how tests become derivations.
+There are no special directory roles or test runner. For example:
+
+#+begin_src nix
+let
+  root = ./tests;
+  overlayFile = "overlay.nix";
+  overlays = llib.tests.mkOverlays { inherit root overlayFile; };
+  scope = (lib.makeScope pkgs.newScope (_: { inherit pkgs llib; })).overrideScope
+    (lib.composeManyExtensions (builtins.attrValues overlays));
+in
+llib.tests.mkChecks { inherit root overlayFile scope; }
+#+end_src
+
+Scope resolution and =callPackage= can supply dependencies from other directories
+without parent-directory imports. The chosen =root= and =overlayFile= determine
+discovery; keep overlay fixtures under test outside that discovery scope, or use
+a different filename. The root's own overlay file is ignored by both functions.
+
+=mkChecks= traverses the directory tree, using the scope only for values at the
+corresponding paths. It does not enumerate scope attributes to find extra checks:
+
+| Discovered directory | Corresponding scope value | Action |
+|----------------------+---------------------------+--------|
+| Leaf with an overlay | Derivation | Extract it. |
+| Leaf with an overlay | Missing or non-derivation | Skip it. |
+| Leaf with an overlay | Ordinary attribute set | Skip it without traversing its attributes. |
+| Has descendant overlays | Non-derivation attribute set | Continue along the directory tree. |
+| Has descendant overlays | Missing, derivation, or other value | Report an invalid namespace path. |
+
+Directories with no matching overlay or descendant overlays are ignored.
+A scope may contain helper functions, evaluation results and other values;
+only directory-selected derivations are exported. Factory ownership of
+=descendantOverlay= does not provide a path mapping to =mkChecks=. If a factory
+relocates results, the caller must arrange their export.
+
+The optional =separator= defaults to ="/"=. A selected derivation at
+=scope.packages.aggregation= becomes the flat check ="packages/aggregation"=.
+Passing =separator = "-"= or =separator = "."= changes that name to
+="packages-aggregation"= or ="packages.aggregation"=. Callers are responsible
+for name collisions introduced by their chosen separator.
+
 * Tests
 =tests/default.nix= accepts ={ llib, lib, pkgs, overlayTree }= and collects the test
 suites. The root injects the internal overlay aggregator for its independent
@@ -180,6 +232,12 @@ addition/replacement forwarding. It uses small evaluation fixtures on all
 systems, with additional real Emacs and TeX package-set evaluation on
 =x86_64-linux=. It does not build large editor or TeX environments.
 
+The =testApi= suite verifies the public test helpers with independent fixtures,
+including scope dependencies, extraction boundaries, separators and factory
+paths. Three extracted =pkgs.writeText= checks under =testApi/= are also built
+through the flake. Existing suites retain their original entry and JSON reports;
+they have not been migrated to the public test aggregation API.
+
 Run the merge suite alone from the repository root without loading flake inputs:
 
 #+begin_src sh
@@ -192,7 +250,8 @@ an empty =lib=. The package suite uses the flake's locked Nixpkgs.
 
 The flake passes =llib= into the test entry and exposes each suite under
 =checks.<system>.<suite>= alongside the formatting check. Failed suites stop
-evaluation; successful checks produce a JSON report of the named results.
+evaluation; successful evaluation suites produce a JSON report of the named
+results. Extracted check derivations are included directly.
 Run all checks for the current system with =nix flake check=, or build the
 merge suite's report directly:
 
@@ -200,4 +259,5 @@ merge suite's report directly:
 nix build .#checks.x86_64-linux.mergeAttrsRecursive
 nix build .#checks.x86_64-linux.packages
 nix build .#checks.x86_64-linux.overlays
+nix build .#checks.x86_64-linux.testApi
 #+end_src
