@@ -15,7 +15,8 @@ Keep the reference repositories read-only and dependencies parameter-injected.
 
 ## Package aggregation and package-set integration tests
 
-Status: planned; feasibility assessed, implementation and execution pending.
+Status: partially covered by the completed built-in migration's evaluation
+suite; the broader build/runtime/platform matrix remains deferred.
 The owner requested preserving this plan before returning to the work.
 The complete matrix is deferred separately from the bounded built-in rule
 migration in `memory/package-aggregation-rules.md`; only that migration's
@@ -98,4 +99,11 @@ The plan is satisfied when selected mechanisms have explicit behavioral tests,
 negative cases fail as intended, successful consumers use the extended
 packages, and all overlays remain internal. Record any unsupported mechanisms
 and platform limits rather than asserting universal package-set compatibility.
-No implementation or validation of this backlog item has been performed.
+The bounded migration now supplies 48 generic/mock cases and six real Emacs/TeX
+package-set evaluations on x86_64-linux, integrated into checks and validated by
+a full flake check. This covers much of evaluation layer 1, including scope
+binding, precedence, collisions, extraction and module discovery. It does not
+complete layers 2 or 3: real producer/consumer builds, runtime Emacs loading,
+TeX compilation, Python/Haskell integration and other platforms remain open.
+Do not treat evaluation of derivation paths as proof of runtime environment
+behavior. See `memory/package-aggregation-rules.md` for the implemented subset.

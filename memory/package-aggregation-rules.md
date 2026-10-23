@@ -2,10 +2,11 @@
 
 ## Status, purpose and source boundary
 
-This is the owner's scoped development contract, reviewed against the current
-aggregator and the two local reference implementations. Implementation is pending.
-The present request authorizes document review and GAW memory organization, not
-starting implementation or executing validation commands.
+This is the owner's scoped development contract and implementation outcome.
+Implementation, README updates and minimal validation are complete in the staged
+project worktree. The owner authorized implementation and repeated scoped staging,
+formatting, targeted builds and full checks. No project commit has been created;
+validation is not attributed to an implementation commit that does not yet exist.
 
 Move existing Emacs and TeX Live aggregation practice into `lib.packages`, with
 automatic selection by immediate child-directory name. Reuse the current scope,
@@ -21,16 +22,17 @@ commits there. Design references are:
 - `~/nixos/pkgs/pkgs/texlivePackages/overlay.nix`: TeX environment integration.
 - `~/nixos/pkgs/pkgs/piPackages/`: ordinary child overlays, without a parent rule.
 
-These are owner-reported working examples and were inspected as source. No
-runtime validation of this migration has been performed.
+These are owner-reported working examples and were inspected as source. The
+migration now has mock and real package-set evaluation coverage; actual Emacs
+loading and TeX compilation remain outside this bounded acceptance scope.
 
 ## Workspace baseline and organization
 
 The supplied guide names `lib/packages.nix`. At review time the owner had already
 staged its 100%-identical move to `lib/packages/default.nix`, with the corresponding
 `lib/default.nix` import changed to `./packages`. Keep that existing preparation;
-use the current paths rather than recreating the old file. The staged move was
-not committed or otherwise changed by the agent.
+use the current paths rather than recreating the old file. The implementation
+extends the moved file; the resulting staged candidate includes that preparation.
 
 Keep the public namespace `lib.packages`. Independent internal rule functions
 can live at `lib/packages/rules/emacsPackages.nix` and
@@ -112,8 +114,13 @@ existence alone. Preserve unrelated packages and original merge priorities.
 This is an intentional functional extension to the migration-only instruction,
 authorized by the owner's supplement. Do not retain the old new-names-only
 filter as the full contract, and do not silently broaden this into a TeX package
-set redesign. Choose a bounded selection mechanism during implementation; report
-any further required behavior change before introducing it.
+set redesign. The adopted bound is to forward replacements declared by this
+TeX subtree, using a parameter-injected selector backed by `mkLegacyPackages_`.
+Keep forwarding globally new names as before. Use `recursiveUpdateUntil` to
+preserve unrelated nested siblings while treating derivations as atomic leaves.
+Existing callback merge priorities are preserved, with declared replacements
+applied last. This affects selections made through the wrapped entry points;
+already instantiated environments are not automatically rebuilt.
 
 ## Unchanged APIs and excluded work
 
@@ -159,3 +166,37 @@ rules and dispatch, explicit-rule priority, the requested TeX replacement
 behavior, consistent documentation and successful minimal validation. Downstream
 parent overlays may become removable in a later separately scoped migration;
 this work does not delete them or modify the reference repositories.
+
+## Implemented structure and validation outcome
+
+`lib/packages/default.nix` classifies and instantiates both explicit and implicit
+factories through shared helpers. Only top-level dispatch selects built-ins;
+ordinary recursive discovery, extraction and module aggregation remain generic.
+The Emacs rule lives at `lib/packages/rules/emacsPackages.nix`. The TeX rule at
+`lib/packages/rules/texlivePackages.nix` accepts `{ selectPackages }`, injected by
+the aggregator, and retains the original wrappers, guards and environment list.
+No rule registry, public overlay output or new configuration was added.
+
+`tests/packages.nix` and downward-loaded fixtures cover discovery, empty and nested
+special names, custom overlayFile, root-overlay exclusion, explicit ordinary and
+factory precedence, local-before-namespace order, one-time descendant application,
+new/existing scopes, parent and sibling dependency binding, plain attrsets,
+extraction, invalid collisions/missing paths and NixOS/Home module discovery.
+Mock TeX tests distinguish additions and replacements, preserve nested siblings,
+treat derivations atomically, check all supported environment wrappers, and verify
+that unrelated external same-name replacements are not forwarded.
+
+Six real evaluations on x86_64-linux check a minimal Emacs package against two
+Emacs variants, distinct scope derivations/default extraction, and TeX selection
+through `texlive.withPackages` and `texliveMinimal.withPackages`. TeX callbacks
+assert both new-package and same-name latex replacement markers before resulting
+derivation paths are forced. These are evaluation tests, not runtime load or
+compilation checks and not large ecosystem builds.
+
+The packages suite passed 54 cases (48 generic plus six real evaluations), and
+the unchanged merge suite passed 43 cases. The final authorized
+`nix flake check --no-write-lock-file --show-trace` passed both suites and treefmt
+on x86_64-linux after scoped formatting and the targeted packages check build.
+Other platforms were skipped. README matches the implemented boundaries. All
+project changes are staged; no lockfile update or reference-repository edit was
+made. The complete package-set/runtime test matrix remains deferred in backlog.

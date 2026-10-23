@@ -14,12 +14,12 @@ Overall migration completeness and historical buildability remain unverified.
 
 ## Completed shared library
 
-The owner has committed the flake infrastructure, shared library, tests and
-checks integration. The previous shared-library checkpoint associated the final
-committed baseline inspected then. The current review observes a user-staged
-100%-identical move from `lib/packages.nix` to `lib/packages/default.nix` and its
-updated import. That preparation is preserved and is not yet a committed source
-snapshot. No ordinary project commits were created by the agent.
+The owner has committed the shared-library baseline. The built-in aggregation
+implementation is now complete and staged, including the owner's preparatory
+move from `lib/packages.nix` to `lib/packages/default.nix` and its updated import.
+No ordinary project commit was created by the agent. Validation below concerns
+this staged worktree, not a committed implementation snapshot. No additional
+project parent is attached for it because current project HEAD lacks these changes.
 
 `lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
 `mkHomeModule`. README.org documents their interfaces and directory conventions.
@@ -43,53 +43,58 @@ not restricted to functions. The implementation uses builtins only.
 
 ## Tests and dependency boundary
 
-`tests/default.nix` and its merge suite accept `{ llib }`; tests inherit the
-function from that library. Add `lib` or `pkgs` only when actually needed.
-Cross-parent-directory dependencies must be passed exclusively as function
-parameters. Parent-relative imports and equivalent ancestor traversal are
-forbidden. The root loads library and tests downward; the test aggregator
-loads only its same-directory suite. Test cases perform no imports.
+`tests/default.nix` accepts `{ llib, lib, pkgs }` and forwards dependencies
+only where used: the merge suite takes `{ llib }`, and the packages suite takes
+`{ llib, lib, pkgs }`. Cross-parent-directory dependencies must be passed
+exclusively as function parameters. Parent-relative imports and equivalent
+ancestor traversal are forbidden; downward and same-directory imports are used.
 
-The merge suite contains 43 named evaluation cases. It returns boolean results
-or throws with failed case names. Cases cover recursive merging, strict
-conflicts, input/options validation, functions, lists, laziness, derivation-shaped
-leaves and later-entry precedence including subtree replacement barriers.
-Derivation fixtures use a type marker, not real package builds.
+The merge suite contains 43 named evaluation cases covering recursive merging,
+strict conflicts, input/options validation, functions, lists, laziness,
+derivation-shaped leaves and later-entry precedence. The packages suite has
+54 cases on x86_64-linux: 48 generic/mock cases and six real package-set
+evaluations. See `memory/package-aggregation-rules.md` for their scope and limits.
+Suites return boolean results or throw failed case names. The flake injects
+library and package dependencies and maps suites to per-system JSON checks via
+`pkgs.writeText`. The existing treefmt/nixfmt check remains integrated.
 
-The flake passes `llib` to the test entry and maps suites to per-system checks.
-A failed suite stops evaluation; successful checks write JSON reports via
-`pkgs.writeText`. The existing treefmt/nixfmt check remains configured. README
-contains standalone evaluation and flake check commands.
+Authorized validation passed after the final implementation changes:
 
-Validation: 43 cases passed local evaluation before the final `llib` parameter
-wiring. The final wiring then passed the authorized targeted build:
-`timeout 120s nix build --no-link --no-write-lock-file .#checks.x86_64-linux.mergeAttrsRecursive`.
-That build ran against the integration worktree before the owner's final
-commit. The final committed integration was subsequently inspected; its source
-differs from the built version only in formatting. The earlier shared-library
-checkpoint associates that final inspected snapshot, not a claim that the build
-ran at committed HEAD.
-No full `nix flake check`, formatting check or real ecosystem build was run by
-the agent. Previous single-run command authorizations are consumed.
+- `timeout 120s nix fmt -- flake.nix lib/packages tests/default.nix tests/packages.nix tests/fixtures/packages`
+- `timeout 120s nix build --show-trace --no-link --no-write-lock-file .#checks.x86_64-linux.packages`
+- `timeout 120s nix flake check --no-write-lock-file --show-trace`
 
-## Next scoped development: built-in aggregation rules
+The final full check passed both suites (97 cases total) and formatting on
+x86_64-linux. Other systems were skipped. No large Emacs/TeX environment was
+built, no runtime ecosystem smoke test was performed, and the lockfile was not
+updated. Static review found no ancestor-relative dependencies in package library
+or test Nix files; the staged diff has no whitespace errors or unstaged edits.
 
-Read `memory/package-aggregation-rules.md` for the owner's reviewed development
-contract. It introduces root-child-name defaults for Emacs and TeX Live while
-preserving explicit overlay precedence and the existing public APIs. The owner's
-supplement requires TeX same-name package replacements to reach the existing
-selection/environment entry points. The reference rule explicitly forwards only
-new names, so this is an intentional enhancement rather than mechanical copying.
+## Built-in aggregation rules: implemented and validated
 
-The current request is review and memory organization only. No implementation
-or validation of the built-in rules has started. The next development step is
-reference/loader inspection under that contract when implementation is requested.
-Local `~/nixos` and `~/emarccs` repositories are authorized read-only references.
+Read `memory/package-aggregation-rules.md` for the contract and implementation
+outcome. Root-child-name defaults now provide Emacs and TeX Live rules, with
+explicit overlay precedence, unchanged public APIs and unchanged generic scope,
+extraction and module-discovery algorithms. Emacs owns descendant application;
+TeX uses a local integration overlay followed by the generic namespace overlay.
 
-Read `memory/backlog.md` for broader package-set tests and non-blocking future
-support for package sets beyond the two named built-ins. That broader work must
-not block this bounded migration. Overall historical buildability and the complete
-packaging migration remain unverified.
+TeX forwards same-name replacements declared by the current TeX subtree into
+selection callbacks, while preserving forwarding of new names from other
+overlays. Replacement applies at package selection time; already instantiated
+environments are not automatically rebuilt. Nested selection merges preserve
+unrelated siblings and treat derivations atomically. These bounds were adopted
+during implementation planning rather than broadening all external replacements.
+
+README and tests are synchronized and all implementation changes are staged.
+The next action is owner review and an ordinary project commit if desired;
+agent policy does not authorize creating that commit. No further implementation
+or validation is currently outstanding within this bounded scope. The local
+`~/nixos` and `~/emarccs` references were read only and remain unchanged.
+
+Read `memory/backlog.md` for broader package-set support, real consumer builds,
+runtime smoke tests and other platforms. These remain non-blocking deferred
+work. Overall historical buildability and the complete packaging migration
+remain unverified.
 
 ## Memory conventions
 
