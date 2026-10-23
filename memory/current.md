@@ -98,6 +98,16 @@ runtime smoke tests and other platforms. These remain non-blocking deferred
 work. Overall historical buildability and the complete packaging migration
 remain unverified.
 
+## Proposed shared overlay layer and lib.tests
+
+The owner requested review of a new guide, not implementation. See
+`memory/overlay-tests-design.md` for its proposed architecture, unresolved
+mkChecks extraction cases and review findings. Migrating this repository's own
+test suites was explicitly deferred; independent fixtures can validate the new
+API while existing checks stay intact. The next step is to settle the extraction
+contract before implementation. The completed package migration above remains
+the current implemented baseline.
+
 ## Memory conventions
 
 Start here for current state, follow `memory/package-aggregation-rules.md` for

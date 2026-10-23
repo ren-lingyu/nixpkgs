@@ -107,3 +107,13 @@ complete layers 2 or 3: real producer/consumer builds, runtime Emacs loading,
 TeX compilation, Python/Haskell integration and other platforms remain open.
 Do not treat evaluation of derivation paths as proof of runtime environment
 behavior. See `memory/package-aggregation-rules.md` for the implemented subset.
+
+## Migrate this repository's suites to lib.tests
+
+Status: explicitly deferred by the owner during review of the shared overlay
+aggregation/lib.tests guide. Initial API delivery may use independent fixtures;
+keep the existing test entry and checks working without requiring this migration.
+After the APIs exist, assess moving boolean suites into caller-built test scopes
+and lightweight check derivations. Choose a discovery filename or source layout
+that does not aggregate overlay.nix fixtures under test. See
+`memory/overlay-tests-design.md` for the proposed APIs and review boundaries.
