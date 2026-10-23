@@ -26,12 +26,14 @@
             lib = inputs.nixpkgs.lib;
           in
           rec {
+            overlayTree = import ./lib/overlay-tree.nix { inherit lib; };
             llib = import ./lib { inherit lib; };
           };
       }
       (
         {
           llib,
+          overlayTree,
           config,
           lib,
           ...
@@ -63,7 +65,7 @@
                     )
                     (
                       import ./tests {
-                        inherit llib pkgs;
+                        inherit llib pkgs overlayTree;
                         lib = pkgs.lib;
                       }
                     );

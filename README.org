@@ -154,7 +154,9 @@ A directory with such a module must not also contain matching modules in its
 descendants. The module file directly inside =root= is not included.
 
 * Tests
-=tests/default.nix= accepts ={ llib, lib, pkgs }= and collects the test suites.
+=tests/default.nix= accepts ={ llib, lib, pkgs, overlayTree }= and collects the test
+suites. The root injects the internal overlay aggregator for its independent
+regression suite; this does not add a public library output.
 Each suite receives only the arguments it needs: the merge suite uses =llib=,
 while package aggregation tests also use Nixpkgs =lib= and =pkgs=. Dependencies outside a
 test's directory must be passed as function parameters; parent-directory imports
@@ -166,6 +168,11 @@ merging, strict conflicts, later-entry override precedence, subtree replacement,
 function and list values, derivation-shaped leaves, input validation, and
 laziness. It returns named boolean results on success and reports failed case
 names in an error. The derivation cases do not build real packages.
+
+The =overlays= suite tests the shared internal aggregator independently of
+package-specific rules: discovery, ordinary overlays and factories, implicit-rule
+precedence, scope dependency resolution, namespace collisions, and custom overlay
+filenames. The package API supplies its domain rules to that same aggregator.
 
 The =packages= suite covers implicit and explicit rule selection, namespace and
 module discovery, package extraction, scope dependency resolution, and TeX
@@ -192,4 +199,5 @@ merge suite's report directly:
 #+begin_src sh
 nix build .#checks.x86_64-linux.mergeAttrsRecursive
 nix build .#checks.x86_64-linux.packages
+nix build .#checks.x86_64-linux.overlays
 #+end_src
