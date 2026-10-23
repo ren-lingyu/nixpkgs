@@ -5,5 +5,5 @@ in
 {
   mergeAttrsRecursive = import ./merge-attrs-recursive.nix;
   packages = import ./packages { inherit lib overlayTree; };
-  tests = import ./tests { inherit lib overlayTree; };
+  tests = import ./tests.nix { inherit lib overlayTree; };
 }
