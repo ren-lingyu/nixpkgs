@@ -111,8 +111,8 @@ behavior. See `memory/package-aggregation-rules.md` for the implemented subset.
 ## Migrate this repository's suites to lib.tests
 
 Status: explicitly deferred by the owner during review of the shared overlay
-aggregation/lib.tests guide. The public API is now implemented and validated in
-the staged worktree with independent fixtures; existing test entries/checks are
+aggregation/lib.tests guide. The public API is now implemented, validated and
+committed with independent fixtures; existing test entries/checks are
 retained. This does not authorize starting the deferred suite migration.
 After the APIs exist, assess moving boolean suites into caller-built test scopes
 and lightweight check derivations. Choose a discovery filename or source layout

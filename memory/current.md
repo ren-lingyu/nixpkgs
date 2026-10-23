@@ -25,9 +25,13 @@ project snapshot. The owner has now committed the generic extraction as
 matches the reviewed and validated staged candidate, including the flat filename;
 the project worktree was clean on inspection. An earlier checkpoint associates
 that inspected snapshot. Validation ran before commit against the same content.
-Public lib.tests is now implemented and validated on top of that baseline but
-is staged, not committed. No additional project parent is attached for the
-uncommitted feature. No ordinary project commit was created by the agent.
+The owner has also committed public lib.tests as
+`feat(lib): add test overlay aggregation and check extraction`. After detecting
+HEAD movement, every file's blob and mode in the committed tree matched the
+reviewed staged snapshot exactly (90 files), and the project worktree was clean.
+This checkpoint associates that inspected feature commit. Validation ran before
+commit against the same content; no ordinary project commit was created by the
+agent.
 
 `lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
 `mkHomeModule`. README.org documents their interfaces and directory conventions.
@@ -73,7 +77,7 @@ results or throw failed case names. The flake injects
 library and package dependencies and maps suites to per-system JSON checks via
 `pkgs.writeText`. The existing treefmt/nixfmt check remains integrated.
 
-Authorized validation passed for the staged public test API and final formatting:
+Authorized validation passed before the public test API commit, including final formatting:
 
 - `timeout 120s nix fmt -- flake.nix lib/default.nix lib/tests tests/default.nix tests/test-api.nix tests/test-checks.nix tests/fixtures/test-api`
 - `timeout 120s nix build --show-trace --no-link --no-write-lock-file .#checks.x86_64-linux.testApi .#checks.x86_64-linux.testApi/checks/alpha .#checks.x86_64-linux.testApi/checks/nested/beta .#checks.x86_64-linux.testApi/validators`
@@ -84,8 +88,10 @@ extracted writeText checks and formatting on x86_64-linux. Original package,
 merge and generic-overlay report derivations are unchanged. Other systems were
 skipped. No lockfile update, large Emacs/TeX build or runtime ecosystem smoke
 test was performed. Static review found no ancestor-relative dependencies or
-whitespace errors. All intended project changes are staged, with no unstaged
-project edits. This validation concerns the worktree before a feature commit.
+whitespace errors. The owner independently ran nix flake check before committing;
+it passed with the same derivations and no pending builds. The committed tree
+matches that validated worktree; the project worktree is now clean. Checks were
+not rerun after commit solely to create a provenance association.
 
 ## Built-in aggregation rules: implemented and validated
 
@@ -119,8 +125,8 @@ supplies implicit Emacs/TeX rules and a directory-capturing selector. Its public
 APIs and extraction/module algorithms are unchanged. Namespace diagnostics use
 the domain-neutral `overlays.mkOverlay` prefix.
 
-The second delivery, public lib.tests, is implemented, documented and validated
-in the staged worktree. Read `memory/overlay-tests-design.md` for the complete
+The second delivery, public lib.tests, is implemented, documented, validated
+and committed by the owner. Read `memory/overlay-tests-design.md` for the complete
 contract and coverage. The owner requested `lib/tests/default.nix` to mirror
 `lib/packages/default.nix`. Root library assembly injects lib and overlayTree.
 Public tests.mkOverlays returns unapplied overlays without package defaults;
@@ -133,9 +139,9 @@ filter or arbitrary scope enumeration was added.
 Existing boolean-to-JSON suites retain their wiring and assertions. Independent
 API tests and three real extracted checks are added alongside them. Migrating
 the repository's own suites to lib.tests remains explicitly deferred in backlog.
-The next action is owner review and a project commit if desired. The agent must
-not create that ordinary commit. No implementation or validation remains within
-this bounded feature scope; other platforms remain unverified.
+Both planned deliveries are complete. No implementation or validation remains
+within this bounded feature scope; other platforms remain unverified. Further
+work, including the deferred suite migration, needs its own task selection.
 
 ## Memory conventions
 

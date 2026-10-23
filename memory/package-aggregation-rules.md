@@ -202,5 +202,5 @@ the unchanged merge suite passed 43 cases. The final authorized
 `nix flake check --no-write-lock-file --show-trace` passed both suites and treefmt
 on x86_64-linux after scoped formatting and the targeted packages check build.
 Other platforms were skipped. README matches the implemented boundaries. The
-owner committed the migration; newer staged development is tracked in
+owner committed the migration; newer development is tracked in
 `memory/current.md`. No lockfile update or reference-repository edit was made. The complete package-set/runtime test matrix remains deferred in backlog.

@@ -14,8 +14,9 @@ test cases added and existing assertions retained. Scoped formatting, targeted
 checks and full flake check have passed on x86_64-linux after explicit command
 authorization. The owner committed that delivery as
 `refactor(lib): extract generic overlay tree aggregation`; its committed diff
-matches the reviewed candidate. The owner now requests implementing public
-lib.tests, with own-suite migration still deferred.
+matches the reviewed candidate. Public lib.tests has subsequently been completed
+and committed as well (see the second delivery outcome below), with own-suite
+migration still deferred.
 Existing committed aggregation functionality and its validation remain
 as described in `memory/package-aggregation-rules.md`.
 
@@ -170,6 +171,11 @@ were skipped. No lockfile update, downstream reference changes or large ecosyste
 builds occurred. README documents public APIs, caller scope assembly, discovery
 boundaries, the extraction contract, separators and factory path limitations.
 
-All feature changes are staged and reviewed; there is no ordinary feature commit
-yet. This checkpoint does not attribute worktree validation to the baseline
-project commit. Next is owner review/commit. Own-suite migration remains deferred.
+The owner committed the feature as
+`feat(lib): add test overlay aggregation and check extraction`. The agent polled
+HEAD after preparing the message, then compared the complete committed tree's
+blob IDs and modes to the reviewed index snapshot: all 90 files match exactly.
+The project worktree is clean. This checkpoint associates the inspected feature
+commit. Agent checks and the owner's independent nix flake check passed before
+commit against that content; no claim is made that checks were rerun after commit.
+Both deliveries are complete. Own-suite migration remains deferred.
