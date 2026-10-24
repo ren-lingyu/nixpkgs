@@ -9,8 +9,13 @@ and directory-selected exports using one lazy description tree, including TeX
 selection; public mkLegacyPackages is removed. Full flake checks and treefmt passed
 on x86_64-linux against a source-only snapshot including untracked fixtures; all
 128 snapshot files were compared with the current worktree and matched. Other
-systems and downstream builds were not tested. Project changes remain unstaged;
-no ordinary commit, lockfile or consumer change was made. Next: owner review.
+systems and downstream builds were not tested. The owner committed all 15 changed
+files as `feat(lib): unify package aggregation with overlay groups`, with a
+breaking-change footer for old API removal. All 128 committed file blobs and modes
+match the reviewed, validated source snapshot exactly, and the project worktree
+is clean. This checkpoint associates that inspected project commit. Validation
+ran before commit against identical content; no checks were rerun solely for
+provenance. No lockfile or consumer change was made. Await the next objective.
 
 ## Project purpose
 
@@ -120,7 +125,7 @@ The owner considered moving overlay application into mkLegacyPackages,
 passing external overlay inputs, retaining discovery metadata and exporting
 an entire extended pkgs as legacyPackages. That proposal was initially deferred.
 The owner later adopted the bounded groups/export design in
-`memory/package-groups.md`, now implemented in the unstaged worktree. Export only
+`memory/package-groups.md`, now committed and validated. Export only
 directory-selected packages from final, not an entire extended package set;
 keep mkOverlays public and remove mkLegacyPackages. No public selector/tree API
 or inferred pkgs parameter was introduced.
