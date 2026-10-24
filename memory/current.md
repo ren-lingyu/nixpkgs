@@ -1,5 +1,39 @@
 # Current project state
 
+## Remove duplicate overlay-tree injection: both steps implemented
+
+The owner intends to wrap flake-parts/treefmt-nix as a common project foundation,
+but requested no framework plan yet. Preparatory work must remove the independent
+overlay-tree import where llib is already available. The owner split implementation
+into two steps, committed the first as
+`refactor(lib): centralize overlay aggregation access through llib`, then requested
+the second. lib/default.nix now exposes
+overlays.mkOverlays through llib; flake.lib explicitly exports only
+mergeAttrsRecursive, packages and tests, so this helper is not exported by the
+flake. The owner requires explicit exports rather than exclusion filtering.
+flake.nix no longer imports or injects overlayTree through specialArgs.
+The first commit included a temporary checks adapter, overlayTree = llib.overlays,
+which kept the old tests entry compatible until the second step.
+
+The owner committed the second step as
+`test(lib): use llib for generic overlay aggregation tests`; its complete five-file
+committed diff matches the reviewed implementation. tests/default.nix accepts
+only llib, lib and pkgs, its scope no longer carries overlayTree, and the generic
+overlay suite uses llib.overlays.mkOverlays for all nine calls. Removed the flake
+adapter and synchronized README's tests entry signature. Fixtures, call arguments
+and assertions are unchanged. Independent mkChecks acceptance in tests/test-api.nix
+and the three real checks in tests/test-checks.nix are untouched; directChecks_
+and the exact output-name guard remain at the root. The owner explicitly requires
+tests/ to continue separately testing the test-assembly function. Do not replace
+generic aggregation with packages.mkOverlays, which adds domain rules and lacks
+implicitOverlays. Read-only diff review and git diff --check passed; no formatting,
+evaluation, build or test was run. Runtime equivalence remains unverified.
+Subsequent inspection found a separate committed gitignore change allowing Nix
+files under modules/, plus uncommitted owner edits in flake.nix introducing a
+mkFlake wrapper and the flake-parts modules module. Those edits were not made,
+validated or reviewed for correctness by the agent; preserve them and await the
+owner's next instruction.
+
 ## Package aggregation refactor: implemented and validated
 
 The owner requested implementation of the reviewed package aggregation plan and
