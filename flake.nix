@@ -16,16 +16,37 @@
 
   outputs =
     { self, ... }@inputs:
-    inputs.flake-parts.lib.mkFlake
+    let
+      mkFlake =
+        args: module:
+        assert inputs.nixpkgs.lib.assertMsg (args ? moduleLocation)
+          "mkFlake: moduleLocation must be explicitly specified, such as `moduleLocation = ./flake.nix;` or `moduleLocation = __curPos.file;`.";
+        inputs.flake-parts.lib.mkFlake args {
+          imports = [
+            inputs.flake-parts.flakeModules.modules
+            inputs.treefmt-nix.flakeModule
+            ./modules/fp/treefmt
+            module
+          ];
+        };
+    in
+    mkFlake
       {
         inherit inputs;
-
+        moduleLocation = __curPos.file;
         specialArgs =
           let
             lib = inputs.nixpkgs.lib;
           in
           {
-            llib = import ./lib { inherit lib; };
+            llib =
+              let
+                llib_ = import ./lib { inherit lib; };
+              in
+              llib_.mergeAttrsRecursive { allowOverrides = false; } [
+                llib_
+                { inherit mkFlake; }
+              ];
           };
       }
       (
@@ -36,13 +57,18 @@
           ...
         }:
         {
-          imports = [ inputs.treefmt-nix.flakeModule ];
-
           config = {
             systems = inputs.nixpkgs.lib.systems.flakeExposed;
 
             flake = {
-              lib = { inherit (llib) mergeAttrsRecursive packages tests; };
+              lib = {
+                inherit (llib)
+                  mkFlake
+                  mergeAttrsRecursive
+                  packages
+                  tests
+                  ;
+              };
             };
 
             perSystem =
@@ -60,25 +86,13 @@
                 };
 
                 treefmt = {
-                  flakeFormatter = true;
                   flakeCheck = true;
-                  enableDefaultExcludes = false;
-                  projectRootFile = builtins.baseNameOf __curPos.file;
                   settings.excludes = [
                     ".gitignore"
                     "LICENSE"
                     "README.org"
                     "flake.lock"
                   ];
-                  programs = {
-                    nixfmt = {
-                      enable = true;
-                      package = pkgs.nixfmt;
-                      width = 100;
-                      indent = 2;
-                      strict = true;
-                    };
-                  };
                 };
               };
           };
