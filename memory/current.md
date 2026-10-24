@@ -1,5 +1,42 @@
 # Current project state
 
+## Shared foundation: committed local subflake
+
+The owner committed `feat(flake): add mkFlake with shared modules and formatting
+defaults`, then `refactor(flake): extract shared foundation into a local subflake`.
+Both complete committed diffs were inspected and match the reviewed staged
+implementations. The latter is the project snapshot associated with this
+checkpoint. No Nix evaluation, formatting, build or test was run for these changes;
+prior library checks do not validate the new wrapper/subflake integration.
+
+The root consumes local-nixpkgs at path:./pkgs, with nixpkgs, flake-parts and
+treefmt-nix following the root inputs; flake.lock records that local input without
+changing upstream locked revisions. pkgs/flake.nix uses native flake-parts to
+assemble its lib and export mkFlake before the root flake assembles itself. Root
+calls inputs.local-nixpkgs.lib.mkFlake and receives that input's lib as llib.
+The root explicitly exports mkFlake, mergeAttrsRecursive, packages and tests;
+the subflake lib also contains the internal overlays entry for repository tests.
+
+Shared code moved unchanged from lib/ to pkgs/lib/, and the treefmt module from
+modules/fp/treefmt/ to pkgs/modules/fp/treefmt/. Older paths elsewhere in memory
+describe pre-move implementation history; use the new paths for current source.
+mkFlake requires explicit moduleLocation and loads flake-parts' modules module,
+treefmt-nix and the local treefmt module before the caller's module. The shared
+treefmt configuration enables nixfmt, shfmt, prettier, fourmolu, cabal-fmt,
+xmllint, ruff-format and taplo, provides a formatter/default check, forces default
+excludes off, derives projectRootFile from moduleLocation and treats unmatched
+files as fatal. There is no nonempty-excludes assertion. Root supplies its own
+exclusion list. README's direct ./lib import examples, including its standalone
+merge-test command, have not yet been synchronized with the move.
+
+The owner plans pkgs/pkgs/ overlays, organized with llib.packages.mkOverlays,
+for use by flake modules loaded through mkFlake. This explains retaining package
+assembly in the subflake; do not treat the unfinished package integration as an
+accidental omission or implement it without instruction. At handoff the only
+project change is staged pkgs/pkgs/default.nix, defining default and legacy
+overlay groups; it is not part of the committed subflake refactor or wired into
+pkgs/flake.nix. Preserve the owner's staged file. Await the next instruction.
+
 ## Remove duplicate overlay-tree injection: both steps implemented
 
 The owner intends to wrap flake-parts/treefmt-nix as a common project foundation,
@@ -28,11 +65,7 @@ tests/ to continue separately testing the test-assembly function. Do not replace
 generic aggregation with packages.mkOverlays, which adds domain rules and lacks
 implicitOverlays. Read-only diff review and git diff --check passed; no formatting,
 evaluation, build or test was run. Runtime equivalence remains unverified.
-Subsequent inspection found a separate committed gitignore change allowing Nix
-files under modules/, plus uncommitted owner edits in flake.nix introducing a
-mkFlake wrapper and the flake-parts modules module. Those edits were not made,
-validated or reviewed for correctness by the agent; preserve them and await the
-owner's next instruction.
+The subsequent mkFlake wrapper and subflake delivery is described above.
 
 ## Package aggregation refactor: implemented and validated
 
@@ -55,8 +88,8 @@ provenance. No lockfile or consumer change was made. Await the next objective.
 
 This repository is a personal nixpkgs: a shared foundation for flake-based
 projects to consume as an input where needed. Its adopted description is
-`Personal nixpkgs`. Shared functions are the current implemented scope;
-framework components, possibly built on flake-parts, remain a future possibility.
+`Personal nixpkgs`. Shared functions and a flake-parts/treefmt-nix mkFlake wrapper
+are implemented; package overlays for its modules remain planned as described above.
 
 The former NUR packaging role became obsolete after packaging moved to
 `~/nixos.git`, according to the owner. Use **obsolete**, matching `nur_obsolete`.
