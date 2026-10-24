@@ -8,16 +8,112 @@ The name reflects its role in this project ecosystem and continuity with the
 repository's original use as a personal NUR repository.
 
 * Flake infrastructure
-The flake is built with flake-parts. Formatting is configured through treefmt-nix
-with nixfmt, exposed as the flake formatter and a formatting check.
+The root flake consumes =pkgs/= as a local subflake named =local-nixpkgs=.
+That subflake uses flake-parts to assemble the shared library, package sets and
+the =mkFlake= wrapper before the root flake calls that wrapper. Its =nixpkgs=,
+=flake-parts= and =treefmt-nix= inputs follow the root's corresponding inputs.
+
+The source is organized as follows:
+
+| Path | Purpose |
+|------+---------|
+| =flake.nix= | Consume the shared foundation, select public library exports, forward packages and assemble repository checks. |
+| =pkgs/flake.nix= | Assemble the foundation and define =lib.mkFlake=. |
+| =pkgs/lib/= | Shared merge, package/module discovery and test-assembly functions. |
+| =pkgs/pkgs/= | Package definitions and their internal overlay groups. |
+| =pkgs/modules/fp/= | Shared flake-parts modules, currently treefmt configuration. |
+| =tests/= | Library suites, independent test-assembly acceptance cases and fixtures. |
+
+The root exports =lib=, =legacyPackages=, =formatter= and =checks=. Its public
+=lib= contains =mkFlake=, =mergeAttrsRecursive=, =packages= and =tests=.
+The subflake's library additionally contains =overlays.mkOverlays= for internal
+use, including the generic overlay suite; the root does not export that entry.
+
+** Shared flake construction
+=lib.mkFlake= takes three positional arguments:
+
+#+begin_src nix
+inputs.personal-nixpkgs.lib.mkFlake inputs.nixpkgs
+  ({ lib }: {
+    inherit inputs;
+    moduleLocation = __curPos.file;
+    llib = inputs.personal-nixpkgs.lib;
+    lpkgs = inputs.personal-nixpkgs;
+  })
+  ({ ... }: {
+    systems = [ "x86_64-linux" ];
+    perSystem.treefmt.settings.excludes = [ "flake.lock" ];
+  })
+#+end_src
+
+The first argument is the Nixpkgs input used to instantiate per-system packages.
+The second is a function receiving ={ lib = nixpkgs.lib; }= and returning the
+arguments for flake-parts. Its result must be an attribute set containing
+=inputs= and =moduleLocation=; an explicitly supplied =specialArgs= must also be
+an attribute set. The third argument is the caller's flake-parts module.
+The caller chooses the supported =systems=.
+
+The argument function may supply =llib= and =lpkgs=, both defaulting to ={ }=.
+The wrapper removes these two fields from the forwarded flake-parts arguments
+and injects them through =specialArgs=, together with =lib = nixpkgs.lib=.
+Caller-supplied =specialArgs= recursively override those defaults. This does not
+implicitly extend the =lib= argument with =llib=.
+
+The wrapper declares =perSystem.nixpkgs.overlays= as a list of overlays and uses
+it to import Nixpkgs for each system, forcing that result as the per-system
+=pkgs= argument. The foundation's internal =default= overlay group participates
+in this list; caller modules may add their own overlays. The wrapper also loads
+treefmt-nix and the shared treefmt module. It does not automatically load the
+flake-parts =modules= module.
+
+** Formatting defaults
+The shared treefmt module provides the flake formatter and enables the formatting
+check by default through =lib.mkDefault true=. It derives =projectRootFile= from
+the basename of =moduleLocation=, forces treefmt's default excludes off, and
+defaults the explicit exclude list to =[ ]=. Unmatched files are fatal, so
+consumers must configure exclusions for files outside their formatter coverage.
+The root excludes =.gitignore=, =LICENSE=, =README.org= and =flake.lock=.
+
+| Files | Formatter |
+|-------+-----------|
+| Nix | nixfmt, width 100, indent 2, strict mode. |
+| Shell | shfmt, indent 2, simplification disabled. |
+| Prettier-supported files | prettier, width 100, tab width 2, preserved prose wrapping and LF endings. |
+| Haskell | fourmolu. |
+| Cabal | cabal-fmt. |
+| XML | xmllint. |
+| Python | ruff-format, line length 100. |
+| TOML | taplo. |
+| Scheme (=.scm=) | =lisplens format=. |
+| Emacs Lisp (=.el=) | elisp-autofmt. |
+
+* Provided packages
+=legacyPackages.${system}= contains =elisp-autofmt= and =lisplens=. Their
+definitions live under =pkgs/pkgs/=, with =overlay.nix= entries assembled by
+=lib.packages.mkOverlays=. Both packages provide =nix-update-script= update scripts.
+
+=elisp-autofmt= installs the upstream Emacs Lisp formatter scripts and configuration,
+with a Python command wrapper providing Emacs and Pygments at runtime.
+=lisplens= is built with =rustPlatform.buildRustPackage= and provides Lisp formatting
+and structural editing commands.
+
+The internal =default= group adds the packages without a selection export;
+the =legacy= group also adds the directory-selected =legacyPackages= attribute.
+The subflake applies =legacy= to its own package set and exports that selection
+by system. The root forwards it directly. These overlay groups are internal;
+neither flake exports an =overlays= output.
 
 * Shared library
 The flake's =lib= output provides functions for use by other repositories.
-It can also be imported directly with a caller-supplied Nixpkgs =lib=:
+The filesystem library can also be imported directly with a caller-supplied
+Nixpkgs =lib=:
 
 #+begin_src nix
-import ./lib { inherit lib; }
+import ./pkgs/lib { inherit lib; }
 #+end_src
+
+This direct import provides the merge, overlay, package/module and test helpers;
+=mkFlake= is assembled by the subflake and is available through its flake library.
 
 ** Recursive attribute-set merge
 =lib.mergeAttrsRecursive= takes a named configuration argument followed by a
@@ -336,7 +432,8 @@ names in an error. The derivation cases do not build real packages.
 The =overlays= suite tests the shared internal aggregator independently of
 package-specific rules: discovery, ordinary overlays and factories, implicit-rule
 precedence, scope dependency resolution, namespace collisions, and custom overlay
-filenames. The package API supplies its domain rules to that same aggregator.
+filenames. It calls =llib.overlays.mkOverlays= through the subflake library.
+The package API supplies its domain rules to that same aggregator.
 
 The =packages= suite covers implicit and explicit rule selection, namespace and
 module discovery, package extraction, scope dependency resolution, and TeX
@@ -359,11 +456,16 @@ Run the merge suite alone from the repository root without loading flake inputs:
 
 #+begin_src sh
 nix-instantiate --eval --strict --readonly-mode \
-  --expr 'import ./tests/merge-attrs-recursive.nix { llib = import ./lib { lib = {}; }; }'
+  --expr 'import ./tests/merge-attrs-recursive.nix { llib = import ./pkgs/lib { lib = {}; }; }'
 #+end_src
 
 The merge suite needs no Nixpkgs library functions, so this command supplies
 an empty =lib=. The package suite uses the flake's locked Nixpkgs.
+The root separately imports that Nixpkgs for the test entry's =pkgs= argument,
+without the project's overlays. Real package-set fixtures can therefore append
+their own export-enabled overlays without colliding with a project-level
+=legacyPackages= attribute. The test entry's =lib= argument is supplied from the
+enclosing per-system package set.
 
 The flake injects the shared dependencies into the test entry and exposes its
 returned checks directly, alongside the formatting check. Failed suites stop
