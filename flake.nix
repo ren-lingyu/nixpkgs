@@ -1,5 +1,4 @@
 {
-
   description = "Personal nixpkgs";
 
   inputs = {
