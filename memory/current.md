@@ -1,27 +1,35 @@
 # Current project state
 
-## Shared foundation: committed local subflake
+## Shared foundation: package integration and argument cleanup committed
 
 The owner committed `feat(flake): add mkFlake with shared modules and formatting
 defaults`, then `refactor(flake): extract shared foundation into a local subflake`.
-Both complete committed diffs were inspected and match the reviewed staged
-implementations. The latter is the project snapshot associated with this
-checkpoint. No Nix evaluation, formatting, build or test was run for these changes;
-prior library checks do not validate the new wrapper/subflake integration.
+Subsequent owner commits integrate package overlays, scope gitignore to the new
+layout, stop loading flake-parts' modules module, move legacy-package assembly
+into the subflake, and simplify mkFlake argument handling. Current source and the
+complete aggregate diff from the prior associated subflake snapshot were read.
+This checkpoint associates the inspected `refactor(flake): simplify mkFlake
+argument handling` project snapshot. The agent ran no Nix command in this work.
 
 The root consumes local-nixpkgs at path:./pkgs, with nixpkgs, flake-parts and
 treefmt-nix following the root inputs; flake.lock records that local input without
 changing upstream locked revisions. pkgs/flake.nix uses native flake-parts to
 assemble its lib and export mkFlake before the root flake assembles itself. Root
-calls inputs.local-nixpkgs.lib.mkFlake and receives that input's lib as llib.
+calls inputs.local-nixpkgs.lib.mkFlake inputs.nixpkgs and passes that input's lib
+as llib and the full local-nixpkgs input as lpkgs.
 The root explicitly exports mkFlake, mergeAttrsRecursive, packages and tests;
 the subflake lib also contains the internal overlays entry for repository tests.
 
 Shared code moved unchanged from lib/ to pkgs/lib/, and the treefmt module from
 modules/fp/treefmt/ to pkgs/modules/fp/treefmt/. Older paths elsewhere in memory
 describe pre-move implementation history; use the new paths for current source.
-mkFlake requires explicit moduleLocation and loads flake-parts' modules module,
-treefmt-nix and the local treefmt module before the caller's module. The shared
+mkFlake's current signature is nixpkgs: args: module; args requires moduleLocation
+and accepts llib/lpkgs defaulting to {}. It removes those two fields before
+forwarding args, and merges default specialArgs (lib = nixpkgs.lib, llib, lpkgs)
+with caller args using later-entry overrides. The explicit moduleLocation
+existence assertion was removed because the function pattern already requires it.
+It loads treefmt-nix and the local treefmt module before the caller's module;
+the former automatic flake-parts modules-module import is removed. The shared
 treefmt configuration enables nixfmt, shfmt, prettier, fourmolu, cabal-fmt,
 xmllint, ruff-format and taplo, provides a formatter/default check, forces default
 excludes off, derives projectRootFile from moduleLocation and treats unmatched
@@ -29,13 +37,41 @@ files as fatal. There is no nonempty-excludes assertion. Root supplies its own
 exclusion list. README's direct ./lib import examples, including its standalone
 merge-test command, have not yet been synchronized with the move.
 
-The owner plans pkgs/pkgs/ overlays, organized with llib.packages.mkOverlays,
-for use by flake modules loaded through mkFlake. This explains retaining package
-assembly in the subflake; do not treat the unfinished package integration as an
-accidental omission or implement it without instruction. At handoff the only
-project change is staged pkgs/pkgs/default.nix, defining default and legacy
-overlay groups; it is not part of the committed subflake refactor or wired into
-pkgs/flake.nix. Preserve the owner's staged file. Await the next instruction.
+pkgs/pkgs/default.nix now organizes default and legacy groups through
+llib.packages.mkOverlays. The owner intends these packages for flake modules
+loaded through mkFlake. The wrapper defaults perSystem.nixpkgs.overlays to the
+subflake's internal default group, defines that list option and forces the
+per-system pkgs argument to import the supplied nixpkgs with that overlay list.
+The subflake separately applies its legacy group and exports legacyPackages by
+system; it no longer exports overlays. Root forwards lpkgs.legacyPackages.${system}
+rather than applying the legacy overlay itself. A temporary touchup proposal
+to hide root formatter/legacyPackages was not retained in current source.
+
+The owner removed perSystem._module.args.lib = mkForce nixpkgs.lib because module
+arguments already supplied by the module system or specialArgs take precedence
+over config._module.args. mkForce controls option merging, not argument-source
+selection. General upstream source confirmed the args.name-or-config._module.args
+fallback and perSystem's separate evalModules call; do not assume all top-level
+specialArgs directly propagate into perSystem. Sources consulted (not a pinned
+dependency revalidation): https://github.com/NixOS/nixpkgs/blob/master/lib/modules.nix
+and https://github.com/hercules-ci/flake-parts/blob/main/modules/perSystem.nix.
+
+An owner-run nix flake check initially failed because root's legacy group had
+already added pkgs.legacyPackages and tests/suites/packages/cases.nix:realPkgs_
+appended another export-enabled fixture group. The guard correctly rejected
+the repeated export name. Root now passes a separately imported clean Nixpkgs
+as tests' pkgs argument. tests' lib argument still comes from the enclosing
+per-system pkgs.lib; no further isolation change was made. Keep fixture export
+checks and independent mkChecks acceptance intact. The owner later supplied two
+successful nix flake show outputs for intermediate dirty states (x86_64-linux
+checks resolved to derivations, other systems omitted); exact source snapshots
+were not captured. This is evaluation evidence, not successful flake-check builds
+or validation of the latest commit. Runtime/build/platform validation remains open.
+
+At handoff four owner package files are staged: overlay.nix and package.nix under
+each of pkgs/pkgs/elisp-autofmt/ and pkgs/pkgs/lisplens/. They are not part of the
+associated committed snapshot. Preserve that index; do not claim those packages
+were built or committed. Await the next instruction.
 
 ## Remove duplicate overlay-tree injection: both steps implemented
 
@@ -89,7 +125,8 @@ provenance. No lockfile or consumer change was made. Await the next objective.
 This repository is a personal nixpkgs: a shared foundation for flake-based
 projects to consume as an input where needed. Its adopted description is
 `Personal nixpkgs`. Shared functions and a flake-parts/treefmt-nix mkFlake wrapper
-are implemented; package overlays for its modules remain planned as described above.
+are implemented; package overlay assembly is integrated, with concrete package
+definitions still staged as described above.
 
 The former NUR packaging role became obsolete after packaging moved to
 `~/nixos.git`, according to the owner. Use **obsolete**, matching `nur_obsolete`.
