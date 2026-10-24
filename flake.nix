@@ -24,21 +24,17 @@
 
   outputs =
     { self, ... }@inputs:
-    inputs.local-nixpkgs.lib.mkFlake
+    inputs.local-nixpkgs.lib.mkFlake inputs.nixpkgs
       {
         inherit inputs;
         moduleLocation = __curPos.file;
-        specialArgs =
-          let
-            lib = inputs.nixpkgs.lib;
-          in
-          {
-            llib = inputs.local-nixpkgs.lib;
-          };
+        llib = inputs.local-nixpkgs.lib;
+        lpkgs = { inherit (inputs.local-nixpkgs) overlays; };
       }
       (
         {
           llib,
+          lpkgs,
           config,
           lib,
           ...
@@ -60,15 +56,20 @@
 
             perSystem =
               {
-                inputs',
+                system,
                 config,
                 pkgs,
                 lib,
                 ...
               }:
               {
+                nixpkgs.overlays = [ lpkgs.overlays.legacy ];
+
+                legacyPackages = pkgs.legacyPackages;
+
                 checks = import ./tests {
-                  inherit llib pkgs;
+                  inherit llib;
+                  pkgs = import inputs.nixpkgs { inherit system; };
                   lib = pkgs.lib;
                 };
 
