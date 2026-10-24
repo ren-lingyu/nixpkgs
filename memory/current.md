@@ -1,5 +1,14 @@
 # Current project state
 
+## Active package aggregation refactor
+
+The owner requested implementation of the reviewed package aggregation plan and
+continuous GAW maintenance. See `memory/package-groups.md` for the adopted
+contract, implementation state and next action. This supersedes the deferred
+package-side design boundary below. The project checkout was clean at task start.
+The prior completed deliveries and validation below describe the baseline, not
+validation of this refactor.
+
 ## Project purpose
 
 This repository is a personal nixpkgs: a shared foundation for flake-based
