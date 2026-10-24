@@ -20,6 +20,10 @@
 !/pkgs/**/
 !/pkgs/**/*.nix
 
+!/modules/
+!/modules/**/
+!/modules/**/*.nix
+
 *~
 *#
 result
