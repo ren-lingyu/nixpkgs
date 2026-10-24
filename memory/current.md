@@ -1,6 +1,6 @@
 # Current project state
 
-## Shared foundation: package integration and argument cleanup committed
+## Shared foundation: argument function, Lisp formatters and README committed
 
 The owner committed `feat(flake): add mkFlake with shared modules and formatting
 defaults`, then `refactor(flake): extract shared foundation into a local subflake`.
@@ -8,8 +8,15 @@ Subsequent owner commits integrate package overlays, scope gitignore to the new
 layout, stop loading flake-parts' modules module, move legacy-package assembly
 into the subflake, and simplify mkFlake argument handling. Current source and the
 complete aggregate diff from the prior associated subflake snapshot were read.
-This checkpoint associates the inspected `refactor(flake): simplify mkFlake
-argument handling` project snapshot. The agent ran no Nix command in this work.
+Since then the owner committed the two Lisp packages, their treefmt integration,
+and `refactor(lib.mkFlake): construct arguments through a function`. The owner
+prefers refactor for that interface restructuring, allows uppercase in scopes,
+and chose lib.mkFlake as a precise scope. Breaking API changes still warrant a
+BREAKING-CHANGE footer independently of type. The complete aggregate source diff
+and resulting source were inspected, not built. The owner subsequently committed
+`docs(readme): describe the shared flake foundation`; its full committed diff
+matches the agent's reviewed README update. This checkpoint associates that
+inspected project snapshot. The agent ran no Nix command in this work.
 
 The root consumes local-nixpkgs at path:./pkgs, with nixpkgs, flake-parts and
 treefmt-nix following the root inputs; flake.lock records that local input without
@@ -23,19 +30,22 @@ the subflake lib also contains the internal overlays entry for repository tests.
 Shared code moved unchanged from lib/ to pkgs/lib/, and the treefmt module from
 modules/fp/treefmt/ to pkgs/modules/fp/treefmt/. Older paths elsewhere in memory
 describe pre-move implementation history; use the new paths for current source.
-mkFlake's current signature is nixpkgs: args: module; args requires moduleLocation
-and accepts llib/lpkgs defaulting to {}. It removes those two fields before
-forwarding args, and merges default specialArgs (lib = nixpkgs.lib, llib, lpkgs)
-with caller args using later-entry overrides. The explicit moduleLocation
-existence assertion was removed because the function pattern already requires it.
+mkFlake's current signature is nixpkgs: argsFun: module. It calls argsFun with
+{ lib = nixpkgs.lib; } and asserts that the result is an attrset containing inputs
+and moduleLocation, and any explicit specialArgs is an attrset. It no longer
+accepts an args attrset directly. It assembles specialArgs with lib = nixpkgs.lib
+and llib/lpkgs defaulting to {}, merges caller specialArgs with later-entry
+overrides, then constructs flakeArgs while removing top-level llib/lpkgs. Root
+uses the argument-function protocol. README documents the API and a usage example.
 It loads treefmt-nix and the local treefmt module before the caller's module;
 the former automatic flake-parts modules-module import is removed. The shared
 treefmt configuration enables nixfmt, shfmt, prettier, fourmolu, cabal-fmt,
-xmllint, ruff-format and taplo, provides a formatter/default check, forces default
+xmllint, ruff-format and taplo, plus custom lisplens format for root/nested *.scm
+and elisp-autofmt for root/nested *.el. It provides a formatter/default check, forces default
 excludes off, derives projectRootFile from moduleLocation and treats unmatched
 files as fatal. There is no nonempty-excludes assertion. Root supplies its own
-exclusion list. README's direct ./lib import examples, including its standalone
-merge-test command, have not yet been synchronized with the move.
+exclusion list. README now uses ./pkgs/lib for direct imports and the standalone
+merge-test command, and distinguishes filesystem helpers from subflake mkFlake.
 
 pkgs/pkgs/default.nix now organizes default and legacy groups through
 llib.packages.mkOverlays. The owner intends these packages for flake modules
@@ -68,10 +78,22 @@ checks resolved to derivations, other systems omitted); exact source snapshots
 were not captured. This is evaluation evidence, not successful flake-check builds
 or validation of the latest commit. Runtime/build/platform validation remains open.
 
-At handoff four owner package files are staged: overlay.nix and package.nix under
-each of pkgs/pkgs/elisp-autofmt/ and pkgs/pkgs/lisplens/. They are not part of the
-associated committed snapshot. Preserve that index; do not claim those packages
-were built or committed. Await the next instruction.
+The four package files under pkgs/pkgs/elisp-autofmt/ and pkgs/pkgs/lisplens/ are
+now committed. elisp-autofmt installs upstream scripts/config and wraps Python
+with Emacs and Pygments; lisplens 0.6.0 uses buildRustPackage. Both have overlay
+entries and nix-update-script. No package builds or formatter smoke tests were
+performed by the agent; do not treat source inspection as runtime verification.
+
+README was audited against the committed implementation from its prior update
+through the current source. It now covers the subflake layout/outputs, mkFlake
+protocol, shared formatting defaults, packages/internal groups, migrated import
+paths and test-pkgs isolation while preserving independent mkChecks acceptance.
+The user explicitly requested the sequence edit README, request staging approval,
+wait, draft commit message, wait for owner commit, then maintain GAW. That sequence
+was followed: only README.org was staged after approval, the owner committed it,
+and the project worktree is clean. Read-only diff --check passed; no build/test/
+format command was run. No project source or lockfile was changed by the agent.
+Await the next instruction.
 
 ## Remove duplicate overlay-tree injection: both steps implemented
 
@@ -125,8 +147,8 @@ provenance. No lockfile or consumer change was made. Await the next objective.
 This repository is a personal nixpkgs: a shared foundation for flake-based
 projects to consume as an input where needed. Its adopted description is
 `Personal nixpkgs`. Shared functions and a flake-parts/treefmt-nix mkFlake wrapper
-are implemented; package overlay assembly is integrated, with concrete package
-definitions still staged as described above.
+are implemented; package overlay assembly, concrete Lisp packages and their
+formatter integration are committed as described above.
 
 The former NUR packaging role became obsolete after packaging moved to
 `~/nixos.git`, according to the owner. Use **obsolete**, matching `nur_obsolete`.
@@ -351,6 +373,12 @@ workflow change. Do not default to `docs` merely because memory is written in
 Markdown; reserve `docs` for documentation changes. The owner explicitly asked
 to avoid overusing `docs` in GAW. This is a forward-looking convention, not an
 instruction to rewrite existing checkpoint history.
+
+Do not copy the associated project's type/scope into a GAW checkpoint by habit.
+For a current-memory maintenance and handoff checkpoint, use a message such as
+`chore(memory): record shared foundation handoff`; the checkpoint does not itself
+refactor lib.mkFlake. The owner reverted the incorrectly classified checkpoint
+and requested recreation with this corrected classification.
 
 Checkpoint consequential findings and completed phases when they have recovery
 value. Do not defer a warranted checkpoint merely because the owner did not
