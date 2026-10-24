@@ -24,15 +24,13 @@
           let
             lib = inputs.nixpkgs.lib;
           in
-          rec {
-            overlayTree = import ./lib/overlay-tree.nix { inherit lib; };
+          {
             llib = import ./lib { inherit lib; };
           };
       }
       (
         {
           llib,
-          overlayTree,
           config,
           lib,
           ...
@@ -44,7 +42,7 @@
             systems = inputs.nixpkgs.lib.systems.flakeExposed;
 
             flake = {
-              lib = llib;
+              lib = { inherit (llib) mergeAttrsRecursive packages tests; };
             };
 
             perSystem =
@@ -57,8 +55,9 @@
               }:
               {
                 checks = import ./tests {
-                  inherit llib pkgs overlayTree;
+                  inherit llib pkgs;
                   lib = pkgs.lib;
+                  overlayTree = llib.overlays;
                 };
 
                 treefmt = {
