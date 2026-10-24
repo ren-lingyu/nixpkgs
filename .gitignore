@@ -1,24 +1,24 @@
 *
 */
 
-!README.org
-!.gitignore
-!.gitsubmodules
-!LICENSE
-!flake.nix
-!flake.lock
+!/README.org
+!/.gitignore
+!/.gitsubmodules
+!/LICENSE
+!/flake.nix
+!/flake.lock
 
-!lib/
-!lib/**/
-!lib/**/*.nix
+!/lib/
+!/lib/**/
+!/lib/**/*.nix
 
-!tests/
-!tests/**/
-!tests/**/*.nix
+!/tests/
+!/tests/**/
+!/tests/**/*.nix
 
-!pkgs/
-!pkgs/**/
-!pkgs/**/*.nix
+!/pkgs/
+!/pkgs/**/
+!/pkgs/**/*.nix
 
 *~
 *#
