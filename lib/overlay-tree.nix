@@ -18,15 +18,26 @@ let
 
   isFactory_ = overlay_: (builtins.functionArgs overlay_) ? descendantOverlay;
 
-  isOverlayFactory_ =
-    overlayFile_: root_:
-    if hasPath_ overlayFile_ root_ then
-      isFactory_ (import (resolvePath_ overlayFile_ root_))
-    else
-      false;
+  # Each directory is described once. Children, imports and constructor metadata
+  # stay lazy; discovering a subtree never instantiates its constructors.
+  discoverTree =
+    { root, overlayFile }:
+    let
+      describe_ = path_: rec {
+        inherit path_;
+        hasOverlay = hasPath_ overlayFile path_;
+        constructor = import (resolvePath_ overlayFile path_);
+        ownsDescendants = hasOverlay && isFactory_ constructor;
+        children = lib.mapAttrs (unused_name_: describe_) (getDirectories_ path_);
+        hasDescendants = builtins.any (child_: child_.hasOverlay || child_.hasDescendants) (
+          builtins.attrValues children
+        );
+      };
+    in
+    describe_ root;
 
   instantiateOverlay_ =
-    overlayFile_: extraArgs_: root_: constructor_:
+    extraArgs_: node_: constructor_:
     let
       formalArgs_ = builtins.functionArgs constructor_;
       unknownArgs_ = lib.subtractLists [ "extraArgs" "descendantOverlay" ] (
@@ -35,17 +46,13 @@ let
       constructorArgs_ =
         lib.optionalAttrs (formalArgs_ ? extraArgs) { extraArgs = extraArgs_; }
         // lib.optionalAttrs (formalArgs_ ? descendantOverlay) {
-          descendantOverlay = mkOverlay_ overlayFile_ extraArgs_ root_;
+          descendantOverlay = mkOverlay_ extraArgs_ node_;
         };
     in
     if unknownArgs_ != [ ] then
-      builtins.throw "overlays.mkOverlay: unknown constructor arguments ${builtins.toJSON unknownArgs_} at `${toString root_}`"
+      builtins.throw "overlays.mkOverlay: unknown constructor arguments ${builtins.toJSON unknownArgs_} at `${toString node_.path_}`"
     else
       constructor_ constructorArgs_;
-
-  loadOverlay_ =
-    overlayFile_: extraArgs_: root_:
-    instantiateOverlay_ overlayFile_ extraArgs_ root_ (import (resolvePath_ overlayFile_ root_));
 
   mkAttrsetOverlay_ =
     final_: previous_: overlay_:
@@ -67,9 +74,9 @@ let
       ];
 
   mkNamespaceOverlay_ =
-    overlayFile_: extraArgs_: name_: root_:
+    extraArgs_: name_: node_:
     let
-      overlay_ = mkOverlay_ overlayFile_ extraArgs_ root_;
+      overlay_ = mkOverlay_ extraArgs_ node_;
     in
     final_: prev_:
     lib.setAttrByPath [ name_ ] (
@@ -89,21 +96,18 @@ let
     );
 
   mkOverlay_ =
-    overlayFile_: extraArgs_: root_:
+    extraArgs_: node_:
     let
-      directories_ = getDirectories_ root_;
-
       localOverlays_ = lib.mapAttrsToList (
-        unused_name_: child_: loadOverlay_ overlayFile_ extraArgs_ child_
-      ) (lib.filterAttrs (unused_name_: child_: hasPath_ overlayFile_ child_) directories_);
+        unused_name_: child_: instantiateOverlay_ extraArgs_ child_ child_.constructor
+      ) (lib.filterAttrs (unused_name_: child_: child_.hasOverlay) node_.children);
 
       namespaceOverlays_ =
-        lib.mapAttrsToList (name_: child_: mkNamespaceOverlay_ overlayFile_ extraArgs_ name_ child_)
+        lib.mapAttrsToList (name_: child_: mkNamespaceOverlay_ extraArgs_ name_ child_)
           (
             lib.filterAttrs (
-              unused_name_: child_:
-              if isOverlayFactory_ overlayFile_ child_ then false else hasEntries_ overlayFile_ child_
-            ) directories_
+              unused_name_: child_: !child_.ownsDescendants && child_.hasDescendants
+            ) node_.children
           );
     in
     lib.composeManyExtensions (
@@ -113,42 +117,34 @@ let
       ]
     );
 
-  mkOverlays_ =
-    overlayFile_: extraArgs_: root_: implicitOverlays_:
+  mkOverlaysFromTree =
+    {
+      tree,
+      extraArgs ? { },
+      implicitOverlays ? { },
+    }:
     lib.mapAttrs
       (
         name_: child_:
         let
-          hasDescendants_ = hasEntries_ overlayFile_ child_;
+          hasDescendants_ = child_.hasDescendants;
           localOverlay_ =
-            if hasPath_ overlayFile_ child_ then
-              import (resolvePath_ overlayFile_ child_)
-            else if hasDescendants_ && builtins.hasAttr name_ implicitOverlays_ then
-              implicitOverlays_.${name_}
+            if child_.hasOverlay then
+              child_.constructor
+            else if hasDescendants_ && builtins.hasAttr name_ implicitOverlays then
+              implicitOverlays.${name_}
             else
               null;
           ownsDescendants_ = localOverlay_ != null && isFactory_ localOverlay_;
         in
         lib.composeManyExtensions (
           builtins.concatLists [
-            (lib.optional (localOverlay_ != null) (
-              instantiateOverlay_ overlayFile_ extraArgs_ child_ localOverlay_
-            ))
-            (lib.optional (hasDescendants_ && !ownsDescendants_) (
-              mkNamespaceOverlay_ overlayFile_ extraArgs_ name_ child_
-            ))
+            (lib.optional (localOverlay_ != null) (instantiateOverlay_ extraArgs child_ localOverlay_))
+            (lib.optional (hasDescendants_ && !ownsDescendants_) (mkNamespaceOverlay_ extraArgs name_ child_))
           ]
         )
       )
-      (
-        lib.filterAttrs (
-          unused_name_: child_:
-          builtins.any (x_: x_) [
-            (hasPath_ overlayFile_ child_)
-            (hasEntries_ overlayFile_ child_)
-          ]
-        ) (getDirectories_ root_)
-      );
+      (lib.filterAttrs (unused_name_: child_: child_.hasOverlay || child_.hasDescendants) tree.children);
 
 in
 {
@@ -157,6 +153,8 @@ in
     resolvePath_
     hasPath_
     hasEntries_
+    discoverTree
+    mkOverlaysFromTree
     ;
 
   mkOverlays =
@@ -166,5 +164,8 @@ in
       implicitOverlays ? { },
       extraArgs ? { },
     }:
-    mkOverlays_ overlayFile extraArgs root implicitOverlays;
+    mkOverlaysFromTree {
+      tree = discoverTree { inherit root overlayFile; };
+      inherit extraArgs implicitOverlays;
+    };
 }

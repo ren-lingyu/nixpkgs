@@ -65,8 +65,7 @@ tree. All functions take an attribute set; paths such as =overlayFile= and
 
 | Function | Arguments | Result |
 |----------+-----------+--------|
-| =mkOverlays= | =root=, =overlayFile=, optional =extraArgs= | An attribute set of overlays named after the immediate child directories containing overlays or descendant overlays. |
-| =mkLegacyPackages= | =root=, =overlayFile=, =pkgs= | A package tree selected from an existing package set using the overlay directory layout. |
+| =mkOverlays= | =root=, =overlayFile=, optional =extraArgs=, =groups= | Independent top-level directory overlays, or named groups with optional package exports. |
 | =mkNixosModule= | =root=, =modulePath= | A module whose =imports= collect the discovered NixOS modules. |
 | =mkHomeModule= | =root=, =modulePath= | A module whose =imports= collect the discovered Home Manager modules. |
 
@@ -78,22 +77,56 @@ let
   helpers = inputs.personal-nixpkgs.lib.packages;
   root = ./pkgs;
   overlayFile = "overlay.nix";
-  overlays = helpers.mkOverlays { inherit root overlayFile; };
+  grouped = helpers.mkOverlays {
+    inherit root overlayFile;
+    groups = {
+      default = { };
+      share.exclude = [ "rage-armored" ];
+      legacy.export = true;
+    };
+  };
   pkgs = import inputs.nixpkgs {
     system = "x86_64-linux";
-    overlays = builtins.attrValues overlays;
+    overlays = [ grouped.legacy ];
   };
 in
 {
-  inherit overlays;
-  legacyPackages.x86_64-linux = helpers.mkLegacyPackages {
-    inherit root overlayFile pkgs;
-  };
+  overlays = { inherit (grouped) default share; };
+  legacyPackages.x86_64-linux = pkgs.legacyPackages;
 }
 #+end_src
 
-Here, =./pkgs= and =overlay.nix= are consumer choices. =mkLegacyPackages= reads
-the resulting =pkgs=; it does not apply overlays itself.
+Here, =./pkgs= and =overlay.nix= are consumer choices; =rage-armored= must be a
+discovered top-level overlay name. The =legacy= group is used internally, while
+the published =default= and =share= overlays do not add a package export.
+
+*** Overlay groups and package exports
+With =groups= omitted or ={ }=, the result retains the independent overlays named
+after immediate child directories containing an overlay or descendant overlays.
+With nonempty =groups=, each result is a standard overlay that composes the
+selected top-level overlays in attribute-name order. All groups share one lazy
+directory description per =mkOverlays= call.
+
+Each group accepts only =exclude= (a list of strings, default =[ ]=) and =export=
+(default =false=). =export = true= adds =legacyPackages=; a nonempty string uses
+that export name instead. =false= adds no export. Invalid types, empty export
+names, unknown group fields and unknown excluded overlay names are errors.
+Groups and individual configurations must be attribute sets. Duplicate exclusions
+are allowed; empty directories are not valid exclusion names. Excluding every
+overlay is allowed and produces an empty export tree when export is enabled.
+
+=exclude= removes only the named top-level overlays and their export paths.
+It does not prohibit other overlays from creating attributes with those names.
+Excluded constructors are not imported or instantiated merely for discovery or
+configuration validation, and one group's settings do not alter another group.
+
+Exports are added by the group's last extension. Its =prev= includes the group's
+base overlays and must not already contain the export name; conflicts with
+upstream attributes or the group's own definitions fail instead of overwriting.
+The selector reads =final=, so a later overlay's package replacements appear in
+the export. Selecting packages never reapplies overlays. Group overlays are
+alternatives; do not apply both =default= and =legacy= to the same package set
+unless intentionally applying their shared base overlays again.
 
 *** Overlay conventions
 Discovery starts with the children of =root=. An overlay file directly inside
@@ -182,9 +215,14 @@ prebuilt environments are not rebuilt automatically without using a selection
 entry point. Other overlays' same-name replacements are not explicitly forwarded
 by this rule. Internal rules are not exposed as additional public library APIs.
 
-=mkLegacyPackages= preserves namespace nesting and selects derivations at leaf
-directories with overlay files. A selected derivation cannot have descendant
-overlays; selected namespace paths must exist in the supplied package set.
+Group exports preserve namespace nesting and select derivations at leaf
+directories with overlay files. Missing or non-derivation leaves are skipped.
+Paths with descendant overlays must exist as non-derivation attribute sets;
+missing namespaces, derivations with descendants and other namespace values
+are errors. Extra attributes returned by overlays are not exported unless a
+directory selects them. Factories retain the same directory-to-attribute mapping;
+arbitrary relocation is not inferred. Emacs exports use the final =emacsPackages=
+namespace, and TeX selection reuses the shared =texlivePackages= subtree.
 
 *** Module conventions
 =mkNixosModule= and =mkHomeModule= use the same discovery mechanism. For example:

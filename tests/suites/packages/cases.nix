@@ -64,6 +64,20 @@ let
       root = root_;
       overlayFile = overlayFile_;
     };
+  groupOverlays_ =
+    root_: groups_:
+    helpers_.mkOverlays {
+      root = root_;
+      overlayFile = "overlay.nix";
+      groups = groups_;
+    };
+  applyGroup_ =
+    root_: config_: extra_:
+    lib.fix (
+      lib.extends (lib.composeManyExtensions (
+        [ (groupOverlays_ root_ { selected = config_; }).selected ] ++ extra_
+      )) base_
+    );
   apply_ =
     root_: overlayFile_: extra_:
     lib.fix (
@@ -108,11 +122,7 @@ let
       final_: (builtins.removeAttrs (base_ final_) environmentNames_) // { texliveFull = 17; }
     )
   );
-  extracted_ = helpers_.mkLegacyPackages {
-    root = implicitRoot_;
-    overlayFile = "overlay.nix";
-    pkgs = implicit_;
-  };
+  extracted_ = (applyGroup_ implicitRoot_ { export = true; } [ ]).legacyPackages;
   rejects_ = value_: !(builtins.tryEval (builtins.seq value_ true)).success;
 
   parameterized_ = lib.fix (
@@ -121,6 +131,7 @@ let
         helpers_.mkOverlays {
           root = ./constructor-fixtures;
           overlayFile = "overlay.nix";
+          groups.legacy.export = true;
           extraArgs = {
             marker = "public-parameter";
             unused = throw "public unused constructor arg";
@@ -129,7 +140,163 @@ let
       )
     )) base_
   );
+  groupRoot_ = ./group-fixtures;
+  groups_ = groupOverlays_ groupRoot_ {
+    default = { };
+    share.exclude = [ "a" ];
+    legacy.export = true;
+    custom.export = "customName";
+    off.export = false;
+    empty = {
+      exclude = [
+        "a"
+        "z"
+      ];
+      export = true;
+    };
+  };
+  grouped_ = name_: lib.fix (lib.extends groups_.${name_} base_);
+  groupRejects_ = groups_: rejects_ (groupOverlays_ groupRoot_ groups_);
+  selectedLeaves_ =
+    (applyGroup_ ./selector-fixtures {
+      exclude = [ "missing" ];
+      export = true;
+    } [ ]).legacyPackages.leaves;
   tests_ = {
+    publicApi =
+      builtins.attrNames helpers_ == [
+        "mkHomeModule"
+        "mkNixosModule"
+        "mkOverlays"
+      ];
+    emptyGroupsCompatible =
+      builtins.attrNames (groupOverlays_ implicitRoot_ { })
+      == builtins.attrNames (overlays_ implicitRoot_ "overlay.nix")
+      &&
+        (lib.fix (
+          lib.extends (lib.composeManyExtensions (
+            builtins.attrValues (groupOverlays_ implicitRoot_ { })
+          )) base_
+        )).piPackages.tool.marker == implicit_.piPackages.tool.marker;
+    groupNames =
+      builtins.attrNames groups_ == [
+        "custom"
+        "default"
+        "empty"
+        "legacy"
+        "off"
+        "share"
+      ];
+    groupOrder = (grouped_ "default").sequence == "az";
+    groupExclusion = (grouped_ "share").sequence == "z" && !((grouped_ "share") ? a);
+    groupIsolation = (grouped_ "default").a.marker == "a" && !((grouped_ "default") ? legacyPackages);
+    groupExportOff = !((grouped_ "off") ? legacyPackages);
+    groupExportValues =
+      (grouped_ "legacy").legacyPackages.a.marker == "a"
+      && (grouped_ "legacy").legacyPackages.z.marker == "z";
+    groupOnlyDeclared =
+      builtins.attrNames (grouped_ "legacy").legacyPackages == [
+        "a"
+        "z"
+      ];
+    groupCustomExport =
+      (grouped_ "custom").customName.z.marker == "z" && !((grouped_ "custom") ? legacyPackages);
+    groupEmptyExport = (grouped_ "empty").legacyPackages == { };
+    groupEmptyOverlay =
+      (groupOverlays_ groupRoot_ {
+        empty.exclude = [
+          "a"
+          "z"
+        ];
+      }).empty
+        { }
+        { } == { };
+    groupAppliesOnce = (grouped_ "legacy").applications == 2;
+    groupFinalValues =
+      (applyGroup_ groupRoot_ { export = true; } [ (final_: prev_: { a = leaf_ "final"; }) ])
+      .legacyPackages.a.marker == "final";
+    groupExcludedExport =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          exclude = [ "a" ];
+          export = true;
+        } [ (final_: prev_: { a = leaf_ "external"; }) ];
+      in
+      result_.a.marker == "external" && builtins.attrNames result_.legacyPackages == [ "z" ];
+    groupPreviousCollision =
+      rejects_
+        (lib.fix (lib.extends groups_.legacy (final_: base_ final_ // { legacyPackages = { }; })))
+        .legacyPackages;
+    groupCustomPreviousCollision =
+      rejects_
+        (lib.fix (lib.extends groups_.custom (final_: base_ final_ // { customName = 17; }))).customName;
+    groupCustomIgnoresLegacyName =
+      (lib.fix (lib.extends groups_.custom (final_: base_ final_ // { legacyPackages = 17; })))
+      .customName.a.marker == "a";
+    groupOwnCollision = rejects_ (applyGroup_ groupRoot_ { export = "a"; } [ ]).a;
+    groupNamespaceCollision =
+      rejects_
+        (applyGroup_ implicitRoot_ { export = "texlivePackages"; } [ ]).texlivePackages;
+    groupExcludedConstructorLazy =
+      (applyGroup_ ./lazy-fixtures {
+        exclude = [ "excluded" ];
+        export = true;
+      } [ ]).legacyPackages.kept.marker == "kept";
+    groupSiblingConstructorLazy =
+      (groupOverlays_ ./lazy-fixtures {
+        safe.exclude = [ "excluded" ];
+        unsafe = { };
+      }).safe
+        { }
+        { } == {
+        kept = leaf_ "kept";
+      };
+    groupInvalidGroups = groupRejects_ [ ];
+    groupInvalidConfig = groupRejects_ { bad = false; };
+    groupUnknownField = groupRejects_ { bad.include = [ "a" ]; };
+    groupInvalidExclude = groupRejects_ { bad.exclude = "a"; };
+    groupInvalidExcludeMember = groupRejects_ { bad.exclude = [ 1 ]; };
+    groupUnknownExclude = groupRejects_ { bad.exclude = [ "absent" ]; };
+    groupEmptyDirectoryExclude = rejects_ (
+      groupOverlays_ ./fixtures/empty { bad.exclude = [ "emacsPackages" ]; }
+    );
+    groupInvalidExport = builtins.all (export_: groupRejects_ { bad.export = export_; }) [
+      ""
+      0
+      null
+      [ ]
+      { }
+    ];
+    groupValidatesAllConfigs =
+      rejects_
+        (groupOverlays_ groupRoot_ {
+          good = { };
+          bad.export = "";
+        }).good;
+    groupDuplicateExclude =
+      (applyGroup_ groupRoot_ {
+        exclude = [
+          "a"
+          "a"
+        ];
+        export = true;
+      } [ ]).legacyPackages.z.marker == "z";
+    factoryDirectorySelection =
+      builtins.attrNames selectedLeaves_ == [ "kept" ] && selectedLeaves_.kept.marker == "selected";
+    explicitFactoryExport =
+      (applyGroup_ ./fixtures/factory { export = true; } [ ])
+      .legacyPackages.emacsPackages.sample.applications == 1;
+    customFileExport =
+      let
+        customOverlay_ =
+          (helpers_.mkOverlays {
+            root = ./fixtures/custom;
+            overlayFile = "custom.nix";
+            groups.legacy.export = true;
+          }).legacy;
+      in
+      (lib.fix (lib.extends customOverlay_ base_)).legacyPackages.texlivePackages.added.marker
+      == "custom";
     publicConstructorArgument = parameterized_.piPackages.sample.marker == "public-parameter";
     emacsConstructorArgument =
       (parameterized_.emacsPackagesFor { variant = "first"; }).sample.marker == "first:public-parameter";
@@ -142,11 +309,7 @@ let
     texConstructorPreservesExisting =
       parameterized_.texlive.withPackages (ps_: ps_.existing.marker) == "original";
     parameterizedExtraction =
-      (helpers_.mkLegacyPackages {
-        root = ./constructor-fixtures;
-        overlayFile = "overlay.nix";
-        pkgs = parameterized_;
-      }).piPackages.sample.marker == "public-parameter";
+      parameterized_.legacyPackages.piPackages.sample.marker == "public-parameter";
     publicArgsNotInPackageSet = !(parameterized_ ? extraArgs) && !(parameterized_ ? marker);
 
     immediateChildren =
@@ -239,20 +402,19 @@ let
     );
     extractionMissingNamespace =
       rejects_
-        (helpers_.mkLegacyPackages {
-          root = implicitRoot_;
-          overlayFile = "overlay.nix";
-          pkgs = { };
-        }).piPackages;
+        (applyGroup_ ./selector-fixtures {
+          exclude = [ "leaves" ];
+          export = true;
+        } [ ]).legacyPackages.missing;
     extractionDerivationWithDescendants =
       rejects_
-        (helpers_.mkLegacyPackages {
-          root = implicitRoot_;
-          overlayFile = "overlay.nix";
-          pkgs = {
-            piPackages = leaf_ "collision";
-          };
-        }).piPackages;
+        (applyGroup_ implicitRoot_ { export = true; } [
+          (final_: prev_: { piPackages = leaf_ "collision"; })
+        ]).legacyPackages.piPackages;
+    extractionScalarNamespace = rejects_ (
+      (applyGroup_ implicitRoot_ { export = true; } [ (final_: prev_: { piPackages = 17; }) ])
+      .legacyPackages.piPackages
+    );
     nixosModuleDiscovery =
       (lib.evalModules {
         modules = [
@@ -273,7 +435,9 @@ let
       }).config.packageAggregationHome;
   };
 
-  realPkgs_ = pkgs.appendOverlays (builtins.attrValues (overlays_ ./fixtures/real "overlay.nix"));
+  realPkgs_ = pkgs.appendOverlays [
+    (groupOverlays_ ./fixtures/real { legacy.export = true; }).legacy
+  ];
   realSelection_ =
     ps_:
     assert ps_.latex.testMarker == "replacement";
@@ -289,13 +453,7 @@ let
     realEmacsDifferentScopes =
       (realPkgs_.emacsPackagesFor pkgs.emacs).personal-nixpkgs-probe.drvPath
       != (realPkgs_.emacsPackagesFor pkgs.emacs-nox).personal-nixpkgs-probe.drvPath;
-    realEmacsExtraction =
-      lib.isDerivation
-        (helpers_.mkLegacyPackages {
-          root = ./fixtures/real;
-          overlayFile = "overlay.nix";
-          pkgs = realPkgs_;
-        }).emacsPackages.personal-nixpkgs-probe;
+    realEmacsExtraction = lib.isDerivation realPkgs_.legacyPackages.emacsPackages.personal-nixpkgs-probe;
     realTexSelection = builtins.isString (realPkgs_.texlive.withPackages realSelection_).drvPath;
     realTexMinimalSelection = builtins.isString (realPkgs_.texliveMinimal.withPackages realSelection_)
       .drvPath;

@@ -7,34 +7,82 @@ let
     hasEntries_
     ;
 
-  mkLegacyPackages_ =
-    overlayFile_: pkgs_: root_:
+  selectPackages_ =
+    node_: pkgs_:
     lib.mapAttrs
       (
         name_: child_:
         if !(builtins.hasAttr name_ pkgs_) then
-          builtins.throw "packages.mkLegacyPackages: `${name_}` does not exist in the package set"
+          builtins.throw "packages.mkOverlays: namespace `${toString child_.path_}` does not exist in the package set"
         else if lib.isDerivation pkgs_.${name_} then
-          if hasEntries_ overlayFile_ child_ then
-            builtins.throw "packages.mkLegacyPackages: derivation `${name_}` has descendant overlays in `${toString child_}`"
+          if child_.hasDescendants then
+            builtins.throw "packages.mkOverlays: derivation `${name_}` has descendant overlays in `${toString child_.path_}`"
           else
             pkgs_.${name_}
         else if builtins.isAttrs pkgs_.${name_} then
-          mkLegacyPackages_ overlayFile_ pkgs_.${name_} child_
+          selectPackages_ child_ pkgs_.${name_}
         else
-          builtins.throw "packages.mkLegacyPackages: `${name_}` is not a package namespace"
+          builtins.throw "packages.mkOverlays: `${toString child_.path_}` is not a package namespace"
       )
       (
         lib.filterAttrs (
           name_: child_:
-          if hasEntries_ overlayFile_ child_ then
+          if child_.hasDescendants then
             true
-          else if hasPath_ overlayFile_ child_ then
+          else if child_.hasOverlay then
             lib.isDerivation (pkgs_.${name_} or null)
           else
             false
-        ) (getDirectories_ root_)
+        ) node_.children
       );
+
+  validateGroup_ =
+    overlays_: name_: config_:
+    let
+      fail_ = message_: builtins.throw "packages.mkOverlays: group `${name_}`: ${message_}";
+      unknown_ = lib.subtractLists [ "exclude" "export" ] (builtins.attrNames config_);
+      exclude_ = config_.exclude or [ ];
+      export_ = config_.export or false;
+      unknownExcluded_ = lib.subtractLists (builtins.attrNames overlays_) exclude_;
+    in
+    if !(builtins.isAttrs config_) then
+      fail_ "expected an attribute set"
+    else if unknown_ != [ ] then
+      fail_ "unknown fields ${builtins.toJSON unknown_}"
+    else if !(builtins.isList exclude_ && builtins.all builtins.isString exclude_) then
+      fail_ "exclude must be a list of strings"
+    else if !(builtins.isBool export_ || builtins.isString export_) then
+      fail_ "export must be a boolean or a nonempty string"
+    else if export_ == "" then
+      fail_ "export name must not be empty"
+    else if unknownExcluded_ != [ ] then
+      fail_ "unknown excluded overlays ${builtins.toJSON unknownExcluded_}"
+    else
+      {
+        exclude = exclude_;
+        exportName = if export_ == true then "legacyPackages" else export_;
+      };
+
+  mkGroup_ =
+    tree_: overlays_: name_: config_:
+    let
+      selected_ = builtins.removeAttrs overlays_ config_.exclude;
+      groupTree_ = tree_ // {
+        children = builtins.intersectAttrs selected_ tree_.children;
+      };
+      groupOverlay_ = lib.composeManyExtensions (builtins.attrValues selected_);
+      exportName_ = config_.exportName;
+    in
+    lib.composeManyExtensions (
+      [ groupOverlay_ ]
+      ++ lib.optional (exportName_ != false) (
+        final_: prev_:
+        if builtins.hasAttr exportName_ prev_ then
+          builtins.throw "packages.mkOverlays: group `${name_}`: export name `${exportName_}` already exists"
+        else
+          { ${exportName_} = selectPackages_ groupTree_ final_; }
+      )
+    );
 
   mkModule_ = modulePath_: root_: {
     imports = builtins.concatLists (
@@ -52,31 +100,34 @@ let
   };
 in
 {
-  mkLegacyPackages =
-    {
-      root,
-      pkgs,
-      overlayFile,
-    }:
-    mkLegacyPackages_ overlayFile pkgs root;
-
   mkOverlays =
     {
       root,
       overlayFile,
       extraArgs ? { },
+      groups ? { },
     }:
-    overlayTree.mkOverlays {
-      inherit root overlayFile extraArgs;
-      implicitOverlays = {
-        emacsPackages = import ./rules/emacsPackages.nix;
-        texlivePackages =
-          { }:
-          import ./rules/texlivePackages.nix {
-            selectPackages = pkgs_: mkLegacyPackages_ overlayFile pkgs_ (resolvePath_ "texlivePackages" root);
-          };
+    let
+      tree = overlayTree.discoverTree { inherit root overlayFile; };
+      overlays_ = overlayTree.mkOverlaysFromTree {
+        inherit tree extraArgs;
+        implicitOverlays = {
+          emacsPackages = import ./rules/emacsPackages.nix;
+          texlivePackages =
+            { }:
+            import ./rules/texlivePackages.nix {
+              selectPackages = selectPackages_ tree.children.texlivePackages;
+            };
+        };
       };
-    };
+      configs_ = lib.mapAttrs (validateGroup_ overlays_) groups;
+    in
+    if !(builtins.isAttrs groups) then
+      builtins.throw "packages.mkOverlays: groups must be an attribute set"
+    else if groups == { } then
+      overlays_
+    else
+      builtins.deepSeq configs_ (lib.mapAttrs (mkGroup_ tree overlays_) configs_);
 
   mkNixosModule = { root, modulePath }: mkModule_ modulePath root;
 
