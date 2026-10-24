@@ -40,8 +40,6 @@
             systems = inputs.nixpkgs.lib.systems.flakeExposed;
 
             flake = {
-              inherit (lpkgs) overlays;
-
               lib = toplevel.llib.mergeAttrsRecursive { allowOverrides = false; } [
                 toplevel.llib
                 {
@@ -119,6 +117,25 @@
                 }
               ];
             };
+
+            perSystem =
+              {
+                system,
+                config,
+                pkgs,
+                lib,
+                ...
+              }:
+              {
+                _module.args = {
+                  pkgs = import inputs.nixpkgs {
+                    inherit system;
+                    overlays = [ lpkgs.overlays.legacy ];
+                  };
+                };
+
+                legacyPackages = pkgs.legacyPackages;
+              };
           };
         }
       );

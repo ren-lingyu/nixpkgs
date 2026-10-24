@@ -29,7 +29,7 @@
         inherit inputs;
         moduleLocation = __curPos.file;
         llib = inputs.local-nixpkgs.lib;
-        lpkgs = { inherit (inputs.local-nixpkgs) overlays; };
+        lpkgs = inputs.local-nixpkgs;
       }
       (
         {
@@ -63,9 +63,7 @@
                 ...
               }:
               {
-                nixpkgs.overlays = [ lpkgs.overlays.legacy ];
-
-                legacyPackages = pkgs.legacyPackages;
+                legacyPackages = lpkgs.legacyPackages.${system};
 
                 checks = import ./tests {
                   inherit llib;
