@@ -1,5 +1,10 @@
 # Built-in package aggregation rules
 
+The later groups/export refactor is implemented and validated in the current
+unstaged project worktree; see `memory/package-groups.md`. It supersedes this
+delivery's public mkLegacyPackages and independent selector-discovery descriptions.
+The built-in rule business behavior below remains the baseline contract.
+
 ## Status, purpose and source boundary
 
 This file preserves the built-in-rule delivery contract below. The subsequent

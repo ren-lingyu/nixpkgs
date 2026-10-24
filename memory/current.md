@@ -1,13 +1,16 @@
 # Current project state
 
-## Active package aggregation refactor
+## Package aggregation refactor: implemented and validated
 
 The owner requested implementation of the reviewed package aggregation plan and
 continuous GAW maintenance. See `memory/package-groups.md` for the adopted
-contract, implementation state and next action. This supersedes the deferred
-package-side design boundary below. The project checkout was clean at task start.
-The prior completed deliveries and validation below describe the baseline, not
-validation of this refactor.
+contract, implementation and validation evidence. mkOverlays now supports groups
+and directory-selected exports using one lazy description tree, including TeX
+selection; public mkLegacyPackages is removed. Full flake checks and treefmt passed
+on x86_64-linux against a source-only snapshot including untracked fixtures; all
+128 snapshot files were compared with the current worktree and matched. Other
+systems and downstream builds were not tested. Project changes remain unstaged;
+no ordinary commit, lockfile or consumer change was made. Next: owner review.
 
 ## Project purpose
 
@@ -47,7 +50,7 @@ commit. Validation ran before commit against the same content; no checks were
 rerun just to establish provenance. No ordinary project commit was created by
 the agent.
 
-`lib.packages` exposes `mkOverlays`, `mkLegacyPackages`, `mkNixosModule` and
+`lib.packages` exposes `mkOverlays`, `mkNixosModule` and
 `mkHomeModule`. README.org documents their interfaces and directory conventions.
 The original practice was inspected in `~/nixos/pkgs` and `~/emarccs`; their
 library implementations matched this repository at the earlier comparison.
@@ -107,18 +110,20 @@ The owner committed it as `feat(lib): add parameterized overlay constructors`.
 All 117 committed file blobs and modes match the reviewed index snapshot exactly;
 the project worktree was clean on inspection. Validation ran before commit
 against the same content, with no post-commit test rerun. This checkpoint
-associates the inspected constructor commit. The implementation is complete;
-await the owner's next objective. Broader package-set/runtime work remains deferred.
+associates the inspected constructor commit. That constructor delivery is complete;
+the subsequent package refactor is described above. Broader package-set/runtime
+work remains deferred.
 
 ## Package-side design boundary
 
 The owner considered moving overlay application into mkLegacyPackages,
 passing external overlay inputs, retaining discovery metadata and exporting
-an entire extended pkgs as legacyPackages. No redesign was adopted: the owner
-explicitly deferred the package side. Keep packages.mkOverlays public and
-mkLegacyPackages as extraction from already extended pkgs. Do not apply the
-test API simplification or inferred extraArgs/pkgs parameters to packages.
-The separately approved constructor extraArgs extension below is in scope.
+an entire extended pkgs as legacyPackages. That proposal was initially deferred.
+The owner later adopted the bounded groups/export design in
+`memory/package-groups.md`, now implemented in the unstaged worktree. Export only
+directory-selected packages from final, not an entire extended package set;
+keep mkOverlays public and remove mkLegacyPackages. No public selector/tree API
+or inferred pkgs parameter was introduced.
 
 ## Overlay constructors: committed and validated
 
@@ -135,7 +140,7 @@ Read memory/parameterized-overlays.md for the full adopted contract, migration
 scope and tests. packages.mkOverlays gains extraArgs; all source/fixture and
 implicit definitions are migrated, including test entries. mkChecks keeps its
 public API and args semantics, with constructor extraArgs defaulting to {}.
-The earlier package-consumption redesign remains deferred.
+The later groups/export redesign is described in `memory/package-groups.md`.
 
 The owner requested implementation and authorized staging/formatting/checks.
 The implementation provides recursive selective injection and unknown-name errors,

@@ -39,7 +39,7 @@ Build/check/format commands require the repository's explicit command authority;
 announce exact commands and their cache/store/network effects before execution.
 No ordinary project staging, commit or lockfile change is planned.
 
-## Current state and next action
+## Implementation and verification outcome
 
 Baseline inspected: packages has a filesystem-recursive mkLegacyPackages;
 overlay-tree repeats hasEntries/getDirectories recursion; TeX closes over a
@@ -65,10 +65,28 @@ the six existing real Emacs/TeX evaluations. One initial test used a marker abse
 from the existing factory fixture; corrected it to assert applications == 1.
 README now documents the new API, alternatives for group application, validation,
 prev collision checks, final selection, exclusions and package-selection bounds.
-Next: scoped formatting, complete flake checks including untracked fixtures,
-structural/diff review and final memory consistency check.
+Scoped nix fmt completed, followed by successful full validation:
+
+`timeout 120s nix flake check --no-write-lock-file -L path:/home/lingyu/nixpkgs/tmp/package-groups-source`
+
+All x86_64-linux checks passed: package, overlay, merge and test API reports,
+three real writeText checks and treefmt. Treefmt traversed 128 source files,
+processed 124 and changed none. Nix skipped incompatible systems. Structural
+review confirmed packages.mkOverlays creates one tree; overlay recursion,
+factory descendants, group exports and TeX selectors consume its nodes. Remaining
+hasEntries usage in packages belongs only to unchanged module discovery.
+No public old API references remain in lib, tests or README, and diff --check
+passed. Project index and flake.lock are unchanged.
 
 New fixtures are untracked, and no project staging is authorized/planned. Normal
-Git flake sources omit those files. Evaluate workspace tests directly with Nix
---impure first; use a filtered source snapshot including only project source and
-metadata for the final full flake check, without including .git/.agents/tmp.
+Git flake sources omit those files. The final check used a source-only snapshot
+under the verified ignored tmp area: root metadata plus lib and tests, excluding
+.git/.agents/tmp. All 128 files were compared byte-for-byte by SHA-256 with the
+current worktree and matched, with matching file sets. The snapshot is incidental;
+the actual implementation and fixtures are the project worktree files. After the
+owner stages new fixtures, ordinary Git flake checks can include them directly.
+
+Implementation is ready for owner review; no ordinary project staging or commit
+was done. Real downstream migration/builds remain a separate task. No new exact
+project commit represents the dirty implementation, so its GAW checkpoints do not
+attach the baseline HEAD as if it contained these changes.
