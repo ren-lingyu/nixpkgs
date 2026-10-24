@@ -312,7 +312,7 @@ Passing =separator = "-"= or =separator = "."= changes that name to
 for name collisions introduced by their chosen separator.
 
 * Tests
-=tests/default.nix= accepts ={ llib, lib, pkgs, overlayTree }= and returns the
+=tests/default.nix= accepts ={ llib, lib, pkgs }= and returns the
 complete check derivation set. Ordinary suites live under =tests/suites/=, each
 with a =cases.nix= expression, a =test-overlay.nix= entry, and any local fixtures.
 The entry passes existing API checks and shared arguments to =lib.tests.mkChecks=,

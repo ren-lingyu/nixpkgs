@@ -2,9 +2,9 @@
   overlays = final.callPackage (
     {
       lib,
-      overlayTree,
+      llib,
       mkResultCheck,
     }:
-    mkResultCheck "overlays" (import ./cases.nix { inherit lib overlayTree; })
+    mkResultCheck "overlays" (import ./cases.nix { inherit lib llib; })
   ) { };
 }

@@ -1,7 +1,7 @@
-{ lib, overlayTree }:
+{ lib, llib }:
 let
   root_ = ./fixtures;
-  overlays_ = overlayTree.mkOverlays {
+  overlays_ = llib.overlays.mkOverlays {
     root = root_;
     overlayFile = "overlay.nix";
   };
@@ -42,7 +42,7 @@ let
   implicit_ = apply_ (_: { }) (
     lib.composeManyExtensions (
       builtins.attrValues (
-        builtins.removeAttrs (overlayTree.mkOverlays {
+        builtins.removeAttrs (llib.overlays.mkOverlays {
           root = root_;
           overlayFile = "overlay.nix";
           implicitOverlays = implicitOverlays_;
@@ -53,7 +53,7 @@ let
   factory_ = apply_ (_: { }) (
     lib.composeManyExtensions (
       builtins.attrValues (
-        builtins.removeAttrs (overlayTree.mkOverlays {
+        builtins.removeAttrs (llib.overlays.mkOverlays {
           root = root_;
           overlayFile = "overlay.nix";
           implicitOverlays = {
@@ -72,7 +72,7 @@ let
   custom_ = apply_ (_: { }) (
     lib.composeManyExtensions (
       builtins.attrValues (
-        overlayTree.mkOverlays {
+        llib.overlays.mkOverlays {
           root = root_ + "/custom";
           overlayFile = "custom.nix";
         }
@@ -89,7 +89,7 @@ let
   };
   constructorOverlays_ =
     extraArgs_:
-    overlayTree.mkOverlays {
+    llib.overlays.mkOverlays {
       root = constructorRoot_ + "/basic";
       overlayFile = "overlay.nix";
       extraArgs = extraArgs_;
@@ -99,7 +99,7 @@ let
     apply_ (final_: { callPackage = lib.callPackageWith final_; }) (
       lib.composeManyExtensions (
         builtins.attrValues (
-          builtins.removeAttrs (overlayTree.mkOverlays {
+          builtins.removeAttrs (llib.overlays.mkOverlays {
             root = root_;
             overlayFile = "overlay.nix";
             extraArgs = extraArgs_;
@@ -113,7 +113,7 @@ let
   defaultConstructed_ = apply_ (final_: { callPackage = lib.callPackageWith final_; }) (
     lib.composeManyExtensions (
       builtins.attrValues (
-        builtins.removeAttrs (overlayTree.mkOverlays {
+        builtins.removeAttrs (llib.overlays.mkOverlays {
           root = constructorRoot_ + "/basic";
           overlayFile = "overlay.nix";
         }) [ "destructured" ]
@@ -123,7 +123,7 @@ let
   implicitConstructor_ = apply_ (_: { }) (
     lib.composeManyExtensions (
       builtins.attrValues (
-        builtins.removeAttrs (overlayTree.mkOverlays {
+        builtins.removeAttrs (llib.overlays.mkOverlays {
           root = root_;
           overlayFile = "overlay.nix";
           extraArgs = constructorArgs_;
@@ -198,7 +198,7 @@ let
     implicitFactoryOwnsDescendants = factory_.implicit.item.applications == 1;
     emptyAndAbsentNotCreated = !(implicit_ ? empty) && !(implicit_ ? absent);
     emptyDiscovery =
-      overlayTree.mkOverlays {
+      llib.overlays.mkOverlays {
         root = root_ + "/empty";
         overlayFile = "overlay.nix";
         implicitOverlays.empty = throw "unused";

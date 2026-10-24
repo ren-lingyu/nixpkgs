@@ -57,7 +57,6 @@
                 checks = import ./tests {
                   inherit llib pkgs;
                   lib = pkgs.lib;
-                  overlayTree = llib.overlays;
                 };
 
                 treefmt = {

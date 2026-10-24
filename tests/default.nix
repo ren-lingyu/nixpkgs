@@ -2,7 +2,6 @@
   llib,
   lib,
   pkgs,
-  overlayTree,
 }:
 let
   mkResultCheck_ =
@@ -15,12 +14,7 @@ let
     overlayFile = overlayFile_;
     checks = directChecks_;
     args = {
-      inherit
-        llib
-        lib
-        pkgs
-        overlayTree
-        ;
+      inherit llib lib pkgs;
       mkResultCheck = mkResultCheck_;
     };
   };
