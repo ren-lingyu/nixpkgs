@@ -20,6 +20,28 @@
         "url": "https://github.com/hercules-ci/flake-parts.git"
       }
     },
+    "local-nixpkgs": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
+        ]
+      },
+      "locked": {
+        "path": "./pkgs",
+        "type": "path"
+      },
+      "original": {
+        "path": "./pkgs",
+        "type": "path"
+      },
+      "parent": []
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1792506237,
@@ -55,6 +77,7 @@
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
+        "local-nixpkgs": "local-nixpkgs",
         "nixpkgs": "nixpkgs",
         "treefmt-nix": "treefmt-nix"
       }

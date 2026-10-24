@@ -12,25 +12,19 @@
       url = "git+https://github.com/numtide/treefmt-nix.git?ref=refs/heads/main&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    local-nixpkgs = {
+      url = "path:./pkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
   };
 
   outputs =
     { self, ... }@inputs:
-    let
-      mkFlake =
-        args: module:
-        assert inputs.nixpkgs.lib.assertMsg (args ? moduleLocation)
-          "mkFlake: moduleLocation must be explicitly specified, such as `moduleLocation = ./flake.nix;` or `moduleLocation = __curPos.file;`.";
-        inputs.flake-parts.lib.mkFlake args {
-          imports = [
-            inputs.flake-parts.flakeModules.modules
-            inputs.treefmt-nix.flakeModule
-            ./modules/fp/treefmt
-            module
-          ];
-        };
-    in
-    mkFlake
+    inputs.local-nixpkgs.lib.mkFlake
       {
         inherit inputs;
         moduleLocation = __curPos.file;
@@ -39,14 +33,7 @@
             lib = inputs.nixpkgs.lib;
           in
           {
-            llib =
-              let
-                llib_ = import ./lib { inherit lib; };
-              in
-              llib_.mergeAttrsRecursive { allowOverrides = false; } [
-                llib_
-                { inherit mkFlake; }
-              ];
+            llib = inputs.local-nixpkgs.lib;
           };
       }
       (
