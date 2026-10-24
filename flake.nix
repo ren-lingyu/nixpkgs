@@ -25,12 +25,12 @@
   outputs =
     { self, ... }@inputs:
     inputs.local-nixpkgs.lib.mkFlake inputs.nixpkgs
-      {
+      ({ lib }: {
         inherit inputs;
         moduleLocation = __curPos.file;
         llib = inputs.local-nixpkgs.lib;
         lpkgs = inputs.local-nixpkgs;
-      }
+      })
       (
         {
           llib,

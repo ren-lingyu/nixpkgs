@@ -44,73 +44,78 @@
                 toplevel.llib
                 {
                   mkFlake =
-                    nixpkgs:
-                    {
-                      moduleLocation,
-                      llib ? { },
-                      lpkgs ? { },
-                      ...
-                    }@args:
-                    module:
-                    inputs.flake-parts.lib.mkFlake
-                      (toplevel.llib.mergeAttrsRecursive { allowOverrides = true; } [
+                    nixpkgs: argsFun: module:
+                    let
+                      args = argsFun { lib = nixpkgs.lib; };
+                      specialArgs = toplevel.llib.mergeAttrsRecursive { allowOverrides = true; } [
                         {
-                          specialArgs = {
-                            lib = nixpkgs.lib;
-                            inherit llib lpkgs;
-                          };
+                          lib = nixpkgs.lib;
+                          llib = args.llib or { };
+                          lpkgs = args.lpkgs or { };
                         }
+                        (args.specialArgs or { })
+                      ];
+                      flakeArgs = toplevel.llib.mergeAttrsRecursive { allowOverrides = true; } [
+                        { inherit specialArgs; }
                         (builtins.removeAttrs args [
                           "llib"
                           "lpkgs"
                         ])
-                      ])
-                      {
-                        imports = [
-                          {
-                            perSystem =
-                              {
-                                llib,
-                                lpkgs,
-                                pkgs,
-                                lib,
-                                system,
-                                config,
-                                ...
-                              }:
-                              {
-                                options = {
-                                  nixpkgs = {
-                                    overlays = lib.mkOption {
-                                      type = lib.types.listOf (
-                                        lib.types.functionTo (lib.types.functionTo (lib.types.lazyAttrsOf lib.types.unspecified))
-                                      );
-                                      default = [ ];
-                                    };
-                                  };
-                                };
-                                config = {
-                                  _module.args = {
-                                    pkgs = nixpkgs.lib.mkForce (
-                                      import nixpkgs {
-                                        inherit system;
-                                        overlays = config.nixpkgs.overlays;
-                                      }
+                      ];
+                    in
+                    assert builtins.isAttrs args;
+                    assert
+                      (builtins.filter (name: !(builtins.hasAttr name args)) [
+                        "inputs"
+                        "moduleLocation"
+                      ]) == [ ];
+                    assert !(args ? specialArgs) || builtins.isAttrs args.specialArgs;
+                    inputs.flake-parts.lib.mkFlake flakeArgs {
+                      imports = [
+                        {
+                          perSystem =
+                            {
+                              llib,
+                              lpkgs,
+                              pkgs,
+                              lib,
+                              system,
+                              config,
+                              ...
+                            }:
+                            {
+                              options = {
+                                nixpkgs = {
+                                  overlays = lib.mkOption {
+                                    type = lib.types.listOf (
+                                      lib.types.functionTo (lib.types.functionTo (lib.types.lazyAttrsOf lib.types.unspecified))
                                     );
+                                    default = [ ];
                                   };
                                 };
                               };
-                          }
-                          inputs.treefmt-nix.flakeModule
-                          {
-                            perSystem = {
-                              nixpkgs.overlays = [ toplevel.lpkgs.overlays.default ];
+                              config = {
+                                _module.args = {
+                                  pkgs = nixpkgs.lib.mkForce (
+                                    import nixpkgs {
+                                      inherit system;
+                                      overlays = config.nixpkgs.overlays;
+                                    }
+                                  );
+                                };
+                              };
                             };
-                          }
-                          ./modules/fp/treefmt
-                          module
-                        ];
-                      };
+                        }
+                        inputs.treefmt-nix.flakeModule
+                        {
+                          perSystem = {
+                            nixpkgs.overlays = [ toplevel.lpkgs.overlays.default ];
+                          };
+                        }
+                        ./modules/fp/treefmt
+                        module
+                      ];
+                    };
                 }
               ];
             };
