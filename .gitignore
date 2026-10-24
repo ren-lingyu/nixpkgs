@@ -8,21 +8,24 @@
 !/flake.nix
 !/flake.lock
 
-!/lib/
-!/lib/**/
-!/lib/**/*.nix
-
 !/tests/
 !/tests/**/
 !/tests/**/*.nix
 
 !/pkgs/
-!/pkgs/**/
-!/pkgs/**/*.nix
+!/pkgs/flake.nix
 
-!/modules/
-!/modules/**/
-!/modules/**/*.nix
+!/pkgs/lib/
+!/pkgs/lib/**/
+!/pkgs/lib/**/*.nix
+
+!/pkgs/pkgs/
+!/pkgs/pkgs/**/
+!/pkgs/pkgs/**/*.nix
+
+!/pkgs/modules/
+!/pkgs/modules/**/
+!/pkgs/modules/**/*.nix
 
 *~
 *#
