@@ -52,8 +52,6 @@
                       ...
                     }@args:
                     module:
-                    assert inputs.nixpkgs.lib.assertMsg (args ? moduleLocation)
-                      "mkFlake: moduleLocation must be explicitly specified, such as `moduleLocation = ./flake.nix;` or `moduleLocation = __curPos.file;`.";
                     inputs.flake-parts.lib.mkFlake
                       (toplevel.llib.mergeAttrsRecursive { allowOverrides = true; } [
                         {
@@ -99,7 +97,6 @@
                                         overlays = config.nixpkgs.overlays;
                                       }
                                     );
-                                    lib = nixpkgs.lib.mkForce nixpkgs.lib;
                                   };
                                 };
                               };
