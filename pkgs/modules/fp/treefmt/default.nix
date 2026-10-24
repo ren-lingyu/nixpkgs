@@ -10,6 +10,24 @@
         settings = {
           excludes = lib.mkDefault [ ];
           on-unmatched = "fatal";
+          formatter = {
+            lisplens = {
+              command = lib.getExe pkgs.lisplens;
+              options = [ "format" ];
+              includes = [
+                "*.scm"
+                "**/*.scm"
+              ];
+            };
+
+            elisp-autofmt = {
+              command = lib.getExe pkgs.elisp-autofmt;
+              includes = [
+                "*.el"
+                "**/*.el"
+              ];
+            };
+          };
         };
 
         programs = {
