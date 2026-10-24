@@ -106,7 +106,6 @@
                                 };
                               };
                           }
-                          inputs.flake-parts.flakeModules.modules
                           inputs.treefmt-nix.flakeModule
                           {
                             perSystem = {
