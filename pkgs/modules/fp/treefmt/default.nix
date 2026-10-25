@@ -27,6 +27,18 @@
                 "**/*.el"
               ];
             };
+
+            cabal-project-fmt = {
+              command = lib.getExe pkgs.haskellPackages.cabal-fmt;
+              options = [
+                "--no-cabal-file"
+                "--inplace"
+              ];
+              includes = [
+                "**/cabal*.project"
+                "**/cabal.project.local"
+              ];
+            };
           };
         };
 
