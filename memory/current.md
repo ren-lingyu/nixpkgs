@@ -1,5 +1,19 @@
 # Current project state
 
+## Cabal project formatter: committed, awaiting next instruction
+
+The owner added cabal-project-fmt in pkgs/modules/fp/treefmt/default.nix and
+requested a commit draft, current-memory update, then waiting for project HEAD
+movement. The reviewed change uses haskellPackages.cabal-fmt with
+--no-cabal-file and --inplace for **/cabal*.project and **/cabal.project.local.
+Drafted `feat(treefmt): add a Cabal project formatter` in tmp/commit.md from that
+diff. Polling observed HEAD move from the README documentation commit to the
+owner's `feat(treefmt): add a Cabal project formatter` commit. Its full committed
+diff matches the reviewed formatter addition; the project worktree is clean.
+This checkpoint associates that inspected project snapshot. No formatter/build/
+test was run. README's formatter table has not been expanded for these project
+file patterns; no README edit was requested in this task. Await next instruction.
+
 ## Shared foundation: argument function, Lisp formatters and README committed
 
 The owner committed `feat(flake): add mkFlake with shared modules and formatting
