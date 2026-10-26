@@ -40,16 +40,22 @@ let
     overlays_: name_: config_:
     let
       fail_ = message_: builtins.throw "packages.mkOverlays: group `${name_}`: ${message_}";
-      unknown_ = lib.subtractLists [ "exclude" "export" "overlays" ] (builtins.attrNames config_);
+      unknown_ = lib.subtractLists [ "include" "exclude" "export" "overlays" ] (
+        builtins.attrNames config_
+      );
+      include_ = config_.include or (builtins.attrNames overlays_);
       exclude_ = config_.exclude or [ ];
       export_ = config_.export or false;
       externalOverlays_ = config_.overlays or [ ];
       unknownExcluded_ = lib.subtractLists (builtins.attrNames overlays_) exclude_;
+      unknownIncluded_ = lib.subtractLists (builtins.attrNames overlays_) include_;
     in
     if !(builtins.isAttrs config_) then
       fail_ "expected an attribute set"
     else if unknown_ != [ ] then
       fail_ "unknown fields ${builtins.toJSON unknown_}"
+    else if !(builtins.isList include_ && builtins.all builtins.isString include_) then
+      fail_ "include must be a list of strings"
     else if !(builtins.isList exclude_ && builtins.all builtins.isString exclude_) then
       fail_ "exclude must be a list of strings"
     else if
@@ -60,10 +66,13 @@ let
       fail_ "export must be a boolean or a nonempty string"
     else if export_ == "" then
       fail_ "export name must not be empty"
+    else if unknownIncluded_ != [ ] then
+      fail_ "unknown included overlays ${builtins.toJSON unknownIncluded_}"
     else if unknownExcluded_ != [ ] then
       fail_ "unknown excluded overlays ${builtins.toJSON unknownExcluded_}"
     else
       {
+        include = include_;
         exclude = exclude_;
         overlays = externalOverlays_;
         exportName = if export_ == true then "legacyPackages" else export_;
@@ -72,7 +81,9 @@ let
   mkGroup_ =
     tree_: overlays_: name_: config_:
     let
-      selected_ = builtins.removeAttrs overlays_ config_.exclude;
+      selected_ = lib.filterAttrs (
+        name_: unused_: builtins.elem name_ config_.include && !(builtins.elem name_ config_.exclude)
+      ) overlays_;
       groupTree_ = tree_ // {
         children = builtins.intersectAttrs selected_ tree_.children;
       };

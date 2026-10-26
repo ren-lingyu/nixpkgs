@@ -248,6 +248,98 @@ let
         { }
         { } == { };
     groupAppliesOnce = (grouped_ "legacy").applications == 2;
+    groupIncludeSubset =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          include = [ "z" ];
+          export = true;
+        } [ ];
+      in
+      result_.sequence == "z" && !(result_ ? a) && builtins.attrNames result_.legacyPackages == [ "z" ];
+    groupIncludeDefaultCompatible =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          include = [
+            "z"
+            "a"
+          ];
+          export = true;
+        } [ ];
+      in
+      result_.sequence == (grouped_ "legacy").sequence
+      && result_.legacyPackages == (grouped_ "legacy").legacyPackages;
+    groupIncludeExcludeWins =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          include = [
+            "a"
+            "z"
+          ];
+          exclude = [ "a" ];
+          export = true;
+        } [ ];
+      in
+      result_.sequence == "z" && !(result_ ? a) && builtins.attrNames result_.legacyPackages == [ "z" ];
+    groupExcludeOutsideInclude =
+      (applyGroup_ groupRoot_ {
+        include = [ "a" ];
+        exclude = [ "z" ];
+      } [ ]).sequence == "a";
+    groupEmptyInclude =
+      (applyGroup_ groupRoot_ {
+        include = [ ];
+        export = true;
+      } [ ]).legacyPackages == { };
+    groupEmptyIncludeNoLocalApplication =
+      (groupOverlays_ groupRoot_ { empty.include = [ ]; }).empty { } { } == { };
+    groupIncludeKeepsExternal =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          include = [ ];
+          overlays = externalOverlays_;
+          export = true;
+        } [ ];
+      in
+      result_.sequence == "12"
+      && result_.a.marker == "external-first:second"
+      && result_.legacyPackages == { };
+    groupIncludeExportPaths =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          include = [ "a" ];
+          overlays = externalOverlays_;
+          export = true;
+        } [ ];
+      in
+      result_.sequence == "12a"
+      && result_.z.marker == "external-z"
+      && builtins.attrNames result_.legacyPackages == [ "a" ]
+      && result_.legacyPackages.a.marker == "a";
+    groupDuplicateInclude =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          include = [
+            "z"
+            "a"
+            "a"
+          ];
+        } [ ];
+      in
+      result_.sequence == "az" && result_.applications == 2;
+    groupUnincludedConstructorLazy =
+      (applyGroup_ ./lazy-fixtures {
+        include = [ "kept" ];
+        export = true;
+      } [ ]).legacyPackages.kept.marker == "kept";
+    groupIncludeIsolation =
+      let
+        groups_ = groupOverlays_ groupRoot_ {
+          selected.include = [ "z" ];
+          all = { };
+        };
+      in
+      (lib.fix (lib.extends groups_.selected base_)).sequence == "z"
+      && (lib.fix (lib.extends groups_.all base_)).sequence == "az";
     groupEmptyExternalCompatible =
       let
         result_ = applyGroup_ groupRoot_ {
@@ -342,7 +434,48 @@ let
       };
     groupInvalidGroups = groupRejects_ [ ];
     groupInvalidConfig = groupRejects_ { bad = false; };
-    groupUnknownField = groupRejects_ { bad.include = [ "a" ]; };
+    groupUnknownField = groupRejects_ { bad.unknown = [ "a" ]; };
+    groupInvalidInclude = builtins.all (include_: groupRejects_ { bad.include = include_; }) [
+      null
+      false
+      1
+      "a"
+      { }
+    ];
+    groupInvalidIncludeMember =
+      builtins.all
+        (
+          member_:
+          groupRejects_ {
+            bad.include = [
+              "a"
+              member_
+            ];
+          }
+        )
+        [
+          null
+          false
+          1
+          [ ]
+          { }
+        ];
+    groupUnknownInclude = groupRejects_ { bad.include = [ "absent" ]; };
+    groupUnknownIncludeEvenIfExcluded = groupRejects_ {
+      bad = {
+        include = [ "absent" ];
+        exclude = [ "absent" ];
+      };
+    };
+    groupEmptyDirectoryInclude = rejects_ (
+      groupOverlays_ ./fixtures/empty { bad.include = [ "emacsPackages" ]; }
+    );
+    groupValidatesSiblingIncludes =
+      rejects_
+        (groupOverlays_ groupRoot_ {
+          good = { };
+          bad.include = [ "absent" ];
+        }).good;
     groupInvalidExclude = groupRejects_ { bad.exclude = "a"; };
     groupInvalidExcludeMember = groupRejects_ { bad.exclude = [ 1 ]; };
     groupInvalidExternalOverlays =
