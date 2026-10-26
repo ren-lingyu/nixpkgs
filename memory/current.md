@@ -1,6 +1,6 @@
 # Current project state
 
-## Group external overlays: implemented and validated, not committed
+## Groups: external overlays, include/exclude and documentation committed
 
 The owner requests groups.<name>.overlays for packages.mkOverlays: a function
 list defaulting to [], applied in list order before selected local overlays and
@@ -20,18 +20,48 @@ affecting only local paths, all-local-excluded exports, default/custom export
 collisions, invalid list/member types and validation of invalid sibling groups.
 Existing assertions and fixtures, including independent mkChecks acceptance,
 remain unchanged. Only the implementation file and tests/suites/packages/cases.nix
-are modified in the project; no project staging or commit was performed.
+were changed for this delivery. The owner staged and committed this delivery as
+`feat(lib.packages): support external overlays in groups`; the inspected two-file
+summary agrees with the reviewed scope.
 
 The owner authorized both exact commands: timeout 120s nix fmt --
 pkgs/lib/packages/default.nix tests/suites/packages/cases.nix, and timeout 120s
 nix flake check --no-write-lock-file -L. Scoped formatting passed, followed by all
 8 x86_64-linux checks (reports, three real checks, treefmt). Treefmt traversed 135
 files, processed 131 and changed none. Other systems were skipped. diff --check
-passed; lockfile and overlay-tree source are unchanged. Validation covers dirty
-worktree source, not a committed project snapshot, so no project parent is
-associated merely by choosing baseline HEAD. No README change requested; its
-group-field list still documents only exclude/export and needs synchronization
-if the owner requests documentation next. Await review or the next instruction.
+passed; lockfile and overlay-tree source are unchanged. Validation ran against
+the dirty worktree before the owner committed the reviewed implementation.
+
+The owner requested three sequential project commits: external overlays,
+include/exclude selection, then README synchronization, updating current memory
+after each owner commit and checkpointing finally. All three phases are complete;
+project commits were owner-operated. include defaults directly to attrNames of the
+already discovered local overlays, not null or an all sentinel; select include
+then remove exclude. Explicit [] selects no locals. Validate both lists and all
+names against local discovery, allow duplicates, retain local name order and
+group isolation. External overlays stay outside these filters; export follows
+the selected local tree. Implementation filters local overlays by membership then
+exclusion without changing name order. Added 18 named tests covering subset/all/
+empty/duplicate selection, exclusion priority and outside-include exclusions,
+external-only groups, export paths, constructor laziness, group isolation,
+invalid types/names/empty directories and sibling validation. Updated the old
+unknown-field test to use unknown rather than newly supported include. Separate
+authorization for scoped formatting and the full flake check was granted. Both
+commands passed: x86_64-linux checks succeed, other systems skipped; only package
+report and treefmt needed rebuilding, all other report/check derivations unchanged
+from the external-overlay delivery. The owner approved staging and committed
+`feat(lib.packages): select group overlays with include and exclude`; the two-file
+summary matches the reviewed scope. Its committed source is the reviewed and
+formatted implementation. No checks were rerun merely to attach a parent.
+README now documents both group features: all four fields/defaults, inclusion
+then exclusion, validation, ordering, group isolation, external-only cases, local
+export paths and collision handling. Updated the consumer example and package
+suite coverage description; diff --check passed. After explicit staging approval,
+the owner committed `docs(readme): explain group overlay selection and composition`.
+Its full committed diff matches the reviewed documentation update. This final
+checkpoint associates that inspected project snapshot, which contains both API
+extensions and their tests. No project files remain staged or unstaged. Other
+systems/downstream acceptance remain unverified; await the next instruction.
 
 ## Cabal project formatter: committed, awaiting next instruction
 
