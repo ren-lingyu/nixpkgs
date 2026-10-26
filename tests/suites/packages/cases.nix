@@ -156,6 +156,42 @@ let
     };
   };
   grouped_ = name_: lib.fix (lib.extends groups_.${name_} base_);
+  externalOverlays_ = [
+    (final_: prev_: {
+      a = leaf_ "external-first";
+      z = leaf_ "external-z";
+      externalOnly = leaf_ "external-only";
+      externalFinalMarker = final_.a.marker;
+      sequence = (prev_.sequence or "") + "1";
+    })
+    (final_: prev_: {
+      a = leaf_ (prev_.a.marker + ":second");
+      externalDependency = prev_.externalOnly.marker;
+      sequence = prev_.sequence + "2";
+    })
+  ];
+  externalGroups_ = groupOverlays_ groupRoot_ {
+    plain = { };
+    injected = {
+      overlays = externalOverlays_;
+      export = true;
+    };
+    excluded = {
+      overlays = externalOverlays_;
+      exclude = [ "a" ];
+      export = true;
+    };
+    allExcluded = {
+      overlays = externalOverlays_;
+      exclude = [
+        "a"
+        "z"
+      ];
+      export = true;
+    };
+    unused.overlays = [ (final_: prev_: throw "another group's overlay must not be applied") ];
+  };
+  externallyGrouped_ = name_: lib.fix (lib.extends externalGroups_.${name_} base_);
   groupRejects_ = groups_: rejects_ (groupOverlays_ groupRoot_ groups_);
   selectedLeaves_ =
     (applyGroup_ ./selector-fixtures {
@@ -212,6 +248,59 @@ let
         { }
         { } == { };
     groupAppliesOnce = (grouped_ "legacy").applications == 2;
+    groupEmptyExternalCompatible =
+      let
+        result_ = applyGroup_ groupRoot_ {
+          overlays = [ ];
+          export = true;
+        } [ ];
+      in
+      result_.sequence == (grouped_ "legacy").sequence
+      && result_.legacyPackages == (grouped_ "legacy").legacyPackages;
+    groupExternalOrder = (externallyGrouped_ "injected").sequence == "12az";
+    groupExternalDependency = (externallyGrouped_ "injected").externalDependency == "external-only";
+    groupLocalOverridesExternal =
+      (externallyGrouped_ "injected").a.marker == "a" && (externallyGrouped_ "injected").z.marker == "z";
+    groupExternalSeesFinal = (externallyGrouped_ "injected").externalFinalMarker == "a";
+    groupExternalIsolation =
+      (externallyGrouped_ "plain").sequence == "az" && !((externallyGrouped_ "plain") ? externalOnly);
+    groupExternalOnlyNotExported =
+      let
+        result_ = externallyGrouped_ "injected";
+      in
+      result_.externalOnly.marker == "external-only"
+      &&
+        builtins.attrNames result_.legacyPackages == [
+          "a"
+          "z"
+        ]
+      && result_.legacyPackages.a.marker == "a";
+    groupExcludeOnlyLocal =
+      let
+        result_ = externallyGrouped_ "excluded";
+      in
+      result_.sequence == "12z"
+      && result_.a.marker == "external-first:second"
+      && builtins.attrNames result_.legacyPackages == [ "z" ];
+    groupExternalWithAllLocalExcluded =
+      let
+        result_ = externallyGrouped_ "allExcluded";
+      in
+      result_.sequence == "12"
+      && result_.externalOnly.marker == "external-only"
+      && result_.legacyPackages == { };
+    groupExternalExportCollision =
+      rejects_
+        (applyGroup_ groupRoot_ {
+          overlays = [ (final_: prev_: { legacyPackages = { }; }) ];
+          export = true;
+        } [ ]).legacyPackages;
+    groupExternalCustomExportCollision =
+      rejects_
+        (applyGroup_ groupRoot_ {
+          overlays = [ (final_: prev_: { customName = { }; }) ];
+          export = "customName";
+        } [ ]).customName;
     groupFinalValues =
       (applyGroup_ groupRoot_ { export = true; } [ (final_: prev_: { a = leaf_ "final"; }) ])
       .legacyPackages.a.marker == "final";
@@ -256,6 +345,42 @@ let
     groupUnknownField = groupRejects_ { bad.include = [ "a" ]; };
     groupInvalidExclude = groupRejects_ { bad.exclude = "a"; };
     groupInvalidExcludeMember = groupRejects_ { bad.exclude = [ 1 ]; };
+    groupInvalidExternalOverlays =
+      builtins.all (overlays_: groupRejects_ { bad.overlays = overlays_; })
+        [
+          null
+          false
+          1
+          "overlay"
+          { }
+          (final_: prev_: { })
+        ];
+    groupInvalidExternalOverlayMember =
+      builtins.all
+        (
+          overlay_:
+          groupRejects_ {
+            bad.overlays = [
+              (final_: prev_: { })
+              overlay_
+            ];
+          }
+        )
+        [
+          null
+          false
+          1
+          "overlay"
+          [ ]
+          { }
+          (leaf_ "not-an-overlay")
+        ];
+    groupValidatesSiblingExternalOverlays =
+      rejects_
+        (groupOverlays_ groupRoot_ {
+          good = { };
+          bad.overlays = [ 1 ];
+        }).good;
     groupUnknownExclude = groupRejects_ { bad.exclude = [ "absent" ]; };
     groupEmptyDirectoryExclude = rejects_ (
       groupOverlays_ ./fixtures/empty { bad.exclude = [ "emacsPackages" ]; }

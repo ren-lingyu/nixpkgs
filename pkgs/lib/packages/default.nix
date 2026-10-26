@@ -40,9 +40,10 @@ let
     overlays_: name_: config_:
     let
       fail_ = message_: builtins.throw "packages.mkOverlays: group `${name_}`: ${message_}";
-      unknown_ = lib.subtractLists [ "exclude" "export" ] (builtins.attrNames config_);
+      unknown_ = lib.subtractLists [ "exclude" "export" "overlays" ] (builtins.attrNames config_);
       exclude_ = config_.exclude or [ ];
       export_ = config_.export or false;
+      externalOverlays_ = config_.overlays or [ ];
       unknownExcluded_ = lib.subtractLists (builtins.attrNames overlays_) exclude_;
     in
     if !(builtins.isAttrs config_) then
@@ -51,6 +52,10 @@ let
       fail_ "unknown fields ${builtins.toJSON unknown_}"
     else if !(builtins.isList exclude_ && builtins.all builtins.isString exclude_) then
       fail_ "exclude must be a list of strings"
+    else if
+      !(builtins.isList externalOverlays_ && builtins.all builtins.isFunction externalOverlays_)
+    then
+      fail_ "overlays must be a list of functions"
     else if !(builtins.isBool export_ || builtins.isString export_) then
       fail_ "export must be a boolean or a nonempty string"
     else if export_ == "" then
@@ -60,6 +65,7 @@ let
     else
       {
         exclude = exclude_;
+        overlays = externalOverlays_;
         exportName = if export_ == true then "legacyPackages" else export_;
       };
 
@@ -74,7 +80,8 @@ let
       exportName_ = config_.exportName;
     in
     lib.composeManyExtensions (
-      [ groupOverlay_ ]
+      config_.overlays
+      ++ [ groupOverlay_ ]
       ++ lib.optional (exportName_ != false) (
         final_: prev_:
         if builtins.hasAttr exportName_ prev_ then
