@@ -177,7 +177,10 @@ let
     inherit root overlayFile;
     groups = {
       default = { };
-      share.exclude = [ "rage-armored" ];
+      share = {
+        exclude = [ "rage-armored" ];
+        overlays = [ inputs.git-agent-workflow.overlays.default ];
+      };
       legacy.export = true;
     };
   };
@@ -193,32 +196,56 @@ in
 #+end_src
 
 Here, =./pkgs= and =overlay.nix= are consumer choices; =rage-armored= must be a
-discovered top-level overlay name. The =legacy= group is used internally, while
-the published =default= and =share= overlays do not add a package export.
+discovered top-level overlay name, and =git-agent-workflow= is an external flake
+input supplied by the consumer. Its overlay participates only in =share=.
+The =legacy= group is used internally, while the published =default= and =share=
+overlays do not add a package export.
 
 *** Overlay groups and package exports
 With =groups= omitted or ={ }=, the result retains the independent overlays named
 after immediate child directories containing an overlay or descendant overlays.
-With nonempty =groups=, each result is a standard overlay that composes the
-selected top-level overlays in attribute-name order. All groups share one lazy
+With nonempty =groups=, each result is a standard overlay. It first applies
+external overlays in list order, then the selected local overlays in attribute-name
+order, and finally its optional export extension. All groups share one lazy
 directory description per =mkOverlays= call.
 
-Each group accepts only =exclude= (a list of strings, default =[ ]=) and =export=
-(default =false=). =export = true= adds =legacyPackages=; a nonempty string uses
-that export name instead. =false= adds no export. Invalid types, empty export
-names, unknown group fields and unknown excluded overlay names are errors.
-Groups and individual configurations must be attribute sets. Duplicate exclusions
-are allowed; empty directories are not valid exclusion names. Excluding every
-overlay is allowed and produces an empty export tree when export is enabled.
+Each group accepts these fields:
 
-=exclude= removes only the named top-level overlays and their export paths.
-It does not prohibit other overlays from creating attributes with those names.
-Excluded constructors are not imported or instantiated merely for discovery or
-configuration validation, and one group's settings do not alter another group.
+| Field | Type | Default |
+|-------+------+---------|
+| =include= | List of local overlay names. | All names from the existing local discovery result. |
+| =exclude= | List of local overlay names. | =[ ]=. |
+| =overlays= | List of external overlay functions. | =[ ]=. |
+| =export= | Boolean or nonempty string. | =false=. |
+
+Local selection first includes the named overlays, then removes excluded names.
+For example, =include = [ "lisplens" ]= selects only that discovered overlay;
+=include = [ ]= selects no local overlays. Omitting =include= retains the existing
+all-local-overlays behavior. An excluded name may lie outside =include= as long as
+it exists in local discovery. Exclusion wins when a name appears in both lists.
+Neither list controls composition order, and duplicate names do not cause an
+overlay to be applied twice. Both lists reject unknown names and empty directories
+without discovered overlays. Their defaults reuse discovery without another scan.
+
+=include= and =exclude= affect only local overlays and their export paths.
+They do not filter external =overlays= or prohibit other overlays from creating
+attributes at unselected names. External overlays remain active even when all
+local overlays are omitted or excluded. Unselected local constructors are not
+imported or instantiated merely for discovery or configuration validation.
+Each group's external overlays and selection are independent of other groups.
+
+=export = true= adds =legacyPackages=; a nonempty string uses that export name
+instead. =false= adds no export. Groups and individual configurations must be
+attribute sets; invalid field types, unknown fields and empty export names are
+errors. Export paths come only from the selected local directory tree. Packages
+added solely at other paths by external overlays are not automatically exported.
+With no selected local overlays, an enabled export produces an empty tree even
+when external overlays add packages.
 
 Exports are added by the group's last extension. Its =prev= includes the group's
-base overlays and must not already contain the export name; conflicts with
-upstream attributes or the group's own definitions fail instead of overwriting.
+external and local overlays and must not already contain the export name;
+conflicts with upstream attributes, external overlays or the group's local
+definitions fail instead of overwriting.
 The selector reads =final=, so a later overlay's package replacements appear in
 the export. Selecting packages never reapplies overlays. Group overlays are
 alternatives; do not apply both =default= and =legacy= to the same package set
@@ -437,7 +464,9 @@ The package API supplies its domain rules to that same aggregator.
 
 The =packages= suite covers implicit and explicit rule selection, namespace and
 module discovery, package extraction, scope dependency resolution, and TeX
-addition/replacement forwarding. It uses small evaluation fixtures on all
+addition/replacement forwarding. Group cases cover include/exclude selection,
+external-overlay ordering and isolation, directory-constrained exports, constructor
+laziness and invalid configurations. It uses small evaluation fixtures on all
 systems, with additional real Emacs and TeX package-set evaluation on
 =x86_64-linux=. It does not build large editor or TeX environments.
 
