@@ -1,5 +1,38 @@
 # Current project state
 
+## Group external overlays: implemented and validated, not committed
+
+The owner requests groups.<name>.overlays for packages.mkOverlays: a function
+list defaulting to [], applied in list order before selected local overlays and
+the final export extension. Exclusion and export paths remain local-directory
+based; external overlays are group-local and export collision checks remain.
+Scope: pkgs/lib/packages/default.nix validation/composition plus package-suite
+tests; do not change overlay-tree discovery or extraArgs. Project and memory were
+clean at start. Implementation now accepts only lists of functions, preserves
+per-group configuration validation and prepends config_.overlays before the local
+group extension and export. No discovery, constructor or selector change was made.
+
+Added 14 package-suite cases using inline external overlays and existing fixtures:
+explicit empty-list compatibility, ordered external/local composition, prev and
+final dependencies, local precedence, group isolation (including an unused
+throwing overlay), external-only derivations excluded from exports, exclusions
+affecting only local paths, all-local-excluded exports, default/custom export
+collisions, invalid list/member types and validation of invalid sibling groups.
+Existing assertions and fixtures, including independent mkChecks acceptance,
+remain unchanged. Only the implementation file and tests/suites/packages/cases.nix
+are modified in the project; no project staging or commit was performed.
+
+The owner authorized both exact commands: timeout 120s nix fmt --
+pkgs/lib/packages/default.nix tests/suites/packages/cases.nix, and timeout 120s
+nix flake check --no-write-lock-file -L. Scoped formatting passed, followed by all
+8 x86_64-linux checks (reports, three real checks, treefmt). Treefmt traversed 135
+files, processed 131 and changed none. Other systems were skipped. diff --check
+passed; lockfile and overlay-tree source are unchanged. Validation covers dirty
+worktree source, not a committed project snapshot, so no project parent is
+associated merely by choosing baseline HEAD. No README change requested; its
+group-field list still documents only exclude/export and needs synchronization
+if the owner requests documentation next. Await review or the next instruction.
+
 ## Cabal project formatter: committed, awaiting next instruction
 
 The owner added cabal-project-fmt in pkgs/modules/fp/treefmt/default.nix and
