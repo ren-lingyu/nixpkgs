@@ -73,11 +73,7 @@
                   inherit llib;
                   pkgs = import inputs.nixpkgs { inherit system; };
                   lib = pkgs.lib;
-                  nixFlakePatched = {
-                    package = pkgs.nix-flake-patched;
-                    legacyPackage = lpkgs.legacyPackages.${system}.nix-flake-patched;
-                    defaultNix = pkgs.nix;
-                  };
+                  nix-flake-patched = pkgs.nix-flake-patched;
                 };
 
                 treefmt = {

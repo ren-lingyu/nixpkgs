@@ -2,7 +2,7 @@
   llib,
   lib,
   pkgs,
-  nixFlakePatched,
+  nix-flake-patched,
 }:
 let
   mkResultCheck_ =
@@ -19,7 +19,7 @@ let
         llib
         lib
         pkgs
-        nixFlakePatched
+        nix-flake-patched
         ;
       mkResultCheck = mkResultCheck_;
     };
