@@ -12,11 +12,12 @@ PR #15982 .patch was downloaded after API 403; source commit is
 3337ecd3b0ce0dea6200364ccb2afd82f43a692f. Its C++ hunk is unchanged locally.
 Both independent patches pass patch --dry-run against the fetched 2.35.3 source.
 
-Package and root test wiring are being written. #4811 candidate uses a relative
+Package, root wiring, synthetic fixtures, runner and README are implemented. #4811 candidate uses a relative
 SourcePath ancestor stack, including accessor/canonical path, root seed and RAII
 cleanup across new/retained nodes; keep the non-relative FlakeRef guard.
-Compilation of the patched variants is pending; baseline runtime evidence is below. .gitignore needed a narrowly
-scoped patch exception; root treefmt excludes these patches. Pass package,
+Both single-patch complete packages build successfully, including their
+upstream build gates. Combined complete-package acceptance remains pending.
+.gitignore needed a narrowly scoped patch exception; root treefmt excludes these patches. Pass package,
 legacy export, default Nix and patch sources through explicit test arguments;
 preserve the no-cross-parent-import test convention. No public variant knobs.
 
@@ -29,14 +30,34 @@ fails at the wrong source path. Setup first verifies builtins.storeDir and a
 minimal successful lock/eval in the private store, so environment failures are
 not accepted as regressions. Explicit path: root references avoid Git filtering.
 Evidence is tmp/nix-flake-patched-baseline-3/results/results.json (incidental;
-substantive results are distilled here). No patched runtime result yet.
+substantive results are distilled here). Added an absolute-path cycle case too.
+The available baseline/circular/nested CLI components passed 63 isolated command
+outcomes, including expected failures: each single patch fixes its own reproducer
+and preserves the other bug; all self/two-node/alias/absolute cycles are detected;
+shared siblings succeed. Nested patch also passes existing root/dependency lock
+reuse, actual v1-to-v2 nested source override/update, root-only recreation and
+marker/parent assertions. Evidence: tmp/nix-flake-patched-cli-tests-1/results.
+These are CLI-component results, not final combined-package acceptance.
+After adding source-identity comparisons independent of generated lock node names
+and an unrelated dependency preserved during the v1-to-v2 update, the same 63
+outcomes passed again. The topology's local-nixpkgs update explicitly uses -v -L.
+The two successful full-package builds retain upstream unit/functional test gates;
+no test disabling or cycle-check weakening was used.
 
 The first build process disappeared without results after a possible user-reported
 OOM. No Nix/compiler processes remained visible. Resumed the same four builds
 with --max-jobs 1 --cores 2 and a persistent tmp log; do not claim OOM proven.
 Scoped formatting of eight Nix files passed after correcting nix fmt invocation.
+The four-package build hit its 1800-second timeout (exit 124), not a proven OOM.
+The owner explicitly authorized continuing one variant at a time, each limited
+to 1800 seconds with --max-jobs 1 --cores 2, stopping again on timeout.
+Circular-only and nested-only complete packages have now both built successfully.
+The final combined package is building, still with one job/two cores.
+The new standard check evaluates successfully from a 143-file source snapshot,
+including assertions for the legacy export and unchanged default pkgs.nix.
 
-Next finish a local-store, offline matrix (baseline, each patch, both) with
+Next complete the three full packages, combined CLI/topology regression, and
+standard flake-check/export acceptance. Finish a local-store, offline matrix (baseline, each patch, both) with
 lock ownership and output marker assertions. Model nixos -> pkgs -> emarccs ->
 org-texmacs, pkgs -> git-agent-workflow, repeated personal-nixpkgs -> path:./pkgs
 and shared follows, using local tarballs across sources. Confirm dependencies'
