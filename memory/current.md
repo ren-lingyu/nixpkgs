@@ -1,17 +1,21 @@
 # Current project state
 
-## nix-flake-patched: remote patch source validated by owner
+## nix-flake-patched: committed and validated on x86_64-linux
 
 The owner approved the standalone package plan, the name nix-flake-patched,
 flake-check integration and 1800-second heavy builds. Use the five reference
 repositories only for input topology; the owner explicitly replaced live consumer
 integration with minimal synthetic flakes. No reference repository was changed.
-The owner has staged the implementation, passthru/remote-source changes and an
-explicit base-Nix injection refactor; the project remains uncommitted, with no
-unstaged changes on inspection. The owner reports manual build/test success and
-supplied successful cached reruns (see remote-source follow-up below). The agent
-did not rerun builds/tests or change the project index/history, root lockfile,
-reference repositories or system Nix. Await the next instruction.
+The owner committed the reviewed delivery as
+`feat(nix-flake-patched): add Nix with nested relative input fixes`.
+All 11 committed file blobs and modes match the staged diff reviewed for the
+commit draft; the project worktree/index are clean. The owner reports manual
+build/test success and supplied successful cached reruns before committing.
+No checks were rerun merely to associate the now-committed source. This GAW
+checkpoint associates that inspected project snapshot; its parent history was
+already retained, and the newly associated delivery diff was fully reviewed.
+The agent made no project commit, staging, root lockfile change, reference-repo
+change or system Nix replacement. Delivery is complete; await the next instruction.
 
 Pinned Nixpkgs (5adc50831c259f87faeb09ddf930d43597197473) provides nix_2_35 at
 2.35.3 with appendPatches. Package overlay adds only nix-flake-patched. The two
@@ -74,8 +78,9 @@ The owner explicitly authorized one version at a time with --max-jobs 1 --cores 
 all three patched complete packages then succeeded within their individual limits.
 Keep these conservative resource settings for future cold builds. Earlier review
 item 6 was an already-planned prerequisite, not an additional requirement.
-No project parent is attached to this validation checkpoint: tested source is
-uncommitted, so current project HEAD does not represent the validated implementation.
+Initial validation checkpoints omitted project parents because the tested source
+was uncommitted. The committed delivery is now associated after matching its
+blobs/modes to the reviewed staged source; this does not claim post-commit tests.
 
 ### Passthru follow-up: verified
 
@@ -131,10 +136,11 @@ systems were omitted and remain unvalidated. No redundant agent build/test ran.
 Read-only inspection confirms the owner also refactored package.nix to accept
 { fetchpatch, lib, nix } and use nix.appendPatches; overlay.nix explicitly passes
 nix = final_.nixVersions.nix_2_35. passthru.baseNix = nix; patches remain exposed.
-The existing test still asserts base.version == "2.35.3". All 11 delivery files
-are staged, with no unstaged project changes; the ordinary HEAD is unchanged.
-No project parent is attached because the validated staged implementation is
-not represented by that commit. Do not rerun checks merely to create provenance.
+The existing test still asserts base.version == "2.35.3". The owner subsequently
+committed all 11 delivery files. Their full blob/mode identities match the reviewed
+staged diff, and project status is clean. This checkpoint associates the inspected
+committed state; the earlier user-run validation remains pre-commit evidence,
+not an independently repeated post-commit run.
 
 ## Groups: external overlays, include/exclude and documentation committed
 
