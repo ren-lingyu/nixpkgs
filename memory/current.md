@@ -1,6 +1,26 @@
 # Current project state
 
-## nix-flake-patched: committed and validated on x86_64-linux
+## nix-flake-patched: test interface simplified, pending commit
+
+Active follow-up: the owner rejected the default-package/legacy-export equality
+assertion and redundant defaultNix argument, changed flake.nix to pass
+nix-flake-patched = pkgs.nix-flake-patched directly, and requested only tests/
+adaptation. Updated tests/default.nix and the package suite check.nix to accept
+that derivation directly, obtain baseNix/patches from it, and remove both the
+legacy-export equality and defaultNix comparison. Retained base version/type/
+different-from-base checks and the original four-variant runner.
+
+The suite overlay explicitly passes nix-flake-patched = prev.nix-flake-patched
+to check.nix. This is necessary because its output check has the same name;
+automatic final-scope injection would otherwise recurse into the check itself.
+Read the existing mkChecks fixed-point implementation to confirm this routing.
+Scoped nix eval of checks.x86_64-linux.nix-flake-patched.drvPath succeeds and
+returns the unchanged a3mp3m0kszc4hnn2s12rnarmkzz43mga regression derivation.
+No build, formatter or runtime regression was run; diff --check passed. Only
+three tests/ files were edited; the owner's flake.nix edit was preserved, and
+all four changed files remain unstaged. README still describes the old
+nixFlakePatched wrapper and was left unchanged under this tests/-only request.
+Next await owner review; no project parent is added for the dirty follow-up.
 
 The owner approved the standalone package plan, the name nix-flake-patched,
 flake-check integration and 1800-second heavy builds. Use the five reference
@@ -9,13 +29,14 @@ integration with minimal synthetic flakes. No reference repository was changed.
 The owner committed the reviewed delivery as
 `feat(nix-flake-patched): add Nix with nested relative input fixes`.
 All 11 committed file blobs and modes match the staged diff reviewed for the
-commit draft; the project worktree/index are clean. The owner reports manual
+commit draft; the project worktree/index were clean at that delivery. The owner reports manual
 build/test success and supplied successful cached reruns before committing.
-No checks were rerun merely to associate the now-committed source. This GAW
+No checks were rerun merely to associate the now-committed source. The delivery
 checkpoint associates that inspected project snapshot; its parent history was
 already retained, and the newly associated delivery diff was fully reviewed.
 The agent made no project commit, staging, root lockfile change, reference-repo
-change or system Nix replacement. Delivery is complete; await the next instruction.
+change or system Nix replacement. The core package delivery is complete; the
+active interface follow-up is described above.
 
 Pinned Nixpkgs (5adc50831c259f87faeb09ddf930d43597197473) provides nix_2_35 at
 2.35.3 with appendPatches. Package overlay adds only nix-flake-patched. The two
@@ -138,7 +159,7 @@ Read-only inspection confirms the owner also refactored package.nix to accept
 nix = final_.nixVersions.nix_2_35. passthru.baseNix = nix; patches remain exposed.
 The existing test still asserts base.version == "2.35.3". The owner subsequently
 committed all 11 delivery files. Their full blob/mode identities match the reviewed
-staged diff, and project status is clean. This checkpoint associates the inspected
+staged diff, and project status was clean then. The delivery checkpoint associates the inspected
 committed state; the earlier user-run validation remains pre-commit evidence,
 not an independently repeated post-commit run.
 
