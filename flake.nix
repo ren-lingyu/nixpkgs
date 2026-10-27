@@ -5,20 +5,9 @@
     nixpkgs = {
       url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1";
     };
-    flake-parts = {
-      url = "git+https://github.com/hercules-ci/flake-parts.git?ref=refs/heads/main&shallow=1";
-    };
-    treefmt-nix = {
-      url = "git+https://github.com/numtide/treefmt-nix.git?ref=refs/heads/main&shallow=1";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     local-nixpkgs = {
       url = "path:./pkgs";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-parts.follows = "flake-parts";
-        treefmt-nix.follows = "treefmt-nix";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 

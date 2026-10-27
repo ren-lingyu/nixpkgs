@@ -22,15 +22,11 @@
     },
     "local-nixpkgs": {
       "inputs": {
-        "flake-parts": [
-          "flake-parts"
-        ],
+        "flake-parts": "flake-parts",
         "nixpkgs": [
           "nixpkgs"
         ],
-        "treefmt-nix": [
-          "treefmt-nix"
-        ]
+        "treefmt-nix": "treefmt-nix"
       },
       "locked": {
         "path": "./pkgs",
@@ -76,15 +72,14 @@
     },
     "root": {
       "inputs": {
-        "flake-parts": "flake-parts",
         "local-nixpkgs": "local-nixpkgs",
-        "nixpkgs": "nixpkgs",
-        "treefmt-nix": "treefmt-nix"
+        "nixpkgs": "nixpkgs"
       }
     },
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": [
+          "local-nixpkgs",
           "nixpkgs"
         ]
       },
