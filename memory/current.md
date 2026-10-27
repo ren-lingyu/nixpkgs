@@ -1,6 +1,6 @@
 # Current project state
 
-## nix-flake-patched: test interface simplified, pending commit
+## nix-flake-patched: test interface committed, README synchronized
 
 Active follow-up: the owner rejected the default-package/legacy-export equality
 assertion and redundant defaultNix argument, changed flake.nix to pass
@@ -18,9 +18,24 @@ Scoped nix eval of checks.x86_64-linux.nix-flake-patched.drvPath succeeds and
 returns the unchanged a3mp3m0kszc4hnn2s12rnarmkzz43mga regression derivation.
 No build, formatter or runtime regression was run; diff --check passed. Only
 three tests/ files were edited; the owner's flake.nix edit was preserved, and
-all four changed files remain unstaged. README still describes the old
-nixFlakePatched wrapper and was left unchanged under this tests/-only request.
-Next await owner review; no project parent is added for the dirty follow-up.
+the owner has now committed all four files as
+`test(nix-flake-patched): simplify regression check arguments`. The complete
+committed diff matches the reviewed staged change and the project is clean.
+No post-commit build/test was run. The owner requested README synchronization,
+which is now complete in the unstaged README.org worktree change.
+
+Also inspected the intervening complete package/dev-shell export commit: internal
+groups are now treefmt (lisplens, elisp-autofmt), nix (nix-flake-patched), and
+legacy (all directory-selected packages, exported). mkFlake applies treefmt and
+nix overlays and provides devShells.nix with the patched binary first on PATH.
+The root exports packages.nix as the patched package. pkgs.nix itself remains
+unmodified. README now documents these group/output details, explicit shell selection, the
+direct test argument and prev injection, as well as the existing patch exclusion
+and Cabal project formatter. Source claims were checked against current committed
+files. diff --check passed; no build/test/formatter ran. Only README.org is dirty,
+with no staged project changes. Next owner review/commit of the documentation.
+This checkpoint grounds the inspected committed implementation; the documentation
+edit itself remains uncommitted.
 
 The owner approved the standalone package plan, the name nix-flake-patched,
 flake-check integration and 1800-second heavy builds. Use the five reference
@@ -52,9 +67,10 @@ Unmodified Nix reproduces both bugs. Both single-patch full packages and the fin
 combined full package built successfully using upstream appendPatches; upstream
 unit/functional build gates remain enabled. The final package reports
 nix (Nix) 2.35.3+2. Root legacyPackages.x86_64-linux.nix-flake-patched builds to
-exactly the same derivation/output as the tested combined package. Standard check
-assertions also prove the default group's package equals the legacy export and
-pkgs.nix has the unchanged clean-Nixpkgs derivation.
+exactly the same derivation/output as the tested combined package at original
+acceptance. The old export/default-Nix equality assertions were subsequently
+removed at the owner's request; current tests retain base version/type and
+different-from-base assertions.
 
 The four-full-package matrix passed 106 isolated command outcomes, including
 expected baseline failures (23 baseline/setup, 16 circular-only, 27 nested-only,
@@ -88,8 +104,8 @@ for interpreting these distilled conclusions. At original acceptance new files w
 explicitly included them without agent staging. They are now owner-staged and
 normal Git Flake filtering includes them.
 
-README describes usage/temporary status/regression cost and the new explicit
-nixFlakePatched test argument. .gitignore narrowly admits this package's patches;
+README describes usage/temporary status/regression cost and the direct
+nix-flake-patched test argument. .gitignore narrowly admits this package's patches;
 the owner subsequently changed root treefmt to exclude *.patch, which was preserved. Test dependencies flow through root/test
 arguments; no cross-parent fixture imports or shared-library changes were made.
 
