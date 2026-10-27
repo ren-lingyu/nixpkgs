@@ -24,8 +24,9 @@ The source is organized as follows:
 | =pkgs/modules/fp/= | Shared flake-parts modules, currently treefmt configuration. |
 | =tests/= | Library suites, independent test-assembly acceptance cases and fixtures. |
 
-The root exports =lib=, =legacyPackages=, =formatter= and =checks=. Its public
-=lib= contains =mkFlake=, =mergeAttrsRecursive=, =packages= and =tests=.
+The root exports =lib=, =packages=, =legacyPackages=, =devShells=, =formatter=
+and =checks=. Its public =lib= contains =mkFlake=, =mergeAttrsRecursive=,
+=packages= and =tests=.
 The subflake's library additionally contains =overlays.mkOverlays= for internal
 use, including the generic overlay suite; the root does not export that entry.
 
@@ -61,8 +62,10 @@ implicitly extend the =lib= argument with =llib=.
 
 The wrapper declares =perSystem.nixpkgs.overlays= as a list of overlays and uses
 it to import Nixpkgs for each system, forcing that result as the per-system
-=pkgs= argument. The foundation's internal =default= overlay group participates
-in this list; caller modules may add their own overlays. The wrapper also loads
+=pkgs= argument. The foundation's internal =treefmt= and =nix= overlay groups
+participate in this list; caller modules may add their own overlays. The wrapper
+provides =devShells.${system}.nix= with =nix-flake-patched= and puts its =bin=
+first on =PATH= when entering the shell. It also loads
 treefmt-nix and the shared treefmt module. It does not automatically load the
 flake-parts =modules= module.
 
@@ -72,7 +75,7 @@ check by default through =lib.mkDefault true=. It derives =projectRootFile= from
 the basename of =moduleLocation=, forces treefmt's default excludes off, and
 defaults the explicit exclude list to =[ ]=. Unmatched files are fatal, so
 consumers must configure exclusions for files outside their formatter coverage.
-The root excludes =.gitignore=, =LICENSE=, =README.org= and =flake.lock=.
+The root excludes =.gitignore=, =LICENSE=, =README.org=, =flake.lock= and =*.patch=.
 
 | Files | Formatter |
 |-------+-----------|
@@ -80,7 +83,7 @@ The root excludes =.gitignore=, =LICENSE=, =README.org= and =flake.lock=.
 | Shell | shfmt, indent 2, simplification disabled. |
 | Prettier-supported files | prettier, width 100, tab width 2, preserved prose wrapping and LF endings. |
 | Haskell | fourmolu. |
-| Cabal | cabal-fmt. |
+| Cabal | cabal-fmt; the cabal-project-fmt entry formats project files using =--no-cabal-file --inplace=. |
 | XML | xmllint. |
 | Python | ruff-format, line length 100. |
 | TOML | taplo. |
@@ -118,14 +121,20 @@ nix build -L .#legacyPackages.x86_64-linux.nix-flake-patched
 ./result/bin/nix --version
 #+end_src
 
-Use the resulting =bin/nix= explicitly. The =nix-flake-patched= check builds the
+The root also exposes this package as =packages.${system}.nix=. Build it with
+=nix build .#nix= and use the resulting =bin/nix= explicitly, or enter the shared
+shell with =nix develop .#nix= to use the patched binary on =PATH= for that shell.
+
+The =nix-flake-patched= check builds the
 unmodified version, each single patch and the combined package; its first build
 can be expensive. It runs offline using private local stores and synthetic
 Flakes modeled on the consumer repositories, including their repeated
 =path:./pkgs= inputs and =follows=. These tests do not build the real consumers.
 
-The internal =default= group adds the packages without a selection export;
-the =legacy= group also adds the directory-selected =legacyPackages= attribute.
+The internal =treefmt= group selects =lisplens= and =elisp-autofmt=, while the
+=nix= group selects =nix-flake-patched=; neither adds a selection export.
+The =legacy= group selects all packages and adds the directory-selected
+=legacyPackages= attribute.
 The subflake applies =legacy= to its own package set and exports that selection
 by system. The root forwards it directly. These overlay groups are internal;
 neither flake exports an =overlays= output.
@@ -462,14 +471,16 @@ Passing =separator = "-"= or =separator = "."= changes that name to
 for name collisions introduced by their chosen separator.
 
 * Tests
-=tests/default.nix= accepts ={ llib, lib, pkgs, nixFlakePatched }= and returns the
+=tests/default.nix= accepts ={ llib, lib, pkgs, nix-flake-patched }= and returns the
 complete check derivation set. Ordinary suites live under =tests/suites/=, each
 with a =cases.nix= expression, a =test-overlay.nix= entry, and any local fixtures.
 The functional =nix-flake-patched= suite instead has a check wrapper, fixture
 specification and Python runner embedded in Nix files. Its explicit
-=nixFlakePatched= argument carries the package, legacy export and default Nix
-from the root. The suite reads its base Nix and patch paths from the package's
-=passthru= metadata, keeping cross-directory dependencies explicit.
+=nix-flake-patched= argument is the package derivation supplied by the root.
+The suite reads its base Nix and patch paths from the package's =passthru=
+metadata. Its overlay explicitly supplies =prev.nix-flake-patched= to the check
+wrapper because the check has the same name as the package argument; this avoids
+resolving the argument to the check itself through the final test scope.
 The entry passes existing API checks and shared arguments to =lib.tests.mkChecks=,
 which builds the test scope, applies discovered overlays, and extracts checks.
 =callPackage= supplies each report wrapper's arguments;
