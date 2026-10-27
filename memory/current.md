@@ -1,14 +1,16 @@
 # Current project state
 
-## nix-flake-patched: implemented and validated on x86_64-linux
+## nix-flake-patched: remote patch source updated, validation deferred
 
 The owner approved the standalone package plan, the name nix-flake-patched,
 flake-check integration and 1800-second heavy builds. Use the five reference
 repositories only for input topology; the owner explicitly replaced live consumer
 integration with minimal synthetic flakes. No reference repository was changed.
-The owner staged the original implementation after acceptance; it remains
-uncommitted. The passthru follow-up below is unstaged on top of that owner-managed
-index. The agent made no ordinary Git index/history change, root lockfile update
+The owner staged the original implementation and passthru follow-up; they remain
+uncommitted. The remote-patch follow-up below is unstaged on top of that
+owner-managed index. At the owner's explicit request, this latest change has not
+been evaluated, formatted, built or regression-tested. Earlier acceptance results
+below cover the prior locally vendored patch representation. The agent made no ordinary Git index/history change, root lockfile update
 or system Nix replacement. Await owner review and the next instruction.
 
 Pinned Nixpkgs (5adc50831c259f87faeb09ddf930d43597197473) provides nix_2_35 at
@@ -92,7 +94,34 @@ full root nix flake check --no-write-lock-file -L --max-jobs 1 --cores 2 passed.
 The regression drvPath is unchanged, so its earlier 106 successful outcomes were
 reused, not rerun; only the changed treefmt check rebuilt (143 traversed, 137
 processed, no changes). Other systems remain unvalidated. User staging and existing
-unstaged edits were preserved; the four-file follow-up remains unstaged.
+unstaged edits were preserved; that four-file follow-up was subsequently staged
+by the owner.
+
+### Remote #14762 patch source: changed without building
+
+The owner requested switching the upstream-identical patch to remote fetching,
+but explicitly prohibited building for this change. package.nix now uses fetchpatch
+with immutable commit URL
+https://github.com/NixOS/nix/commit/3337ecd3b0ce0dea6200364ccb2afd82f43a692f.patch,
+name fix-nested-relative-path.patch, includes = [ "src/libflake/flake.cc" ], and
+hash sha256-c9BGEKrtwRw6+y8AtALfWgwXhuydASQEwTHu851Yi70=.
+The local fix-nested-relative-path.patch was removed; #4811 remains local.
+README explains the source distinction. passthru.patches still supplies both
+sources to the tests; no test/root patch wiring change is needed.
+
+To obtain a real hash without a Nix build/evaluation, downloaded the immutable
+commit patch (identical to the previous PR download) and copied the existing
+patchutils 0.3.3 binary from cache.nixos.org using nix copy, which does not build.
+The pinned Nixpkgs fetchpatch explicitly uses patchutils_0_3_3. Applied its exact
+lsdiff/sorted per-file filterdiff --strip=0 --clean and final -p1 include filtering
+in tmp, then SHA-256/SRI hashed the 1309-byte result. Normalizing the former local
+patch yielded exactly the same C++ diff. No fake hash was used. Read-only diff
+--check passed. No nix build, evaluation, formatter or regression was executed.
+The fixed-output fetchpatch derivation and resulting package still need actual
+Nix validation later; prior package/regression drvPath equivalence cannot be
+assumed after changing the patch representation/source. Preserve the owner's
+current staging; all three project-file changes remain unstaged. Next await an
+explicit request to evaluate/build/test, using conservative 1-job/2-core settings.
 
 ## Groups: external overlays, include/exclude and documentation committed
 
