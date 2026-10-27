@@ -1,14 +1,15 @@
 # Current project state
 
-## mkFlake argument diagnostics: implemented, not committed
+## mkFlake argument diagnostics: committed
 
 The owner reported an unreadable list-comparison assertion for a missing
 moduleLocation. pkgs/flake.nix now computes missingArgs and uses nixpkgs.lib.assertMsg
 for the existing return-attrset, required-attributes and specialArgs-attrset checks.
 Missing-field errors identify mkFlake, list the absent attributes and suggest
 moduleLocation = ./flake.nix; or __curPos.file in the argument function's result.
-Validation conditions and argument semantics are unchanged. Only pkgs/flake.nix
-is modified, not staged or committed. The owner authorized scoped nix fmt and a
+The original validation conditions and argument semantics are unchanged, with
+the additional function-type guard described below. Only pkgs/flake.nix was
+modified. The owner authorized scoped nix fmt and a
 30s impure nix eval deliberately omitting moduleLocation. Formatting and diff
 --check passed. Eval initially could not access the daemon in the sandbox; the
 same authorized command succeeded in reaching the intended failure after
@@ -20,8 +21,14 @@ assertion for argsFun before args is forced, with an argument-function example.
 This prevents the generic non-function call error for a second argument attrset.
 The owner separately authorized formatting and a 30s eval passing {} as that
 argument. Formatting changed no files; the probe reached the expected explicit
-mkFlake error (exit 1). Project changes remain limited to unstaged pkgs/flake.nix.
-Await review/commit instructions.
+mkFlake error (exit 1).
+The owner requested commit drafting, waiting for HEAD movement, then GAW update.
+Drafted `fix(lib.mkFlake): clarify invalid argument errors` from the staged diff.
+Polling observed HEAD move from the locked-Nixpkgs update to that diagnostics
+commit; its complete committed diff matches the reviewed staged change. Project
+worktree is clean. This checkpoint associates the inspected diagnostics snapshot.
+The two negative probes ran before commit; no full check, build or post-commit
+rerun was performed. Await the next instruction.
 
 ## nix-flake-patched: implementation and README committed
 
