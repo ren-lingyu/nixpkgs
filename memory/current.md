@@ -6,9 +6,10 @@ The owner approved the standalone package plan, the name nix-flake-patched,
 flake-check integration and 1800-second heavy builds. Use the five reference
 repositories only for input topology; the owner explicitly replaced live consumer
 integration with minimal synthetic flakes. No reference repository was changed.
-The implementation is complete, unstaged and uncommitted in the project worktree.
-No ordinary Git index/history change, root lockfile update or system Nix replacement
-was made. Await owner review and the next instruction.
+The owner staged the original implementation after acceptance; it remains
+uncommitted. The passthru follow-up below is unstaged on top of that owner-managed
+index. The agent made no ordinary Git index/history change, root lockfile update
+or system Nix replacement. Await owner review and the next instruction.
 
 Pinned Nixpkgs (5adc50831c259f87faeb09ddf930d43597197473) provides nix_2_35 at
 2.35.3 with appendPatches. Package overlay adds only nix-flake-patched. The two
@@ -53,16 +54,16 @@ against tmp/nix-flake-patched-source. All 9 x86_64-linux check derivations evalu
 the new functional check ran all 106 outcomes inside the Nix build sandbox and
 existing checks passed/reused their outputs. Treefmt traversed 143 files, processed
 137 and changed none. Other incompatible systems were skipped, not validated.
-The 143-file snapshot was compared with final project files and modes before and
-after validation and matches exactly; root export build/version and diff --check
+For original acceptance, the 143-file snapshot matched the project files and
+modes before and after that validation; root export build/version and diff --check
 passed. Source manifest/results/logs are incidental tmp artifacts, not required
-for interpreting these distilled conclusions. Since new project files remain
-untracked, ordinary Git Flake source filtering omits them until owner staging;
-the checked snapshot explicitly includes all new files without project staging.
+for interpreting these distilled conclusions. At original acceptance new files were untracked, so the checked snapshot
+explicitly included them without agent staging. They are now owner-staged and
+normal Git Flake filtering includes them.
 
 README describes usage/temporary status/regression cost and the new explicit
 nixFlakePatched test argument. .gitignore narrowly admits this package's patches;
-root treefmt narrowly excludes them. Test dependencies flow through root/test
+the owner subsequently changed root treefmt to exclude *.patch, which was preserved. Test dependencies flow through root/test
 arguments; no cross-parent fixture imports or shared-library changes were made.
 
 Resource history: an initial process disappeared after a possible owner-reported
@@ -73,6 +74,25 @@ Keep these conservative resource settings for future cold builds. Earlier review
 item 6 was an already-planned prerequisite, not an additional requirement.
 No project parent is attached to this validation checkpoint: tested source is
 uncommitted, so current project HEAD does not represent the validated implementation.
+
+### Passthru follow-up: verified
+
+The owner requested carrying both patch files and the underlying unmodified Nix
+in the package passthru. package.nix now defines baseNix and the ordered patches
+once, exposing passthru.baseNix/passthru.patches and the standard top-level
+baseNix/patches accessors. lib.extendDerivation preserves the upstream overriding
+methods and propagates this metadata to each output without changing the build.
+Tests obtain their base and single-patch inputs from the package; the root no
+longer duplicates patch paths. README explains the accessors and test wiring.
+
+Evaluation confirms the package drvPath/output are exactly unchanged from original
+acceptance; top-level/passthru values match, output metadata exists, and appendPatches
+and overrideScope remain functions. Scoped formatting of the three Nix files and
+full root nix flake check --no-write-lock-file -L --max-jobs 1 --cores 2 passed.
+The regression drvPath is unchanged, so its earlier 106 successful outcomes were
+reused, not rerun; only the changed treefmt check rebuilt (143 traversed, 137
+processed, no changes). Other systems remain unvalidated. User staging and existing
+unstaged edits were preserved; the four-file follow-up remains unstaged.
 
 ## Groups: external overlays, include/exclude and documentation committed
 
