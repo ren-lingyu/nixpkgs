@@ -1,0 +1,49 @@
+Subject: [PATCH] flake: detect relative import cycles within their source tree
+
+For Nix 2.35.3. Fixes https://github.com/NixOS/nix/issues/4811.
+Compare resolved relative flake paths, including their source accessor, on
+an active ancestor stack. Canonical paths also catch aliases through '..'.
+Apply this guard to both new and retained relative nodes; keep the existing
+FlakeRef guard for non-relative references. Do not globally deduplicate inputs.
+
+--- a/src/libflake/flake.cc
++++ b/src/libflake/flake.cc
+@@ -462,6 +462,9 @@
+         LockFile newLockFile;
+ 
+         std::vector<FlakeRef> parents;
++        // Relative references identify a flake only within its source tree.
++        // Keep resolved paths (accessor and canonical path) on the active stack.
++        std::vector<SourcePath> relativeParents{flake.path};
+ 
+         std::function<void(
+             const FlakeInputs & flakeInputs,
+@@ -598,6 +601,19 @@
+                             return getFlake(state, ref, useRegistries, inputAttrPath);
+                         }
+                     };
++
++                    auto relativeFlakePath = input.isFlake ? resolveRelativePath() : std::nullopt;
++                    if (relativeFlakePath) {
++                        *relativeFlakePath = *relativeFlakePath / CanonPath(input.ref->subdir) / "flake.nix";
++                        if (std::find(relativeParents.begin(), relativeParents.end(), *relativeFlakePath)
++                            != relativeParents.end())
++                            throw Error("found circular import of flake '%s'", *input.ref);
++                        relativeParents.push_back(*relativeFlakePath);
++                    }
++                    Finally cleanupRelative([&]() {
++                        if (relativeFlakePath)
++                            relativeParents.pop_back();
++                    });
+ 
+                     /* Do we have an entry in the existing lock file?
+                        And the input is not in updateInputs? */
+@@ -718,7 +734,7 @@
+ 
+                             /* Guard against circular flake imports. */
+                             for (auto & parent : parents)
+-                                if (parent == *input.ref)
++                                if (!input.ref->input.isRelative() && parent == *input.ref)
+                                     throw Error("found circular import of flake '%s'", parent);
+                             parents.push_back(*input.ref);
+                             Finally cleanup([&]() { parents.pop_back(); });

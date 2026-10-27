@@ -69,11 +69,17 @@
                   inherit llib;
                   pkgs = import inputs.nixpkgs { inherit system; };
                   lib = pkgs.lib;
+                  nixFlakePatched = {
+                    package = pkgs.nix-flake-patched;
+                    legacyPackage = lpkgs.legacyPackages.${system}.nix-flake-patched;
+                    defaultNix = pkgs.nix;
+                  };
                 };
 
                 treefmt = {
                   flakeCheck = true;
                   settings.excludes = [
+                    "*.patch"
                     ".gitignore"
                     "LICENSE"
                     "README.org"

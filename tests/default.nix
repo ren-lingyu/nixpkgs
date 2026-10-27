@@ -2,6 +2,7 @@
   llib,
   lib,
   pkgs,
+  nixFlakePatched,
 }:
 let
   mkResultCheck_ =
@@ -14,13 +15,19 @@ let
     overlayFile = overlayFile_;
     checks = directChecks_;
     args = {
-      inherit llib lib pkgs;
+      inherit
+        llib
+        lib
+        pkgs
+        nixFlakePatched
+        ;
       mkResultCheck = mkResultCheck_;
     };
   };
   expectedNames_ = lib.sort builtins.lessThan (
     [
       "mergeAttrsRecursive"
+      "nix-flake-patched"
       "overlays"
       "packages"
     ]

@@ -22,6 +22,7 @@
 !/pkgs/pkgs/
 !/pkgs/pkgs/**/
 !/pkgs/pkgs/**/*.nix
+!/pkgs/pkgs/nix-flake-patched/patches/*.patch
 
 !/pkgs/modules/
 !/pkgs/modules/**/
