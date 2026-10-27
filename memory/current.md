@@ -1,5 +1,46 @@
 # Current project state
 
+## nix-flake-patched: plan reviewed, implementation not authorized
+
+The owner requested memory/worktree inspection and review of a proposed standalone
+nix-flake-patched package for Nix issues #4811 and #14762 (PR #15982).
+Project main and formal memory were clean; GAW status/check passed. Root already
+uses path:./pkgs. Current pkgs/pkgs/default.nix selects all discovered overlays
+for default and legacy, exporting the latter; root forwards subflake legacyPackages.
+No matching experimental patches were found in the bounded tmp file listing or
+relevant memory search. Their location/content remain unknown.
+
+Review recommendations, pending owner adoption:
+- Keep the proposed independent package/appendPatches design; do not replace pkgs.nix.
+  Pinned Nixpkgs rev is 5adc50831c259f87faeb09ddf930d43597197473. Public master
+  has nix_2_35 at 2.35.3 and source-wide appendPatches, but pinned-source web
+  retrieval failed. Exact pinned interface/version and patch applicability remain
+  unverified; no Nix evaluation, build or functional test was run.
+- Add package-specific patch exclusions in root flake.nix: shared treefmt disables
+  default excludes and sets on-unmatched=fatal. Do not change the shared framework.
+- Compare baseline, each single patch and both patches on the same 2.35.3 base;
+  keep intermediate variants private to testing, not public package parameters.
+- For #14762 retain dependency-owned lockfiles and prove kept-node traversal;
+  deleting only the consumer root lockfile does not remove dependency lockfiles.
+  PR #15982 describes selective refetch for kept flakes with relative inputs,
+  rather than simply substituting a sourcePath argument. Exact PR diff was not
+  retrievable via the web tool. Pin the reviewed upstream commit before vendoring.
+- Test real cycles including path aliases and multi-node cycles, plus noncyclic
+  repeated references; source context must not make the same target appear new
+  indefinitely. Assert evaluated per-directory marker values as well as lock graph.
+- Real nixos.git integration needs an explicitly identified/authorized workspace
+  and isolated source snapshots. Restore workarounds only where actually present;
+  do not edit the owner's live consumer or advance unrelated upstream revisions.
+- New untracked package/patch files need deliberate inclusion in the tested source;
+  a Git flake may omit them. Build the patched executable before consumer testing.
+
+Public evidence: https://github.com/NixOS/nix/issues/4811,
+https://github.com/NixOS/nix/issues/14762,
+https://github.com/NixOS/nix/pull/15982,
+https://raw.githubusercontent.com/NixOS/nix/2.35.3/src/libflake/flake.cc.
+Next: owner reviews recommendations and defines implementation/test authorization.
+No project source, index, lockfile, system Nix or external repository was changed.
+
 ## Groups: external overlays, include/exclude and documentation committed
 
 The owner requests groups.<name>.overlays for packages.mkOverlays: a function
