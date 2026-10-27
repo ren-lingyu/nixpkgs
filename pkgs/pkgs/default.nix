@@ -3,7 +3,16 @@
     root = ./.;
     overlayFile = "overlay.nix";
     groups = {
-      default = { };
+      treefmt = {
+        include = [
+          "lisplens"
+          "elisp-autofmt"
+        ];
+      };
+
+      nix = {
+        include = [ "nix-flake-patched" ];
+      };
 
       legacy = {
         export = true;

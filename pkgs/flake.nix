@@ -73,7 +73,9 @@
                     inputs.flake-parts.lib.mkFlake flakeArgs {
                       imports = [
                         {
-                          perSystem =
+                          imports = [ inputs.treefmt-nix.flakeModule ];
+
+                          config.perSystem =
                             {
                               llib,
                               lpkgs,
@@ -103,14 +105,21 @@
                                     }
                                   );
                                 };
+
+                                nixpkgs.overlays = with toplevel.lpkgs.overlays; [
+                                  treefmt
+                                  nix
+                                ];
+
+                                devShells = {
+                                  nix = pkgs.mkShellNoCC {
+                                    packages = [ pkgs.nix-flake-patched ];
+
+                                    shellHook = ''export PATH="${pkgs.nix-flake-patched}/bin:$PATH"'';
+                                  };
+                                };
                               };
                             };
-                        }
-                        inputs.treefmt-nix.flakeModule
-                        {
-                          perSystem = {
-                            nixpkgs.overlays = [ toplevel.lpkgs.overlays.default ];
-                          };
                         }
                         ./modules/fp/treefmt
                         module

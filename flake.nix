@@ -65,6 +65,10 @@
               {
                 legacyPackages = lpkgs.legacyPackages.${system};
 
+                packages = {
+                  nix = pkgs.nix-flake-patched;
+                };
+
                 checks = import ./tests {
                   inherit llib;
                   pkgs = import inputs.nixpkgs { inherit system; };
