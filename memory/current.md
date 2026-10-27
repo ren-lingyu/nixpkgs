@@ -1,8 +1,8 @@
 # Current project state
 
-## nix-flake-patched: test interface committed, README synchronized
+## nix-flake-patched: implementation and README committed
 
-Active follow-up: the owner rejected the default-package/legacy-export equality
+Completed follow-up: the owner rejected the default-package/legacy-export equality
 assertion and redundant defaultNix argument, changed flake.nix to pass
 nix-flake-patched = pkgs.nix-flake-patched directly, and requested only tests/
 adaptation. Updated tests/default.nix and the package suite check.nix to accept
@@ -22,7 +22,7 @@ the owner has now committed all four files as
 `test(nix-flake-patched): simplify regression check arguments`. The complete
 committed diff matches the reviewed staged change and the project is clean.
 No post-commit build/test was run. The owner requested README synchronization,
-which is now complete in the unstaged README.org worktree change.
+now committed as `docs(readme): describe patched Nix outputs and test wiring`.
 
 Also inspected the intervening complete package/dev-shell export commit: internal
 groups are now treefmt (lisplens, elisp-autofmt), nix (nix-flake-patched), and
@@ -32,10 +32,10 @@ The root exports packages.nix as the patched package. pkgs.nix itself remains
 unmodified. README now documents these group/output details, explicit shell selection, the
 direct test argument and prev injection, as well as the existing patch exclusion
 and Cabal project formatter. Source claims were checked against current committed
-files. diff --check passed; no build/test/formatter ran. Only README.org is dirty,
-with no staged project changes. Next owner review/commit of the documentation.
-This checkpoint grounds the inspected committed implementation; the documentation
-edit itself remains uncommitted.
+files. diff --check passed; no build/test/formatter ran. The full committed
+README diff matches the reviewed staged documentation. Project worktree/index
+are clean. This checkpoint grounds the inspected committed documentation and
+implementation; no post-commit build/test was run. Await the next instruction.
 
 The owner approved the standalone package plan, the name nix-flake-patched,
 flake-check integration and 1800-second heavy builds. Use the five reference
