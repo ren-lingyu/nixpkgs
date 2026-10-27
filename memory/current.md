@@ -5,7 +5,7 @@
 The owner reported an unreadable list-comparison assertion for a missing
 moduleLocation. pkgs/flake.nix now computes missingArgs and uses nixpkgs.lib.assertMsg
 for the existing return-attrset, required-attributes and specialArgs-attrset checks.
-Missing-field errors identify lib.mkFlake, list the absent attributes and suggest
+Missing-field errors identify mkFlake, list the absent attributes and suggest
 moduleLocation = ./flake.nix; or __curPos.file in the argument function's result.
 Validation conditions and argument semantics are unchanged. Only pkgs/flake.nix
 is modified, not staged or committed. The owner authorized scoped nix fmt and a
@@ -13,7 +13,15 @@ is modified, not staged or committed. The owner authorized scoped nix fmt and a
 --check passed. Eval initially could not access the daemon in the sandbox; the
 same authorized command succeeded in reaching the intended failure after
 escalation, emitting the new explicit message. Exit 1 is expected for that probe;
-no full flake check or builds were run. Await review/commit instructions.
+no full flake check or builds were run.
+Follow-up: the owner requires diagnostic names to use mkFlake at most, never
+lib.mkFlake. All four messages now use that prefix. Added a leading isFunction
+assertion for argsFun before args is forced, with an argument-function example.
+This prevents the generic non-function call error for a second argument attrset.
+The owner separately authorized formatting and a 30s eval passing {} as that
+argument. Formatting changed no files; the probe reached the expected explicit
+mkFlake error (exit 1). Project changes remain limited to unstaged pkgs/flake.nix.
+Await review/commit instructions.
 
 ## nix-flake-patched: implementation and README committed
 
