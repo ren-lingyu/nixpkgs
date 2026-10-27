@@ -1,69 +1,78 @@
 # Current project state
 
-## nix-flake-patched: implementation in progress
+## nix-flake-patched: implemented and validated on x86_64-linux
 
-The owner approved the plan, name nix-flake-patched, flake-check integration and
-1800-second heavy builds. Reference repositories are read-only input-topology
-examples; use minimal synthetic flakes instead of running live configurations.
-Formal GAW check passed. Project and memory were clean at implementation start.
-Pinned Nixpkgs confirms nix_2_35 version 2.35.3 and functional appendPatches.
-Review item 6 was an existing prerequisite, not an additional plan requirement.
-PR #15982 .patch was downloaded after API 403; source commit is
-3337ecd3b0ce0dea6200364ccb2afd82f43a692f. Its C++ hunk is unchanged locally.
-Both independent patches pass patch --dry-run against the fetched 2.35.3 source.
+The owner approved the standalone package plan, the name nix-flake-patched,
+flake-check integration and 1800-second heavy builds. Use the five reference
+repositories only for input topology; the owner explicitly replaced live consumer
+integration with minimal synthetic flakes. No reference repository was changed.
+The implementation is complete, unstaged and uncommitted in the project worktree.
+No ordinary Git index/history change, root lockfile update or system Nix replacement
+was made. Await owner review and the next instruction.
 
-Package, root wiring, synthetic fixtures, runner and README are implemented. #4811 candidate uses a relative
-SourcePath ancestor stack, including accessor/canonical path, root seed and RAII
-cleanup across new/retained nodes; keep the non-relative FlakeRef guard.
-Both single-patch complete packages build successfully, including their
-upstream build gates. Combined complete-package acceptance remains pending.
-.gitignore needed a narrowly scoped patch exception; root treefmt excludes these patches. Pass package,
-legacy export, default Nix and patch sources through explicit test arguments;
-preserve the no-cross-parent-import test convention. No public variant knobs.
+Pinned Nixpkgs (5adc50831c259f87faeb09ddf930d43597197473) provides nix_2_35 at
+2.35.3 with appendPatches. Package overlay adds only nix-flake-patched. The two
+patches stay separate: #4811 uses an active relative SourcePath ancestor stack
+(accessor and canonical flake path, root seed, RAII cleanup, new/retained nodes),
+while retaining the original non-relative FlakeRef guard. #14762 uses the unchanged
+C++ hunk from PR #15982, commit 3337ecd3b0ce0dea6200364ccb2afd82f43a692f, selectively
+refetching kept flakes with relative inputs. Upstream release-note/test hunks are
+omitted in favor of local package tests. Both patches apply independently and
+together to 2.35.3. Remove fixes independently when included in a future base.
 
-Baseline runner passed 17 isolated operations on unmodified 2.35.3: repeated
-same-source and cross-source relative paths fail with circular-import errors;
-the dependency-owned-lock fixture fails at the wrong subflake source path;
-self/two-node/alias cycles correctly report circular imports; shared siblings
-and fresh deep locking succeed. The synthetic five-repository topology also
-fails at the wrong source path. Setup first verifies builtins.storeDir and a
-minimal successful lock/eval in the private store, so environment failures are
-not accepted as regressions. Explicit path: root references avoid Git filtering.
-Evidence is tmp/nix-flake-patched-baseline-3/results/results.json (incidental;
-substantive results are distilled here). Added an absolute-path cycle case too.
-The available baseline/circular/nested CLI components passed 63 isolated command
-outcomes, including expected failures: each single patch fixes its own reproducer
-and preserves the other bug; all self/two-node/alias/absolute cycles are detected;
-shared siblings succeed. Nested patch also passes existing root/dependency lock
-reuse, actual v1-to-v2 nested source override/update, root-only recreation and
-marker/parent assertions. Evidence: tmp/nix-flake-patched-cli-tests-1/results.
-These are CLI-component results, not final combined-package acceptance.
-After adding source-identity comparisons independent of generated lock node names
-and an unrelated dependency preserved during the v1-to-v2 update, the same 63
-outcomes passed again. The topology's local-nixpkgs update explicitly uses -v -L.
-The two successful full-package builds retain upstream unit/functional test gates;
-no test disabling or cycle-check weakening was used.
+Unmodified Nix reproduces both bugs. Both single-patch full packages and the final
+combined full package built successfully using upstream appendPatches; upstream
+unit/functional build gates remain enabled. The final package reports
+nix (Nix) 2.35.3+2. Root legacyPackages.x86_64-linux.nix-flake-patched builds to
+exactly the same derivation/output as the tested combined package. Standard check
+assertions also prove the default group's package equals the legacy export and
+pkgs.nix has the unchanged clean-Nixpkgs derivation.
 
-The first build process disappeared without results after a possible user-reported
-OOM. No Nix/compiler processes remained visible. Resumed the same four builds
-with --max-jobs 1 --cores 2 and a persistent tmp log; do not claim OOM proven.
-Scoped formatting of eight Nix files passed after correcting nix fmt invocation.
-The four-package build hit its 1800-second timeout (exit 124), not a proven OOM.
-The owner explicitly authorized continuing one variant at a time, each limited
-to 1800 seconds with --max-jobs 1 --cores 2, stopping again on timeout.
-Circular-only and nested-only complete packages have now both built successfully.
-The final combined package is building, still with one job/two cores.
-The new standard check evaluates successfully from a 143-file source snapshot,
-including assertions for the legacy export and unchanged default pkgs.nix.
+The four-full-package matrix passed 106 isolated command outcomes, including
+expected baseline failures (23 baseline/setup, 16 circular-only, 27 nested-only,
+40 combined). Each variant/case has private local store/state/cache and disables
+registry/substituters/user config; no host daemon or remote fixtures are used.
+Tests verify isolation first, then same-source/cross-source repeated relative
+paths, self/two-node/dotdot-alias/absolute cycles, shared siblings, fresh nested
+locking, dependency-owned/root lock reuse, nested v1-to-v2 source updates preserving
+an unrelated dependency, and root-only lock recreation. All expected true cycles
+produce the cycle diagnostic, not timeout/unrelated errors. A separate final audit
+confirmed symlink-directory inputs are rejected identically by upstream and combined
+Nix before traversal; no symlink workaround was added.
 
-Next complete the three full packages, combined CLI/topology regression, and
-standard flake-check/export acceptance. Finish a local-store, offline matrix (baseline, each patch, both) with
-lock ownership and output marker assertions. Model nixos -> pkgs -> emarccs ->
-org-texmacs, pkgs -> git-agent-workflow, repeated personal-nixpkgs -> path:./pkgs
-and shared follows, using local tarballs across sources. Confirm dependencies'
-lockfile reuse, targeted updates, root lock recreation and real cycle errors.
-No project staging, root lock changes, live consumer changes or system Nix
-replacement. No successful build or functional result claimed yet.
+Synthetic topology models nixos -> path:./pkgs -> emarccs -> org-texmacs and
+pkgs -> git-agent-workflow, repeated personal-nixpkgs -> path:./pkgs and shared
+follows. Cross-source edges use local file:// tarballs. Combined package passes
+local-nixpkgs -v -L, nested targeted updates and root lock recreation. Assertions
+check evaluated per-directory owner trees, relative nodes' original/locked paths
+and parent input paths, plus unchanged source identities by declared input path
+instead of generated node names. No real NixOS/editor/GAW builds are claimed.
+
+The complete flake check passed with --no-write-lock-file -L --max-jobs 1 --cores 2
+against tmp/nix-flake-patched-source. All 9 x86_64-linux check derivations evaluate;
+the new functional check ran all 106 outcomes inside the Nix build sandbox and
+existing checks passed/reused their outputs. Treefmt traversed 143 files, processed
+137 and changed none. Other incompatible systems were skipped, not validated.
+The 143-file snapshot was compared with final project files and modes before and
+after validation and matches exactly; root export build/version and diff --check
+passed. Source manifest/results/logs are incidental tmp artifacts, not required
+for interpreting these distilled conclusions. Since new project files remain
+untracked, ordinary Git Flake source filtering omits them until owner staging;
+the checked snapshot explicitly includes all new files without project staging.
+
+README describes usage/temporary status/regression cost and the new explicit
+nixFlakePatched test argument. .gitignore narrowly admits this package's patches;
+root treefmt narrowly excludes them. Test dependencies flow through root/test
+arguments; no cross-parent fixture imports or shared-library changes were made.
+
+Resource history: an initial process disappeared after a possible owner-reported
+OOM (not proven). The combined four-version build later hit its 1800-second timeout.
+The owner explicitly authorized one version at a time with --max-jobs 1 --cores 2;
+all three patched complete packages then succeeded within their individual limits.
+Keep these conservative resource settings for future cold builds. Earlier review
+item 6 was an already-planned prerequisite, not an additional requirement.
+No project parent is attached to this validation checkpoint: tested source is
+uncommitted, so current project HEAD does not represent the validated implementation.
 
 ## Groups: external overlays, include/exclude and documentation committed
 
