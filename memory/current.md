@@ -1,17 +1,17 @@
 # Current project state
 
-## nix-flake-patched: remote patch source updated, validation deferred
+## nix-flake-patched: remote patch source validated by owner
 
 The owner approved the standalone package plan, the name nix-flake-patched,
 flake-check integration and 1800-second heavy builds. Use the five reference
 repositories only for input topology; the owner explicitly replaced live consumer
 integration with minimal synthetic flakes. No reference repository was changed.
-The owner staged the original implementation and passthru follow-up; they remain
-uncommitted. The remote-patch follow-up below is unstaged on top of that
-owner-managed index. At the owner's explicit request, this latest change has not
-been evaluated, formatted, built or regression-tested. Earlier acceptance results
-below cover the prior locally vendored patch representation. The agent made no ordinary Git index/history change, root lockfile update
-or system Nix replacement. Await owner review and the next instruction.
+The owner has staged the implementation, passthru/remote-source changes and an
+explicit base-Nix injection refactor; the project remains uncommitted, with no
+unstaged changes on inspection. The owner reports manual build/test success and
+supplied successful cached reruns (see remote-source follow-up below). The agent
+did not rerun builds/tests or change the project index/history, root lockfile,
+reference repositories or system Nix. Await the next instruction.
 
 Pinned Nixpkgs (5adc50831c259f87faeb09ddf930d43597197473) provides nix_2_35 at
 2.35.3 with appendPatches. Package overlay adds only nix-flake-patched. The two
@@ -97,7 +97,7 @@ processed, no changes). Other systems remain unvalidated. User staging and exist
 unstaged edits were preserved; that four-file follow-up was subsequently staged
 by the owner.
 
-### Remote #14762 patch source: changed without building
+### Remote #14762 patch source: owner-validated
 
 The owner requested switching the upstream-identical patch to remote fetching,
 but explicitly prohibited building for this change. package.nix now uses fetchpatch
@@ -117,11 +117,24 @@ lsdiff/sorted per-file filterdiff --strip=0 --clean and final -p1 include filter
 in tmp, then SHA-256/SRI hashed the 1309-byte result. Normalizing the former local
 patch yielded exactly the same C++ diff. No fake hash was used. Read-only diff
 --check passed. No nix build, evaluation, formatter or regression was executed.
-The fixed-output fetchpatch derivation and resulting package still need actual
-Nix validation later; prior package/regression drvPath equivalence cannot be
-assumed after changing the patch representation/source. Preserve the owner's
-current staging; all three project-file changes remain unstaged. Next await an
-explicit request to evaluate/build/test, using conservative 1-job/2-core settings.
+The owner subsequently reports having manually run the actual package build and
+tests successfully, followed by supplied cached reruns of:
+- nix build -v -L .#legacyPackages.x86_64-linux.nix-flake-patched: exit 0.
+- nix flake check: exit 0, all checks passed, running 0 flake checks (cache hits).
+The remote-source regression derivation evaluates to
+a3mp3m0kszc4hnn2s12rnarmkzz43mga-nix-flake-patched-regressions.drv, distinct from
+the earlier local-patch check. Thus remove the pending-validation blocker; the
+fresh execution is owner-reported, while the provided repeat logs directly show
+successful cached acceptance rather than a fresh 106-operation run. Other
+systems were omitted and remain unvalidated. No redundant agent build/test ran.
+
+Read-only inspection confirms the owner also refactored package.nix to accept
+{ fetchpatch, lib, nix } and use nix.appendPatches; overlay.nix explicitly passes
+nix = final_.nixVersions.nix_2_35. passthru.baseNix = nix; patches remain exposed.
+The existing test still asserts base.version == "2.35.3". All 11 delivery files
+are staged, with no unstaged project changes; the ordinary HEAD is unchanged.
+No project parent is attached because the validated staged implementation is
+not represented by that commit. Do not rerun checks merely to create provenance.
 
 ## Groups: external overlays, include/exclude and documentation committed
 
