@@ -1,5 +1,20 @@
 # Current project state
 
+## mkFlake argument diagnostics: implemented, not committed
+
+The owner reported an unreadable list-comparison assertion for a missing
+moduleLocation. pkgs/flake.nix now computes missingArgs and uses nixpkgs.lib.assertMsg
+for the existing return-attrset, required-attributes and specialArgs-attrset checks.
+Missing-field errors identify lib.mkFlake, list the absent attributes and suggest
+moduleLocation = ./flake.nix; or __curPos.file in the argument function's result.
+Validation conditions and argument semantics are unchanged. Only pkgs/flake.nix
+is modified, not staged or committed. The owner authorized scoped nix fmt and a
+30s impure nix eval deliberately omitting moduleLocation. Formatting and diff
+--check passed. Eval initially could not access the daemon in the sandbox; the
+same authorized command succeeded in reaching the intended failure after
+escalation, emitting the new explicit message. Exit 1 is expected for that probe;
+no full flake check or builds were run. Await review/commit instructions.
+
 ## nix-flake-patched: implementation and README committed
 
 Completed follow-up: the owner rejected the default-package/legacy-export equality
