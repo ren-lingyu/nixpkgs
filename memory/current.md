@@ -35,10 +35,14 @@ development shell under mkFlake, and overlay/module helpers under packages;
 use paragraphs or lists within these interface headings as needed.
 Both documents explicitly withhold compatibility promises. The TODO 0.1.0 state,
 version and release status are unchanged; NEXT/DONE transitions remain human-only.
-Both project documents are unstaged, awaiting owner review. Implementation
-evidence is committed HEAD; existing README boundary edits were preserved.
-Reviewed the complete resulting diff and git diff --check passed. No project
-staging, formatting, build or test was performed for this documentation change.
+The owner staged and committed both documents as
+`docs: clarify public interface and organize initial release notes`. The committed
+blobs and modes match the fully reviewed staged diff; the project worktree is clean.
+Implementation evidence was committed source; existing README boundary edits were
+preserved. Reviewed the complete resulting diff and git diff --cached --check
+passed. No project staging, formatting, build or test was performed by the agent
+for this documentation change. Next work depends on the owner's scope/freeze
+decisions; do not infer release readiness from this documentation commit.
 
 ## Initial 0.1.0 changelog: development draft created, not frozen
 
@@ -72,7 +76,7 @@ treefmt.settings.excludes contains *.org, *.patch, LICENSE and flake.lock.
 This configuration was inspected, not executed in this documentation task.
 The subsequent authorized README/CHANGELOG organization described above replaces
 the broad draft inventory with a public-interface summary and moves implementation
-details into README. The README synchronization is pending owner review/commit.
+details into README. That documentation synchronization is now committed.
 
 ## gitignore-fmt: hardening, root matching and activation committed
 
