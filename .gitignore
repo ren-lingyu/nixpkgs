@@ -1,36 +1,33 @@
 *
 */
 
-!/README.org
 !/.gitignore
 !/.gitsubmodules
 !/LICENSE
-!/flake.nix
+!/README.org
 !/flake.lock
-
-!/tests/
-!/tests/**/
-!/tests/**/*.nix
+!/flake.nix
 
 !/pkgs/
 !/pkgs/flake.nix
-
 !/pkgs/lib/
 !/pkgs/lib/**/
 !/pkgs/lib/**/*.nix
-
+!/pkgs/modules/
+!/pkgs/modules/**/
+!/pkgs/modules/**/*.nix
 !/pkgs/pkgs/
 !/pkgs/pkgs/**/
 !/pkgs/pkgs/**/*.nix
 !/pkgs/pkgs/**/*.patch
 !/pkgs/pkgs/**/*.sh
 
-!/pkgs/modules/
-!/pkgs/modules/**/
-!/pkgs/modules/**/*.nix
+!/tests/
+!/tests/**/
+!/tests/**/*.nix
 
-*~
 *#
+*~
 result
 result-*
 tmp/
