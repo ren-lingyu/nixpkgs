@@ -120,22 +120,43 @@ Subsequent full verification and next objective:
   It omitted incompatible systems; do not claim all-platform verification. This
   check ran before the root activation commit against its reviewed implementation,
   not as a post-commit rerun. No lockfile update occurred.
-- The owner noticed the quiet delay at org-fmt. Current runner starts Emacs for
-  every CLI assertion and semantic comparison, roughly 150 launches across the
-  suite. It prints failures and the final summary, but no normal per-case progress.
-  Repeated Org loading and silent progress explain the apparent pause; no timings
-  were captured, so no measured bottleneck or speedup is claimed.
+- The owner noticed the quiet delay at org-fmt. Before optimization the runner
+  started Emacs for every CLI assertion and semantic comparison, and printed only
+  failures and the final summary. The instrumentation-only baseline below measured
+  the repeated startup cost; the optimized runner now reports normal progress.
 - Owner sequence: commit current activation, wait for HEAD, update GAW, then
   prepare test optimization. The commit/wait/maintenance phase is complete.
   Prepare a concrete approach to measuring durations and reducing repeated Emacs
   startup while preserving packaged CLI, failure-injection and independent
-  mkChecks acceptance coverage. No optimization has been implemented or benchmarked.
-  Proposed approach (not yet implemented/adopted): add per-case/phase elapsed
-  times and progress; batch ordinary valid fixtures into shared packaged-CLI
-  invocations and one semantic-comparison Emacs process, retaining per-file
-  goldens, snapshots and error attribution; keep CLI boundaries, configuration
-  isolation and injected failures in separate processes. Compare equivalent
-  before/after checks and measured subprocess counts/durations, not guessed speedup.
+  mkChecks acceptance coverage. The owner then requested modifying the tests.
+  Scoped formatting and repeated targeted builds were separately authorized for
+  this task. Instrumented original execution passed 32/32, measuring 158 Emacs
+  subprocesses and 33.688s inside the suite.
+- Optimization is implemented in only tests/suites/org-fmt/runner.nix and
+  semantics.nix, both unstaged. Ordinary valid fixtures share five processes:
+  packaged CLI formatting, semantic comparisons, reverse-order idempotence,
+  formatted check and original-input check. Every fixture retains goldens where
+  specified, semantic comparison, byte/mode/mtime/inode snapshots, no-write checks
+  and temp cleanup. Original-input check verifies each filename's diagnostic count
+  as well as the aggregate exit status. CLI, config isolation and failure cases
+  still use separate processes. No production, package, discovery or mkChecks
+  acceptance change was made.
+- The semantic helper accepts multiple original/formatted pairs, returns keyed
+  JSON true/error results and continues after individual mismatches/errors. The
+  runner verifies complete result keys and each actual result. A deliberately
+  changed headline precedes real pairs as a negative control: it must report a
+  mismatch without hiding later successful comparisons.
+- Progress now prints START/END phase durations, independent case START/PASS times,
+  named fixture outcomes, total suite seconds and Emacs process count. Timings are
+  logs only, not nondeterministic derivation results or pass thresholds. The named
+  result JSON contract is unchanged.
+- First optimized run passed 32/32 with 48 Emacs processes in 9.523s. After adding
+  the negative control, final build through tests/default.nix again passed 32/32,
+  using 48 processes in 9.504s. Relative to the instrumented baseline this is about
+  72% less elapsed suite time (one local measurement per version, not a statistical
+  benchmark; excludes Nix evaluation/build setup). Scoped nix fmt and diff --check
+  passed. No full flake check was rerun for this test-only optimization. Project
+  staging was untouched; no project commit was made. Next: owner review/commit.
 - README synchronization and remaining 0.1.0 release work remain pending. The last
   README describes the former root exclusion and lacks Org formatter/suite details.
 Keep the narrow v1 scope; expand only for real test defects, not speculative
