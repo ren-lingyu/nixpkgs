@@ -29,6 +29,10 @@ The owner adopted an initial-release presentation: 0.1.0 has only Added entries,
 describing available capabilities rather than development fixes relative to an
 unreleased predecessor. mkFlake validation and gitignore failure safety/root and
 nested matching are folded into their corresponding capability descriptions.
+Under Added, the owner chose level-three headings named lib.mkFlake,
+lib.mergeAttrsRecursive, lib.packages and lib.tests. Group treefmt and the Nix
+development shell under mkFlake, and overlay/module helpers under packages;
+use paragraphs or lists within these interface headings as needed.
 Both documents explicitly withhold compatibility promises. The TODO 0.1.0 state,
 version and release status are unchanged; NEXT/DONE transitions remain human-only.
 Both project documents are unstaged, awaiting owner review. Implementation
