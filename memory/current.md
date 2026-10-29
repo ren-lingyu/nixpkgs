@@ -1,15 +1,16 @@
 # Current project state
 
-## org-fmt v1: required pre-0.1.0 work, implementation not yet accepted
+## org-fmt v1: targeted regression suite verified, pre-0.1.0 work
 
-The owner added org-fmt in the project worktree and supplied the final v1 design
-and decision history. Treat completion and acceptance as pre-0.1.0 work, not as
-a release/freeze declaration. This inspection authorized memory maintenance and,
-in a follow-up, CHANGELOG maintenance; it did not authorize implementation edits
-or running formatting, builds, tests or Nix evaluation. CHANGELOG.org now records
-the candidate under Added / lib.mkFlake as shared treefmt functionality with
-acceptance still pending. Do not advertise the package itself as a separate
-supported public interface. README synchronization remains future work.
+The owner adopted the v1 design below, then authorized fixing review findings and
+constructing complex regression fixtures. They separately authorized repeated
+scoped formatting, a targeted build and a build through tests/default.nix with
+README/CHANGELOG copies. No full flake check or heavy patched-Nix regressions ran.
+CHANGELOG under Added / lib.mkFlake now describes the implemented shared Org
+formatting, not a standalone public package or a published release. README feature
+synchronization remains future work. This is pre-0.1.0 work awaiting owner review;
+passing tests do not freeze scope or finalize a release. Org-TeXmacs is an unknown
+special-block regression sample, never a dedicated adapter or promised integration.
 
 Adopted design and limits:
 - Use full org-element-parse-buffer -> AST transformation ->
@@ -46,64 +47,61 @@ Adopted design and limits:
   clean up temporary files, retain originals on failure, do not silently hide
   errors or follow symbolic links for modification. Keep file handling simple.
 
-Observed worktree, not committed or executed:
-- Package, overlay, shared treefmt registration (*.org and **/*.org), treefmt-group
-  membership, root test argument and tests/default.nix wiring/expected-name update
-  exist. .gitignore admits package .el files. All ten implementation paths have
-  staged changes. The owner subsequently staged the implementation refinements;
-  currently only the agent's CHANGELOG addition is unstaged. Preserve project index.
-- Read the full current org-fmt.el. It implements the selected headline transform,
-  fixed settings, byte comparison, UTF-8 Unix rendering, nearby temp/rename with
-  cleanup and mode copying, symlink/regular-file guards and per-file error handling.
-  CLI also handles --help and --. These are static observations, not guarantees.
-- The owner corrected the startup command to use lib.getExe' emacs-nox "emacs"
-  before --batch -Q --script. Read package.nix and confirmed the executable is now
-  selected explicitly; the earlier directory-as-executable issue is resolved in
-  source. No runtime validation was performed, so do not infer a passing build.
-- Root treefmt.settings.excludes still contains *.org, so repository Org files
-  remain excluded despite shared registration. The owner explicitly chose to
-  keep this exclusion for now. It is intentional, not a defect to fix or remove
-  automatically. Real-document acceptance can be verified separately from root
-  treefmt activation; registration does not prove those checks have occurred.
-- The basic check contains a byte-exact headline/planning/property/source-block
-  fixture, second-pass idempotence, check-mode no-write comparison, and a leading
-  LOGBOOK fixture. Its initial --check assertion only requires failure, not status
-  exactly 1. No validation command was run in this task; no suite pass is claimed.
+Implementation and verification in the current worktree, not committed:
+- Package, overlay, shared registration, treefmt-group membership, .el whitelist
+  and root/test wiring exist. The owner corrected the launcher to use
+  lib.getExe' emacs-nox "emacs". writeShellApplication/emacs-nox/batch -Q is suitable;
+  the optional runtimeInputs was retained. No separate flake, compilation stage
+  or Emacs package framework was introduced.
+- Root intentionally retains *.org exclusion by owner decision. Do not remove it
+  automatically. Real-document tests use copies in an isolated build instead.
+- Tests exposed a real CLI defect: an existing file named --unknown was formatted
+  when passed as an option. The script now rejects unknown leading flags with
+  status 2 and requires -- for leading-dash filenames. Native AST transformation
+  and atomic writeback were retained; no production fault switches were added.
+- Replaced the small smoke check with runner.nix (Python), semantics.nix (Elisp
+  projection), and a test-only fault-injected Emacs wrapper in check.nix. All stay
+  in tests/suites/org-fmt and existing mkChecks. Independent mkChecks acceptance
+  remains intact. Scope arguments supply document paths; no ancestor imports.
+- Semantic projections exclude positions, blanks and incidental text properties,
+  but compare containment, headline fields, timestamps, node properties, lists,
+  counters/tags, paragraph text, table/formula data, affiliations and actual Babel
+  code/language/switches/parameters. Babel's light reader does not execute code.
+  Native bullet spelling normalization for the same explicit counter is accepted.
+  These projections test selected invariants, not all possible Org semantics.
+- Four byte goldens and complex fixtures cover adjacent/empty/nested headlines,
+  planning/properties, leading/body drawers, paragraphs, nested lists/footnotes,
+  tables/affiliations, multiple source languages, -i/:preserve-indent, escaped Org
+  source, export/example/unknown special blocks and Unicode/CRLF/empty/missing-LF.
+  Each valid fixture compares semantics, strict second-pass bytes and unchanged
+  metadata, plus exact --check status/no-write behavior. User-init isolation,
+  help/no-argument/flag handling, spaced/Unicode/dash filenames, multi-file error
+  aggregation, permissions, missing/nonregular files and symlinks are covered.
+- Five injected failures cover serialization, nearby-temp creation, partial write,
+  mode setting and rename. Assert original bytes/mode/mtime/inode remain intact,
+  temporary files are removed, and check mode avoids writeback. Unfaulted execution
+  of the instrumented wrapper is also tested. These are build-local test effects.
+- First run passed 22/29. Besides the CLI bug, harness failures came from Emacs
+  --script action ordering (preceding --load became a formatter filename) and
+  comparing native counter bullet spelling. Use ordered --load actions for fault
+  advice and normalize that spelling while retaining parsed counters/containment.
+  The repaired 29-case suite passed; then user-config and real-document coverage
+  expanded it to 32. The build through tests/default.nix passed all 32 cases on
+  x86_64-linux, including README/CHANGELOG copies. After CHANGELOG synchronization,
+  the same authorized build was rerun and again passed 32/32 on final documents.
+- Root passes org-fmt-documents with explicit README/CHANGELOG paths;
+  tests/default.nix defaults it to {} and forwards it to the suite. Other suites
+  were not built by the targeted assembly check. Scoped nix fmt and git diff
+  --check passed. No all-platform or full flake-check claim is made.
 
-Acceptance still required in existing tests/suites and mkChecks:
-- Behavior: adjacent/empty/parent-child headlines; complex CLOSED/SCHEDULED/DEADLINE;
-  multiple properties; leading LOGBOOK/other drawers and body drawers; paragraphs,
-  tables, NAME/ATTR_*/CAPTION affiliations; multiple source languages and export,
-  example and special blocks.
-- Semantics: compare Org structure and key contents rather than demanding original
-  bytes. Check headline levels/titles, planning timestamps/properties, list/item
-  and footnote boundaries, actual Babel code, -i/:preserve-indent, Org-TeXmacs
-  embedded material and custom special-block parse/serialize behavior. Record
-  minimal reproductions before deciding whether a special case needs support.
-- Strict byte equality F(F(x))=F(x) on fixtures and actual repository documents.
-- CLI: multi-file processing, exact check statuses, no rewriting unchanged files,
-  no writes in check mode, unchanged originals on errors, permissions and cleanup.
-  The current small integration check is only a starting point.
-
-Subsequent static review conclusion: current tests are smoke coverage, insufficient
-for v1 acceptance. Prioritize exact status 1 vs 2, injected render/write/rename
-failures with unchanged-input/cleanup assertions, unchanged-file metadata and
-multi-file/error aggregation, and normalized semantic projections plus all-fixture
-and real-document idempotence. Existing whole-output goldens do not replace
-semantic checks or establish filesystem safety on failure. Keep the independent
-mkChecks acceptance architecture intact.
-The current writeShellApplication + emacs-nox + explicit executable + batch -Q
-wrapper is appropriate for this small v1; no separate flake, Emacs package framework
-or compilation layer is needed. runtimeInputs adds Emacs to PATH but is optional
-for the current absolute-command wrapper; removing it is cleanup, not a correctness
-fix. Nix shell-wrapper checks do not validate the Elisp runtime or Org semantics.
-Review was read-only; no tests/builds or project edits were performed.
-
-Next work is to expand and run authorized acceptance checks while retaining the
-root Org exclusion, then synchronize documentation with verified
-behavior. Preserve the chosen narrow v1 scope; expand only for real test defects.
-Meeting these requirements is sufficient for v1; do not delay adoption for
-speculative complete Org syntax coverage. Overall 0.1.0 scope remains unfrozen.
+The owner's original staging was preserved. Agent corrections, expanded tests,
+document-dependency wiring and CHANGELOG changes are unstaged; runner.nix and
+semantics.nix are new untracked files. No project staging/commit was performed.
+Git-flake sources omit new untracked files, so validation deliberately imported
+the suite/test entry from working-directory paths. Next: owner review and commit
+preparation when requested, README synchronization and remaining release work.
+Keep the narrow v1 scope; expand only for real test defects, not speculative
+complete Org coverage. Overall 0.1.0 scope remains unfrozen.
 
 ## Intended public interface and compatibility boundary
 
