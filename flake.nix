@@ -70,7 +70,6 @@
                   flakeCheck = true;
                   settings.excludes = [
                     "*.patch"
-                    ".gitignore"
                     "LICENSE"
                     "README.org"
                     "flake.lock"
