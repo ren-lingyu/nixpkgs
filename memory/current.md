@@ -5,7 +5,8 @@
 The owner adopted the v1 design below, then authorized fixing review findings and
 constructing complex regression fixtures. They separately authorized repeated
 scoped formatting, a targeted build and a build through tests/default.nix with
-README/CHANGELOG copies. No full flake check or heavy patched-Nix regressions ran.
+README/CHANGELOG copies. Targeted implementation checks were followed by a
+separately authorized full flake check, described below.
 CHANGELOG under Added / lib.mkFlake now describes the implemented shared Org
 formatting, not a standalone public package or a published release. README feature
 synchronization remains future work. This is completed pre-0.1.0 implementation;
@@ -54,8 +55,12 @@ Committed implementation and verification:
   lib.getExe' emacs-nox "emacs". writeShellApplication/emacs-nox/batch -Q is suitable;
   the redundant runtimeInputs was removed by the owner. No separate flake,
   compilation stage or Emacs package framework was introduced.
-- Root intentionally retains *.org exclusion by owner decision. Do not remove it
-  automatically. Real-document tests use copies in an isolated build instead.
+- After the initial deliberate Org exclusion, the owner formatted and committed
+  README/CHANGELOG as `style(docs): normalize Org formatting in README and CHANGELOG`,
+  then committed root activation as `feat(treefmt): include Org files in formatting
+  checks`. Root no longer excludes *.org. The activation commit changes only that
+  exclusion and matches the reviewed staged blob/mode. Real-document suite tests
+  still use copies in the isolated build, in addition to root formatting checks.
 - Tests exposed a real CLI defect: an existing file named --unknown was formatted
   when passed as an option. The script now rejects unknown leading flags with
   status 2 and requires -- for leading-dash filenames. Native AST transformation
@@ -93,7 +98,7 @@ Committed implementation and verification:
 - Root passes org-fmt-documents with explicit README/CHANGELOG paths;
   tests/default.nix defaults it to {} and forwards it to the suite. Other suites
   were not built by the targeted assembly check. Scoped nix fmt and git diff
-  --check passed. No all-platform or full flake-check claim is made.
+  --check passed. These targeted results alone did not establish a full flake check.
 
 The owner staged the complete 13-file implementation, removed redundant
 runtimeInputs, and requested the Elisp Commentary/Code header. They then requested
@@ -105,9 +110,34 @@ blobs and modes exactly match the reviewed/tested index, including the new runne
 and semantic helper. No project staging or commit was performed by the agent.
 Tests ran before commit, not after. Earlier validation imported worktree paths
 while the new helpers were untracked; they are now present in the committed tree.
-The owner explicitly limited this maintenance to HEAD; do not incorporate or
-report changes outside that committed baseline in this handoff.
-Next: README synchronization and remaining release work when requested.
+The owner explicitly limited commit maintenance to HEAD; do not incorporate or
+report changes outside that committed baseline in these handoffs.
+
+Subsequent full verification and next objective:
+- Ran the authorized `timeout 120s nix flake check --no-write-lock-file -L` once.
+  It exited 0 with all checks passed; org-fmt rebuilt and reported 32/32. Other
+  current-system check derivations were evaluated and already satisfied/cached.
+  It omitted incompatible systems; do not claim all-platform verification. This
+  check ran before the root activation commit against its reviewed implementation,
+  not as a post-commit rerun. No lockfile update occurred.
+- The owner noticed the quiet delay at org-fmt. Current runner starts Emacs for
+  every CLI assertion and semantic comparison, roughly 150 launches across the
+  suite. It prints failures and the final summary, but no normal per-case progress.
+  Repeated Org loading and silent progress explain the apparent pause; no timings
+  were captured, so no measured bottleneck or speedup is claimed.
+- Owner sequence: commit current activation, wait for HEAD, update GAW, then
+  prepare test optimization. The commit/wait/maintenance phase is complete.
+  Prepare a concrete approach to measuring durations and reducing repeated Emacs
+  startup while preserving packaged CLI, failure-injection and independent
+  mkChecks acceptance coverage. No optimization has been implemented or benchmarked.
+  Proposed approach (not yet implemented/adopted): add per-case/phase elapsed
+  times and progress; batch ordinary valid fixtures into shared packaged-CLI
+  invocations and one semantic-comparison Emacs process, retaining per-file
+  goldens, snapshots and error attribution; keep CLI boundaries, configuration
+  isolation and injected failures in separate processes. Compare equivalent
+  before/after checks and measured subprocess counts/durations, not guessed speedup.
+- README synchronization and remaining 0.1.0 release work remain pending. The last
+  README describes the former root exclusion and lacks Org formatter/suite details.
 Keep the narrow v1 scope; expand only for real test defects, not speculative
 complete Org coverage. Overall 0.1.0 scope remains unfrozen.
 
@@ -182,8 +212,9 @@ build, formatter, test, README or configuration edit was performed.
 
 Remaining scope: owner review/freeze decisions, later detailed release manuscript
 and release verification. The owner resolved the Org coverage issue in
-`chore(treefmt): exclude all Org files from formatting checks`; current root
-treefmt.settings.excludes contains *.org, *.patch, LICENSE and flake.lock.
+`chore(treefmt): exclude all Org files from formatting checks`; at that point root
+treefmt.settings.excludes contained *.org, *.patch, LICENSE and flake.lock. The
+later root Org activation described above supersedes that exclusion.
 This configuration was inspected, not executed in this documentation task.
 The subsequent authorized README/CHANGELOG organization described above replaces
 the broad draft inventory with a public-interface summary and moves implementation
