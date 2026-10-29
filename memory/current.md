@@ -1,5 +1,30 @@
 # Current project state
 
+## Intended public interface and compatibility boundary
+
+The owner explicitly limits the intended interface for other projects to the
+root flake's lib output and functionality supplied through its functions,
+including mkFlake's development shell and treefmt integration. This is a scope
+decision, not a compatibility promise: compatibility is not currently promised
+even for this intended public interface. Do not describe public availability
+as a stable API or infer a compatibility policy from the planned 0.1.0 release.
+
+Other externally accessible contents are not intended as direct public interfaces
+and carry no compatibility guarantee. This includes individual packages, package
+outputs, internal overlays, the local subflake, source-level imports and repository
+checks. Distinguish the public lib.packages helpers from package outputs. Technical
+accessibility and README implementation details do not broaden this boundary.
+Earlier references to public helpers describe intended exposure, not stability.
+
+The owner suggests keeping implementation detail in README and focusing future
+changelog refinement on intended public capabilities and behavior. The current
+TODO changelog is still a development draft; later simplification is pending,
+and NEXT/DONE transitions remain human-only. This task records the boundary in
+README.org and memory only; it does not rewrite CHANGELOG.org or freeze scope.
+README.org has an unstaged boundary clarification, an internal-packages heading
+and a direct-import qualification, awaiting owner review. No project staging,
+formatting, build or test was performed for this documentation change.
+
 ## Initial 0.1.0 changelog: development draft created, not frozen
 
 The owner plans 0.1.0 but explicitly says scope/TODOs are not frozen. They asked
@@ -21,16 +46,17 @@ Superseded development-only APIs were not mislabeled as upgrades from a released
 version. Baseline is committed source; no staged/worktree implementation change
 was used. Recent .gitignore commits corrected .gitmodules and explicitly admit
 CHANGELOG.org plus CHANGELOGS/*.org. Read-only check-ignore --no-index matches the
-root file's negation rule; it is untracked, not ignored. No project staging,
+root file's negation rule. The draft was subsequently committed as
+`docs(changelog): initialize the 0.1.0 development entry`. No project staging,
 build, formatter, test, README or configuration edit was performed.
 
 Remaining scope: owner review/freeze decisions, later detailed release manuscript
-and release verification. Root treefmt excludes README.org but not CHANGELOG.org,
-with on-unmatched=fatal and no configured Org formatter visible; matching/check
-behavior for this new document needs verification or a separately authorized
-configuration change. Existing README also predates formatter activation and
-root-input simplification. These were reported, not silently fixed. Await next
-instruction; preserve the new untracked CHANGELOG.org.
+and release verification. The owner resolved the Org coverage issue in
+`chore(treefmt): exclude all Org files from formatting checks`; current root
+treefmt.settings.excludes contains *.org, *.patch, LICENSE and flake.lock.
+This configuration was inspected, not executed in this documentation task.
+Existing README still predates formatter activation and root-input simplification;
+the boundary clarification does not perform that broader synchronization.
 
 ## gitignore-fmt: hardening, root matching and activation committed
 
