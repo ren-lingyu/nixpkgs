@@ -16,14 +16,21 @@ checks. Distinguish the public lib.packages helpers from package outputs. Techni
 accessibility and README implementation details do not broaden this boundary.
 Earlier references to public helpers describe intended exposure, not stability.
 
-The owner suggests keeping implementation detail in README and focusing future
-changelog refinement on intended public capabilities and behavior. The current
-TODO changelog is still a development draft; later simplification is pending,
-and NEXT/DONE transitions remain human-only. This task records the boundary in
-README.org and memory only; it does not rewrite CHANGELOG.org or freeze scope.
-README.org has an unstaged boundary clarification, an internal-packages heading
-and a direct-import qualification, awaiting owner review. No project staging,
-formatting, build or test was performed for this documentation change.
+The owner requested applying this boundary to both README and CHANGELOG. README
+now puts intended public functions and mkFlake functionality first, followed by
+a dedicated repository-internals/maintenance section containing subflake layout,
+direct imports, packages and repository tests. It also synchronizes the committed
+input ownership, Org exclusions, gitignore formatting coverage, internal formatter
+behavior and suite wiring. CHANGELOG now summarizes public helpers and inherited
+treefmt/development-shell behavior; standalone package inventories, test counts
+and repository-only ignore fixes were removed from the release summary. Formatter
+failure safety and patched-Nix behavior remain through their mkFlake effects.
+Both documents explicitly withhold compatibility promises. The TODO 0.1.0 state,
+version and release status are unchanged; NEXT/DONE transitions remain human-only.
+Both project documents are unstaged, awaiting owner review. Implementation
+evidence is committed HEAD; existing README boundary edits were preserved.
+Reviewed the complete resulting diff and git diff --check passed. No project
+staging, formatting, build or test was performed for this documentation change.
 
 ## Initial 0.1.0 changelog: development draft created, not frozen
 
@@ -38,7 +45,7 @@ and Added summaries. No NEXT/DONE, CLOSED, early CUSTOM_ID, release date, tag or
 publication claim. No detailed CHANGELOGS file yet; scope/version identity and
 complete detailed notes remain prerequisites for later human freeze/release work.
 
-The draft covers the final shared library/constructor/group/mkChecks contracts,
+The initial draft covered the final shared library/constructor/group/mkChecks contracts,
 mkFlake argument function and per-system packages, treefmt/language support,
 formatter packages and patched-Nix outputs, independent checks and key fixes
 (diagnostics, safe formatter failures/writeback, root matcher and .gitmodules).
@@ -55,8 +62,9 @@ and release verification. The owner resolved the Org coverage issue in
 `chore(treefmt): exclude all Org files from formatting checks`; current root
 treefmt.settings.excludes contains *.org, *.patch, LICENSE and flake.lock.
 This configuration was inspected, not executed in this documentation task.
-Existing README still predates formatter activation and root-input simplification;
-the boundary clarification does not perform that broader synchronization.
+The subsequent authorized README/CHANGELOG organization described above replaces
+the broad draft inventory with a public-interface summary and moves implementation
+details into README. The README synchronization is pending owner review/commit.
 
 ## gitignore-fmt: hardening, root matching and activation committed
 
