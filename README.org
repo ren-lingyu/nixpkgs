@@ -7,30 +7,23 @@ flake input where needed for cross-repository functions and conventions.
 The name reflects its role in this project ecosystem and continuity with the
 repository's original use as a personal NUR repository.
 
-* Flake infrastructure
-The root flake consumes =pkgs/= as a local subflake named =local-nixpkgs=.
-That subflake uses flake-parts to assemble the shared library, package sets and
-the =mkFlake= wrapper before the root flake calls that wrapper. Its =nixpkgs=,
-=flake-parts= and =treefmt-nix= inputs follow the root's corresponding inputs.
+* Public interface and compatibility
+The intended interface for use by other projects is the root flake's =lib=
+output, together with the functionality supplied through those functions.
+This includes the shared development shell and treefmt integration supplied by
+=lib.mkFlake=. Compatibility is not currently promised, even for this intended
+public interface.
 
-The source is organized as follows:
+Other accessible outputs and implementation details are not intended as direct
+interfaces for external use and carry no compatibility guarantee. These include
+the repository's individual packages and package outputs, internal overlays,
+the local subflake, source-level imports and repository checks. Their accessibility
+or documentation does not make them public interfaces. In particular, the
+public =lib.packages= helpers are distinct from the repository's package outputs.
+Descriptions and commands for those internal components below explain repository
+maintenance.
 
-| Path | Purpose |
-|------+---------|
-| =flake.nix= | Consume the shared foundation, select public library exports, forward packages and assemble repository checks. |
-| =pkgs/flake.nix= | Assemble the foundation and define =lib.mkFlake=. |
-| =pkgs/lib/= | Shared merge, package/module discovery and test-assembly functions. |
-| =pkgs/pkgs/= | Package definitions and their internal overlay groups. |
-| =pkgs/modules/fp/= | Shared flake-parts modules, currently treefmt configuration. |
-| =tests/= | Library suites, independent test-assembly acceptance cases and fixtures. |
-
-The root exports =lib=, =packages=, =legacyPackages=, =devShells=, =formatter=
-and =checks=. Its public =lib= contains =mkFlake=, =mergeAttrsRecursive=,
-=packages= and =tests=.
-The subflake's library additionally contains =overlays.mkOverlays= for internal
-use, including the generic overlay suite; the root does not export that entry.
-
-** Shared flake construction
+* Shared flake construction
 =lib.mkFlake= takes three positional arguments:
 
 #+begin_src nix
@@ -75,7 +68,8 @@ check by default through =lib.mkDefault true=. It derives =projectRootFile= from
 the basename of =moduleLocation=, forces treefmt's default excludes off, and
 defaults the explicit exclude list to =[ ]=. Unmatched files are fatal, so
 consumers must configure exclusions for files outside their formatter coverage.
-The root excludes =.gitignore=, =LICENSE=, =README.org=, =flake.lock= and =*.patch=.
+The root repository excludes =*.org=, =*.patch=, =LICENSE= and =flake.lock=;
+these repository-specific exclusions are not inherited by consumers.
 
 | Files | Formatter |
 |-------+-----------|
@@ -89,67 +83,11 @@ The root excludes =.gitignore=, =LICENSE=, =README.org=, =flake.lock= and =*.pat
 | TOML | taplo. |
 | Scheme (=.scm=) | =lisplens format=. |
 | Emacs Lisp (=.el=) | elisp-autofmt. |
-
-* Provided packages
-=legacyPackages.${system}= contains =elisp-autofmt=, =lisplens= and
-=nix-flake-patched=. Their
-definitions live under =pkgs/pkgs/=, with =overlay.nix= entries assembled by
-=lib.packages.mkOverlays=. The two formatter packages provide =nix-update-script=
-update scripts.
-
-=elisp-autofmt= installs the upstream Emacs Lisp formatter scripts and configuration,
-with a Python command wrapper providing Emacs and Pygments at runtime.
-=lisplens= is built with =rustPlatform.buildRustPackage= and provides Lisp formatting
-and structural editing commands.
-
-=nix-flake-patched= is a temporary, independent Nix 2.35 package, verified against
-2.35.3, for nested relative Flake inputs. Separate patches address
-[[https://github.com/NixOS/nix/issues/4811][#4811]] (false circular imports) and
-[[https://github.com/NixOS/nix/pull/15982][PR #15982]] / [[https://github.com/NixOS/nix/issues/14762][#14762]]
-(wrong source tree when reusing locked inputs). The latter uses upstream commit
-=3337ecd3b0ce0dea6200364ccb2afd82f43a692f=, fetched with a fixed hash and filtered
-to =src/libflake/flake.cc=. The #4811 patch is maintained locally. Recheck
-compatibility when upgrading the base Nix version and remove each patch
-separately once its fix is included.
-The package does not override =pkgs.nix= or select the system Nix.
-Its =passthru.baseNix= exposes the unmodified base derivation, and
-=passthru.patches= exposes the ordered patch list. Both are also accessible
-directly as =nix-flake-patched.baseNix= and =nix-flake-patched.patches=.
-
-#+begin_src sh
-nix build -L .#legacyPackages.x86_64-linux.nix-flake-patched
-./result/bin/nix --version
-#+end_src
-
-The root also exposes this package as =packages.${system}.nix=. Build it with
-=nix build .#nix= and use the resulting =bin/nix= explicitly, or enter the shared
-shell with =nix develop .#nix= to use the patched binary on =PATH= for that shell.
-
-The =nix-flake-patched= check builds the
-unmodified version, each single patch and the combined package; its first build
-can be expensive. It runs offline using private local stores and synthetic
-Flakes modeled on the consumer repositories, including their repeated
-=path:./pkgs= inputs and =follows=. These tests do not build the real consumers.
-
-The internal =treefmt= group selects =lisplens= and =elisp-autofmt=, while the
-=nix= group selects =nix-flake-patched=; neither adds a selection export.
-The =legacy= group selects all packages and adds the directory-selected
-=legacyPackages= attribute.
-The subflake applies =legacy= to its own package set and exports that selection
-by system. The root forwards it directly. These overlay groups are internal;
-neither flake exports an =overlays= output.
+| Root and nested =.gitignore= files | gitignore-fmt, for the whitelist convention described under internal maintenance below. |
 
 * Shared library
 The flake's =lib= output provides functions for use by other repositories.
-The filesystem library can also be imported directly with a caller-supplied
-Nixpkgs =lib=:
-
-#+begin_src nix
-import ./pkgs/lib { inherit lib; }
-#+end_src
-
-This direct import provides the merge, overlay, package/module and test helpers;
-=mkFlake= is assembled by the subflake and is available through its flake library.
+It contains =mkFlake=, =mergeAttrsRecursive=, =packages= and =tests=.
 
 ** Recursive attribute-set merge
 =lib.mergeAttrsRecursive= takes a named configuration argument followed by a
@@ -470,15 +408,126 @@ Passing =separator = "-"= or =separator = "."= changes that name to
 ="packages-aggregation"= or ="packages.aggregation"=. Callers are responsible
 for name collisions introduced by their chosen separator.
 
-* Tests
-=tests/default.nix= accepts ={ llib, lib, pkgs, nix-flake-patched }= and returns the
-complete check derivation set. Ordinary suites live under =tests/suites/=, each
-with a =cases.nix= expression, a =test-overlay.nix= entry, and any local fixtures.
-The functional =nix-flake-patched= suite instead has a check wrapper, fixture
-specification and Python runner embedded in Nix files. Its explicit
+* Repository internals and maintenance
+These sections document the repository's implementation and checks. Direct use
+of these contents is outside the intended public interface.
+
+** Flake infrastructure
+The root flake consumes =pkgs/= as a local subflake named =local-nixpkgs=.
+That subflake uses flake-parts to assemble the shared library, package sets and
+the =mkFlake= wrapper before the root flake calls that wrapper. Its =nixpkgs=
+input follows the root's input; =flake-parts= and =treefmt-nix= are owned by the
+subflake.
+
+The source is organized as follows:
+
+| Path | Purpose |
+|------+---------|
+| =flake.nix= | Consume the shared foundation, select public library exports, forward packages and assemble repository checks. |
+| =pkgs/flake.nix= | Assemble the foundation and define =lib.mkFlake=. |
+| =pkgs/lib/= | Shared merge, package/module discovery and test-assembly functions. |
+| =pkgs/pkgs/= | Package definitions and their internal overlay groups. |
+| =pkgs/modules/fp/= | Shared flake-parts modules, currently treefmt configuration. |
+| =tests/= | Library suites, independent test-assembly acceptance cases and fixtures. |
+
+The root exports =lib=, =packages=, =legacyPackages=, =devShells=, =formatter=
+and =checks=. This output inventory does not expand the public interface defined
+above. Its public =lib= contains =mkFlake=, =mergeAttrsRecursive=,
+=packages= and =tests=.
+The subflake's library additionally contains =overlays.mkOverlays= for internal
+use, including the generic overlay suite; the root does not export that entry.
+
+For internal development, the filesystem library can also be imported directly
+with a caller-supplied Nixpkgs =lib=; this source-level import is outside the
+intended public interface:
+
+#+begin_src nix
+import ./pkgs/lib { inherit lib; }
+#+end_src
+
+This direct import provides the merge, overlay, package/module and test helpers;
+=mkFlake= is assembled by the subflake and is available through its flake library.
+
+** Internal packages
+=legacyPackages.${system}= contains =elisp-autofmt=, =gitignore-fmt=, =lisplens=
+and =nix-flake-patched=. Their definitions live under =pkgs/pkgs/=, with
+=overlay.nix= entries assembled by
+=lib.packages.mkOverlays=. =elisp-autofmt= and =lisplens= provide
+=nix-update-script= update scripts.
+
+=elisp-autofmt= installs the upstream Emacs Lisp formatter scripts and configuration,
+with a Python command wrapper providing Emacs and Pygments at runtime.
+=lisplens= is built with =rustPlatform.buildRustPackage= and provides Lisp formatting
+and structural editing commands.
+
+=nix-flake-patched= is a temporary, independent Nix 2.35 package, verified against
+2.35.3, for nested relative Flake inputs. Separate patches address
+[[https://github.com/NixOS/nix/issues/4811][#4811]] (false circular imports) and
+[[https://github.com/NixOS/nix/pull/15982][PR #15982]] / [[https://github.com/NixOS/nix/issues/14762][#14762]]
+(wrong source tree when reusing locked inputs). The latter uses upstream commit
+=3337ecd3b0ce0dea6200364ccb2afd82f43a692f=, fetched with a fixed hash and filtered
+to =src/libflake/flake.cc=. The #4811 patch is maintained locally. Recheck
+compatibility when upgrading the base Nix version and remove each patch
+separately once its fix is included.
+The package does not override =pkgs.nix= or select the system Nix.
+Its =passthru.baseNix= exposes the unmodified base derivation, and
+=passthru.patches= exposes the ordered patch list. Both are also accessible
+directly as =nix-flake-patched.baseNix= and =nix-flake-patched.patches=.
+
+#+begin_src sh
+nix build -L .#legacyPackages.x86_64-linux.nix-flake-patched
+./result/bin/nix --version
+#+end_src
+
+The root also exposes this package as =packages.${system}.nix=. Build it with
+=nix build .#nix= and use the resulting =bin/nix= explicitly, or enter the shared
+shell with =nix develop .#nix= to use the patched binary on =PATH= for that shell.
+
+The =nix-flake-patched= check builds the
+unmodified version, each single patch and the combined package; its first build
+can be expensive. It runs offline using private local stores and synthetic
+Flakes modeled on the consumer repositories, including their repeated
+=path:./pkgs= inputs and =follows=. These tests do not build the real consumers.
+
+The internal =treefmt= group selects =lisplens=, =elisp-autofmt= and
+=gitignore-fmt=, while the =nix= group selects =nix-flake-patched=; neither adds a
+selection export.
+The =legacy= group selects all packages and adds the directory-selected
+=legacyPackages= attribute.
+The subflake applies =legacy= to its own package set and exports that selection
+by system. The root forwards it directly. These overlay groups are internal;
+neither flake exports an =overlays= output.
+
+*** Gitignore formatting convention
+The shared formatter uses the repository's whitelist convention, rather than
+accepting arbitrary ignore-file organization. Its three sections are the =*=
+and =*/= header, negated allow rules, and final ignore rules. Missing header
+lines are inserted; duplicate header lines, empty negations and invalid section
+order are rejected. Allow rules are anchored at the root (=!foo= becomes =!/foo=).
+Rules are grouped by their first directory component and sorted within groups.
+Comments attach to the next rule unless separated by a blank line; detached
+comment blocks form sorting barriers. Duplicate rules and meaningful pattern
+whitespace are retained; CRLF is normalized to LF.
+
+The packaged command accepts multiple files and =--= before file names. Normal
+mode formats files; =--check= verifies them without writing. Exit status is 0 for
+success, 1 when check mode finds formatting needed, and 2 for invalid input or
+operational failure. Symlinks and unsupported control bytes are rejected.
+Replacement is written in the same directory and installed only after successful
+rendering, preserving file permissions. Failed files remain unchanged and later
+files are still processed. These command details describe the internal formatter
+used by treefmt; they do not promise a standalone package interface.
+
+** Repository tests
+=tests/default.nix= accepts ={ llib, lib, pkgs, nix-flake-patched, gitignore-fmt }=
+and returns the complete check derivation set. Ordinary suites live under
+=tests/suites/=, each with a =cases.nix= expression, a =test-overlay.nix= entry,
+and any local fixtures.
+The functional =nix-flake-patched= and =gitignore-fmt= suites instead use check
+wrappers and Python runners embedded in Nix files. The explicit
 =nix-flake-patched= argument is the package derivation supplied by the root.
-The suite reads its base Nix and patch paths from the package's =passthru=
-metadata. Its overlay explicitly supplies =prev.nix-flake-patched= to the check
+The =nix-flake-patched= suite reads its base Nix and patch paths from the package's
+=passthru= metadata. Its overlay explicitly supplies =prev.nix-flake-patched= to the check
 wrapper because the check has the same name as the package argument; this avoids
 resolving the argument to the check itself through the final test scope.
 The entry passes existing API checks and shared arguments to =lib.tests.mkChecks=,
@@ -513,14 +562,20 @@ laziness and invalid configurations. It uses small evaluation fixtures on all
 systems, with additional real Emacs and TeX package-set evaluation on
 =x86_64-linux=. It does not build large editor or TeX environments.
 
+The =gitignore-fmt= suite has 51 named cases covering byte-exact output,
+comments, grouping, sorting, Git pattern syntax, invalid inputs, multi-file
+processing and operational failures. Valid fixtures also check idempotence and
+read-only =--check= behavior. Fault injection covers command and writeback
+failures; metadata checks cover unchanged files and replacement permissions.
+
 The =testApi= suite verifies the public test helpers with independent fixtures,
 including scope dependencies, extraction boundaries, separators and factory
 paths. Three extracted =pkgs.writeText= checks under =testApi/= are also built
 through the flake. The API suite and these real checks are supplied as existing
 =checks= at the root, independently of ordinary-suite discovery. The root also requires
 the complete output names to match the existing API checks plus =mergeAttrsRecursive=,
-=overlays=, =packages= and =nix-flake-patched=, so missing or unexpected checks
-fail evaluation.
+=overlays=, =packages=, =gitignore-fmt= and =nix-flake-patched=, so missing or
+unexpected checks fail evaluation.
 Adding an ordinary suite also requires updating this expected-name set.
 Existing aggregation assertions and report/check names are retained; API tests
 track the current assembly and extraction contract.

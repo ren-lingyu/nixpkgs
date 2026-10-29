@@ -3,75 +3,43 @@
 #+STARTUP: logdone
 #+PROPERTY: TIMEZONE UTC
 
-Notable user-visible changes are recorded here. Development entries describe
-implemented changes; their scope remains open until explicitly frozen.
+Notable changes to the intended public interface are recorded here: the root
+flake's =lib= output and functionality supplied through its functions.
+Compatibility is not currently promised, even for that interface. Other accessible
+contents are internal and carry no compatibility guarantee. See
+[[file:README.org][README]] for usage, detailed behavior and internal maintenance.
+Development entries describe implemented changes; their scope remains open until
+explicitly frozen.
 
 * TODO 0.1.0
 Planned initial release. The version and scope have not been frozen, and this
 entry does not record a release date or publication.
 
-** Fixed
-- Report invalid =mkFlake= calls with explicit diagnostics for a non-function
-  second argument, non-attribute-set results, missing =inputs= or =moduleLocation=,
-  and invalid =specialArgs=. Missing-location errors include correction examples.
-- Make =gitignore-fmt= propagate operational failures instead of relying on
-  =set -e= inside conditionally called functions, and distinguish comparison
-  errors from content differences. Provide =diffutils= explicitly for =cmp=.
-- Prevent partial formatter writes from truncating the original file: generate
-  a replacement in the same directory, preserve file permissions, and replace
-  only after writing succeeds. Failed inputs remain unchanged; temporary files
-  are cleaned up and later files in a multi-file invocation are still processed.
-- Explicitly match both root and nested =.gitignore= files in treefmt, and remove
-  the root file from the project's formatting exclusions.
-- Anchor repository whitelist rules at the root and correct the =.gitmodules=
-  whitelist entry so the intended file can be tracked.
-
 ** Added
-- A shared flake-parts foundation assembled by the local =pkgs/= subflake, with
-  public =lib.mkFlake=, =lib.mergeAttrsRecursive=, =lib.packages= and =lib.tests=.
-- =mkFlake nixpkgs argsFun module=, where =argsFun= receives ={ lib = nixpkgs.lib; }=
-  and returns flake arguments containing =inputs= and =moduleLocation=. Optional
-  =llib= and =lpkgs= are supplied through module arguments; caller =specialArgs=
-  can override defaults. Per-system =nixpkgs.overlays= controls package assembly.
-- Strict recursive attribute-set merging with conflict paths, lazy unique
-  values, atomic derivations and optional later-entry override precedence.
-- Directory-based package overlay aggregation with nested scopes and constructor
-  arguments =extraArgs= and =descendantOverlay=. Built-in Emacs and TeX Live rules
-  integrate discovered packages with their package-set selection mechanisms.
-- Named overlay groups with =include=, =exclude=, external =overlays= and optional
-  =export=. Inclusion defaults to discovered local names; exclusion is applied
-  afterwards. External overlays run in list order before selected local overlays.
-  Exports select final derivations only along selected local directory paths and
-  reject existing export names. Group configuration and application are isolated.
-- =mkNixosModule= and =mkHomeModule= for recursive module discovery, rejecting
-  matching module entries nested below another matching entry.
-- =lib.tests.mkChecks= for assembling an independent test scope from =checks=,
-  =args= and discovered overlays, preserving existing check names and extracting
-  directory-selected derivations with configurable flattened names.
-- Shared treefmt configuration for Nix, shell, Prettier-supported files, Haskell,
-  Cabal files and project files, XML, Python, TOML, Scheme, Emacs Lisp and the
-  project's whitelist-style =.gitignore= convention. It provides =formatter= and
-  a default formatting check, disables default exclusions and treats unmatched
-  files as errors; consumers supply their explicit exclusion lists.
-- =elisp-autofmt=, =lisplens= and =gitignore-fmt= packages exposed through
-  =legacyPackages.${system}=. The formatter packages are available to the shared
-  treefmt module through an internal overlay group.
-- =gitignore-fmt= normalizes the fixed ignore header, root-anchored whitelist
-  rules, directory grouping, sorting and blank lines while retaining attached
-  comments and treating detached comment blocks as sorting barriers. It supports
-  multiple files, =--check= and =--= before file names, retains duplicate rules,
-  and rejects invalid section order, unsupported control bytes and symlinks.
-  Exit codes distinguish success (0), formatting required in check mode (1),
-  and invalid input or operational errors (2).
-- A standalone =nix-flake-patched= package with separate patches for false circular
-  imports and incorrect locked-source reuse with nested relative flake inputs.
-  The package exposes its base Nix and ordered patches for regression comparisons
-  without overriding =pkgs.nix= or selecting the system Nix. Patch compatibility
-  must be rechecked when updating the base version.
-- =packages.${system}.nix= and =devShells.${system}.nix= for explicitly building or
-  entering a shell with the patched Nix; =legacyPackages= also exposes that package.
-- Library checks with independent =mkChecks= acceptance, a 51-case formatter
-  regression suite covering byte-level output, idempotence and injected failures,
-  and isolated baseline/single-patch/combined-patch Nix regression checks.
+*** =lib.mkFlake=
+Construct flakes with flake-parts, shared module arguments and configurable
+per-system Nixpkgs overlays, with explicit argument validation and diagnostics.
 
-See [[file:README.org][README]] for API conventions, package usage and test commands.
+Provide a shared treefmt formatter and default formatting check, covering source
+languages and the project's whitelist-style =.gitignore= convention for root and
+nested files. The =.gitignore= formatter reports operational failures and preserves
+original files on failure. Unmatched files are errors; consumers configure
+explicit exclusions.
+
+Provide a =nix= development shell using patched Nix to address false circular
+imports and incorrect locked-source reuse with nested relative inputs.
+
+*** =lib.mergeAttrsRecursive=
+Merge attribute sets recursively with conflict diagnostics and optional
+later-entry override precedence.
+
+*** =lib.packages=
+=mkOverlays= provides directory-based overlays, nested scopes, Emacs and TeX Live
+integration, and independent groups with =include=, =exclude=, external =overlays=
+and directory-constrained package exports.
+
+=mkNixosModule= and =mkHomeModule= provide recursive module discovery.
+
+*** =lib.tests=
+=mkChecks= assembles an independent test scope, preserving existing checks and
+extracting directory-selected derivations with configurable names.
