@@ -1,5 +1,94 @@
 # Current project state
 
+## org-fmt v1: required pre-0.1.0 work, implementation not yet accepted
+
+The owner added org-fmt in the project worktree and supplied the final v1 design
+and decision history. Treat completion and acceptance as pre-0.1.0 work, not as
+a release/freeze declaration. This inspection authorized memory maintenance and,
+in a follow-up, CHANGELOG maintenance; it did not authorize implementation edits
+or running formatting, builds, tests or Nix evaluation. CHANGELOG.org now records
+the candidate under Added / lib.mkFlake as shared treefmt functionality with
+acceptance still pending. Do not advertise the package itself as a separate
+supported public interface. README synchronization remains future work.
+
+Adopted design and limits:
+- Use full org-element-parse-buffer -> AST transformation ->
+  org-element-interpret-data, not AST-directed source edits or text replacement.
+  Reuse native Org parsing/serialization rather than reimplementing formatting.
+  The owner reports exploratory interactive Emacs results were broadly acceptable
+  for ordinary documents, complex headlines, planning, properties and source
+  blocks. This is owner-reported evidence, not an executed acceptance suite.
+- Accept native serialization normalization rather than byte preservation, subject
+  to actual semantic, idempotence and real-document tests. Reconsider the full
+  round-trip only for demonstrated unacceptable semantic changes, not theoretical
+  fidelity concerns.
+- Set headline :pre-blank and :post-blank to 0. At the start of its section, set
+  :post-blank to 0 for the consecutive planning/property-drawer/drawer prefix,
+  determined by AST order even if source blanks separate them. This is spacing
+  grouping only; ordinary drawers retain their actual Org syntactic ownership.
+  Do not remove blank lines owned by other body elements.
+- Leave paragraphs, body drawers, items/lists, footnotes and all blocks to the
+  native serializer. No universal post-blank mapping or extra blank-line rules.
+  Native source-block indentation/escaping is acceptable; do not invoke embedded
+  language major modes, indent-region or external language formatters.
+- No third-party Org formatter, org-tools/ox-org dependency, special-block plugin
+  system, separate Emacs package framework or extra org-table-align pass without
+  a demonstrated test need. Avoid new generic configuration/abstraction frameworks.
+- Use existing package/overlay discovery in pkgs/pkgs/org-fmt/{package.nix,
+  overlay.nix,org-fmt.el}; include it in treefmt group and existing export group.
+  Register .org in shared pkgs/modules/fp/treefmt/default.nix, with no new flake.
+  Emacs batch -Q must avoid interactive user configuration. Fix
+  org-src-content-indentation=2, org-tags-column=77, org-odd-levels-only=nil;
+  Emacs/Org versions come from the locked Nix dependency.
+- CLI org-fmt FILE... and org-fmt --check FILE...; status 0 success/unchanged,
+  1 check-needs-formatting, 2 argument/file/runtime error. Write only on change,
+  use same-directory temporary replacement, preserve normal permission bits,
+  clean up temporary files, retain originals on failure, do not silently hide
+  errors or follow symbolic links for modification. Keep file handling simple.
+
+Observed worktree, not committed or executed:
+- Package, overlay, shared treefmt registration (*.org and **/*.org), treefmt-group
+  membership, root test argument and tests/default.nix wiring/expected-name update
+  exist. .gitignore admits package .el files. All ten implementation paths have
+  staged changes; org-fmt.el, package.nix and the test overlay additionally have
+  unstaged edits. Preserve that staging split.
+- Read the full current org-fmt.el. It implements the selected headline transform,
+  fixed settings, byte comparison, UTF-8 Unix rendering, nearby temp/rename with
+  cleanup and mode copying, symlink/regular-file guards and per-file error handling.
+  CLI also handles --help and --. These are static observations, not guarantees.
+- Important pending defect: the unstaged package.nix changes `exec emacs ...` to
+  `exec ${emacs-nox} ...`; the latter resolves to the derivation directory rather
+  than its bin/emacs executable and is expected to fail at startup. Reported to
+  owner, not fixed or reproduced. Verify/fix this before acceptance testing.
+- Root treefmt.settings.excludes still contains *.org, so repository Org files
+  remain excluded despite shared registration. Decide activation separately;
+  registration is not evidence that real repository documents were checked.
+- The basic check contains a byte-exact headline/planning/property/source-block
+  fixture, second-pass idempotence, check-mode no-write comparison, and a leading
+  LOGBOOK fixture. Its initial --check assertion only requires failure, not status
+  exactly 1. No validation command was run in this task; no suite pass is claimed.
+
+Acceptance still required in existing tests/suites and mkChecks:
+- Behavior: adjacent/empty/parent-child headlines; complex CLOSED/SCHEDULED/DEADLINE;
+  multiple properties; leading LOGBOOK/other drawers and body drawers; paragraphs,
+  tables, NAME/ATTR_*/CAPTION affiliations; multiple source languages and export,
+  example and special blocks.
+- Semantics: compare Org structure and key contents rather than demanding original
+  bytes. Check headline levels/titles, planning timestamps/properties, list/item
+  and footnote boundaries, actual Babel code, -i/:preserve-indent, Org-TeXmacs
+  embedded material and custom special-block parse/serialize behavior. Record
+  minimal reproductions before deciding whether a special case needs support.
+- Strict byte equality F(F(x))=F(x) on fixtures and actual repository documents.
+- CLI: multi-file processing, exact check statuses, no rewriting unchanged files,
+  no writes in check mode, unchanged originals on errors, permissions and cleanup.
+  The current small integration check is only a starting point.
+
+Next work is to resolve the startup command and activation decisions, expand and
+run authorized acceptance checks, then synchronize documentation with verified
+behavior. Preserve the chosen narrow v1 scope; expand only for real test defects.
+Meeting these requirements is sufficient for v1; do not delay adoption for
+speculative complete Org syntax coverage. Overall 0.1.0 scope remains unfrozen.
+
 ## Intended public interface and compatibility boundary
 
 The owner explicitly limits the intended interface for other projects to the
