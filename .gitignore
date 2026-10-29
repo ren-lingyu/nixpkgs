@@ -2,7 +2,7 @@
 */
 
 !/.gitignore
-!/.gitsubmodules
+!/.gitmodules
 !/LICENSE
 !/README.org
 !/flake.lock
