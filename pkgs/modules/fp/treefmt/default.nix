@@ -11,6 +11,11 @@
           excludes = lib.mkDefault [ ];
           on-unmatched = "fatal";
           formatter = {
+            gitignore-fmt = {
+              command = lib.getExe pkgs.gitignore-fmt;
+              includes = [ "**/.gitignore" ];
+            };
+
             lisplens = {
               command = lib.getExe pkgs.lisplens;
               options = [ "format" ];

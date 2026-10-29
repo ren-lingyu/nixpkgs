@@ -5,8 +5,9 @@
     groups = {
       treefmt = {
         include = [
-          "lisplens"
           "elisp-autofmt"
+          "gitignore-fmt"
+          "lisplens"
         ];
       };
 
