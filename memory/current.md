@@ -85,6 +85,20 @@ Acceptance still required in existing tests/suites and mkChecks:
   no writes in check mode, unchanged originals on errors, permissions and cleanup.
   The current small integration check is only a starting point.
 
+Subsequent static review conclusion: current tests are smoke coverage, insufficient
+for v1 acceptance. Prioritize exact status 1 vs 2, injected render/write/rename
+failures with unchanged-input/cleanup assertions, unchanged-file metadata and
+multi-file/error aggregation, and normalized semantic projections plus all-fixture
+and real-document idempotence. Existing whole-output goldens do not replace
+semantic checks or establish filesystem safety on failure. Keep the independent
+mkChecks acceptance architecture intact.
+The current writeShellApplication + emacs-nox + explicit executable + batch -Q
+wrapper is appropriate for this small v1; no separate flake, Emacs package framework
+or compilation layer is needed. runtimeInputs adds Emacs to PATH but is optional
+for the current absolute-command wrapper; removing it is cleanup, not a correctness
+fix. Nix shell-wrapper checks do not validate the Elisp runtime or Org semantics.
+Review was read-only; no tests/builds or project edits were performed.
+
 Next work is to expand and run authorized acceptance checks while retaining the
 root Org exclusion, then synchronize documentation with verified
 behavior. Preserve the chosen narrow v1 scope; expand only for real test defects.
