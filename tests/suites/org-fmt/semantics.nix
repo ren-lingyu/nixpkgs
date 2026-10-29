@@ -6,6 +6,7 @@
   (require 'org-element)
   (require 'ob-core)
   (require 'subr-x)
+  (require 'json)
 
   (defun org-fmt-test-clean (value)
     (cond ((stringp value) (substring-no-properties value))
@@ -83,10 +84,21 @@
                     result))))
         (org-fmt-test-clean (nreverse result)))))
 
-  (let* ((files command-line-args-left)
-         (before (org-fmt-test-projection (car files)))
-         (after (org-fmt-test-projection (cadr files))))
-    (unless (equal before after)
-      (princ (format "Semantic mismatch\nBEFORE: %S\nAFTER: %S\n" before after))
-      (kill-emacs 1)))
+  ;; One process compares all pairs; a failure stays attributed to its output file.
+  (let ((files command-line-args-left) results)
+    (unless (and files (zerop (% (length files) 2)))
+      (error "Expected original/formatted file pairs"))
+    (while files
+      (let ((original (pop files))
+            (formatted (pop files)))
+        (push
+         (cons formatted
+               (condition-case err
+                   (let ((before (org-fmt-test-projection original))
+                         (after (org-fmt-test-projection formatted)))
+                     (if (equal before after) t
+                       (format "Semantic mismatch\nBEFORE: %S\nAFTER: %S" before after)))
+                 (error (error-message-string err))))
+         results)))
+    (princ (json-encode (nreverse results))))
 ''
