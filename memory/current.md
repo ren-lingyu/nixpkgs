@@ -1,5 +1,42 @@
 # Current project state
 
+## gitignore-fmt: static review and test design pending implementation
+
+The owner committed the whitelist-style formatter package, treefmt integration
+and formatted root .gitignore. At review HEAD is
+`style(git): format .gitignore with pkgs.gitignore-fmt`; project worktree is clean.
+The owner requests review/test design, including errors, idempotence and possible
+simplification (especially whether --check is useful), not source/test edits or
+execution yet. Inspected the complete 181-line script and current suite wiring.
+
+Static findings: format_file is invoked in an if condition, so its commands cannot
+rely on set -e for failure propagation (confirmed in the GNU Bash set manual).
+mkdir, sort, reads and writes need explicit failure handling. In particular a
+failed sort can feed empty data into rendering; a failed cat write can be masked
+by the following successful printf. cmp's different/error statuses are conflated
+by if ! cmp. Final cat > file truncates before writing and is not a safe commit
+boundary. These are static code-path findings, not executed reproductions.
+
+Proposed test contract: byte-exact golden fixtures, exit/status/diagnostic and
+unchanged-input assertions; format twice equals once, then --check succeeds
+without writes for every valid fixture. Check mode returns 0 for formatted,
+1 for needs-formatting, 2 for invalid input/operational failure (proposal).
+Cover headers/sections, anchors, root/directory/glob grouping, stable sorting
+within detached-comment barriers, attached/EOF comments, CRLF/empty/missing-LF,
+escaped !/#/spaces and duplicate retention. Add CLI paths, mixed multi-file
+statuses, injected sort/cmp/write failures, cleanup and per-file non-destructive
+failure tests. Avoid comparing general Git semantics across intentional root
+anchoring/header insertion; semantic checks belong to already-conforming inputs.
+
+Recommend retaining --check for standalone CI and read-only verification; current
+treefmt integration uses normal mode. Prefer explicit error propagation and safe
+writeback before performance rewrites. Tests should run the packaged command via
+a small isolated suite using Python byte fixtures, injected arguments and the
+existing lib.tests path; no parent-directory imports or self-discovered test
+acceptance changes. No final implementation choice is adopted by the owner yet.
+Next: present review/design, then obtain source/test and command authorization
+before implementing or executing it.
+
 ## mkFlake argument diagnostics: committed
 
 The owner reported an unreadable list-comparison assertion for a missing
