@@ -1,5 +1,5 @@
-#+TITLE: Personal Nixpkgs
-#+AUTHOR: Lingyu Ren
+#+title: Personal Nixpkgs
+#+author: Lingyu Ren
 
 * Introduction
 A shared foundation for my Nix flake-based projects, intended to be added as a
@@ -27,17 +27,17 @@ maintenance.
 =lib.mkFlake= takes three positional arguments:
 
 #+begin_src nix
-inputs.personal-nixpkgs.lib.mkFlake inputs.nixpkgs
-  ({ lib }: {
-    inherit inputs;
-    moduleLocation = __curPos.file;
-    llib = inputs.personal-nixpkgs.lib;
-    lpkgs = inputs.personal-nixpkgs;
-  })
-  ({ ... }: {
-    systems = [ "x86_64-linux" ];
-    perSystem.treefmt.settings.excludes = [ "flake.lock" ];
-  })
+  inputs.personal-nixpkgs.lib.mkFlake inputs.nixpkgs
+    ({ lib }: {
+      inherit inputs;
+      moduleLocation = __curPos.file;
+      llib = inputs.personal-nixpkgs.lib;
+      lpkgs = inputs.personal-nixpkgs;
+    })
+    ({ ... }: {
+      systems = [ "x86_64-linux" ];
+      perSystem.treefmt.settings.excludes = [ "flake.lock" ];
+    })
 #+end_src
 
 The first argument is the Nixpkgs input used to instantiate per-system packages.
@@ -71,19 +71,19 @@ consumers must configure exclusions for files outside their formatter coverage.
 The root repository excludes =*.org=, =*.patch=, =LICENSE= and =flake.lock=;
 these repository-specific exclusions are not inherited by consumers.
 
-| Files | Formatter |
-|-------+-----------|
-| Nix | nixfmt, width 100, indent 2, strict mode. |
-| Shell | shfmt, indent 2, simplification disabled. |
-| Prettier-supported files | prettier, width 100, tab width 2, preserved prose wrapping and LF endings. |
-| Haskell | fourmolu. |
-| Cabal | cabal-fmt; the cabal-project-fmt entry formats project files using =--no-cabal-file --inplace=. |
-| XML | xmllint. |
-| Python | ruff-format, line length 100. |
-| TOML | taplo. |
-| Scheme (=.scm=) | =lisplens format=. |
-| Emacs Lisp (=.el=) | elisp-autofmt. |
-| Root and nested =.gitignore= files | gitignore-fmt, for the whitelist convention described under internal maintenance below. |
+| Files                              | Formatter                                                                                       |
+|------------------------------------+-------------------------------------------------------------------------------------------------|
+| Nix                                | nixfmt, width 100, indent 2, strict mode.                                                       |
+| Shell                              | shfmt, indent 2, simplification disabled.                                                       |
+| Prettier-supported files           | prettier, width 100, tab width 2, preserved prose wrapping and LF endings.                      |
+| Haskell                            | fourmolu.                                                                                       |
+| Cabal                              | cabal-fmt; the cabal-project-fmt entry formats project files using =--no-cabal-file --inplace=. |
+| XML                                | xmllint.                                                                                        |
+| Python                             | ruff-format, line length 100.                                                                   |
+| TOML                               | taplo.                                                                                          |
+| Scheme (=.scm=)                    | =lisplens format=.                                                                              |
+| Emacs Lisp (=.el=)                 | elisp-autofmt.                                                                                  |
+| Root and nested =.gitignore= files | gitignore-fmt, for the whitelist convention described under internal maintenance below.         |
 
 * Shared library
 The flake's =lib= output provides functions for use by other repositories.
@@ -96,10 +96,10 @@ attribute-set nodes. The configuration argument is required; pass ={ }= to use
 the defaults. For example, it can combine repository-level libraries:
 
 #+begin_src nix
-inputs.personal-nixpkgs.lib.mergeAttrsRecursive { } [
-  inputs.personal-nixpkgs.lib
-  inputs.other-project.lib
-]
+  inputs.personal-nixpkgs.lib.mergeAttrsRecursive { } [
+    inputs.personal-nixpkgs.lib
+    inputs.other-project.lib
+  ]
 #+end_src
 
 =allowOverrides= must be a boolean and defaults to =false=. Repeated leaves,
@@ -114,11 +114,11 @@ With =allowOverrides = true=, later list entries take precedence at conflicts;
 shared attribute sets still merge recursively:
 
 #+begin_src nix
-inputs.personal-nixpkgs.lib.mergeAttrsRecursive { allowOverrides = true; } [
-  { a = 1; nested.x = 1; }
-  { a = 2; nested.y = 2; }
-]
-# => { a = 2; nested = { x = 1; y = 2; }; }
+  inputs.personal-nixpkgs.lib.mergeAttrsRecursive { allowOverrides = true; } [
+    { a = 1; nested.x = 1; }
+    { a = 2; nested.y = 2; }
+  ]
+  # => { a = 2; nested = { x = 1; y = 2; }; }
 #+end_src
 
 A winning leaf replaces the whole lower-priority subtree. For example,
@@ -133,40 +133,40 @@ remain lazy.
 tree. All functions take an attribute set; paths such as =overlayFile= and
 =modulePath= are relative to each discovered directory and have no defaults.
 
-| Function | Arguments | Result |
-|----------+-----------+--------|
-| =mkOverlays= | =root=, =overlayFile=, optional =extraArgs=, =groups= | Independent top-level directory overlays, or named groups with optional package exports. |
-| =mkNixosModule= | =root=, =modulePath= | A module whose =imports= collect the discovered NixOS modules. |
-| =mkHomeModule= | =root=, =modulePath= | A module whose =imports= collect the discovered Home Manager modules. |
+| Function        | Arguments                                             | Result                                                                                   |
+|-----------------+-------------------------------------------------------+------------------------------------------------------------------------------------------|
+| =mkOverlays=    | =root=, =overlayFile=, optional =extraArgs=, =groups= | Independent top-level directory overlays, or named groups with optional package exports. |
+| =mkNixosModule= | =root=, =modulePath=                                  | A module whose =imports= collect the discovered NixOS modules.                           |
+| =mkHomeModule=  | =root=, =modulePath=                                  | A module whose =imports= collect the discovered Home Manager modules.                    |
 
 For example, with this flake available as =inputs.personal-nixpkgs=, a consumer
 can construct overlays and select its packages for one system:
 
 #+begin_src nix
-let
-  helpers = inputs.personal-nixpkgs.lib.packages;
-  root = ./pkgs;
-  overlayFile = "overlay.nix";
-  grouped = helpers.mkOverlays {
-    inherit root overlayFile;
-    groups = {
-      default = { };
-      share = {
-        exclude = [ "rage-armored" ];
-        overlays = [ inputs.git-agent-workflow.overlays.default ];
+  let
+    helpers = inputs.personal-nixpkgs.lib.packages;
+    root = ./pkgs;
+    overlayFile = "overlay.nix";
+    grouped = helpers.mkOverlays {
+      inherit root overlayFile;
+      groups = {
+        default = { };
+        share = {
+          exclude = [ "rage-armored" ];
+          overlays = [ inputs.git-agent-workflow.overlays.default ];
+        };
+        legacy.export = true;
       };
-      legacy.export = true;
     };
-  };
-  pkgs = import inputs.nixpkgs {
-    system = "x86_64-linux";
-    overlays = [ grouped.legacy ];
-  };
-in
-{
-  overlays = { inherit (grouped) default share; };
-  legacyPackages.x86_64-linux = pkgs.legacyPackages;
-}
+    pkgs = import inputs.nixpkgs {
+      system = "x86_64-linux";
+      overlays = [ grouped.legacy ];
+    };
+  in
+  {
+    overlays = { inherit (grouped) default share; };
+    legacyPackages.x86_64-linux = pkgs.legacyPackages;
+  }
 #+end_src
 
 Here, =./pkgs= and =overlay.nix= are consumer choices; =rage-armored= must be a
@@ -185,12 +185,12 @@ directory description per =mkOverlays= call.
 
 Each group accepts these fields:
 
-| Field | Type | Default |
-|-------+------+---------|
-| =include= | List of local overlay names. | All names from the existing local discovery result. |
-| =exclude= | List of local overlay names. | =[ ]=. |
-| =overlays= | List of external overlay functions. | =[ ]=. |
-| =export= | Boolean or nonempty string. | =false=. |
+| Field      | Type                                | Default                                             |
+|------------+-------------------------------------+-----------------------------------------------------|
+| =include=  | List of local overlay names.        | All names from the existing local discovery result. |
+| =exclude=  | List of local overlay names.        | =[ ]=.                                              |
+| =overlays= | List of external overlay functions. | =[ ]=.                                              |
+| =export=   | Boolean or nonempty string.         | =false=.                                            |
 
 Local selection first includes the named overlays, then removes excluded names.
 For example, =include = [ "lisplens" ]= selects only that discovered overlay;
@@ -231,10 +231,10 @@ Discovery starts with the children of =root=. An overlay file directly inside
 constructor. A definition with no construction dependencies uses:
 
 #+begin_src nix
-{ }:
-final: prev: {
-  example = final.callPackage ./package.nix { };
-}
+  { }:
+  final: prev: {
+    example = final.callPackage ./package.nix { };
+  }
 #+end_src
 
 The constructor returns a standard two-argument Nixpkgs overlay; its returned
@@ -245,21 +245,21 @@ standard two-argument functions and are consumed normally by Nixpkgs.
 =mkOverlays= accepts =extraArgs ? { }= as a constructor environment. For example:
 
 #+begin_src nix
-helpers.mkOverlays {
-  inherit root overlayFile;
-  extraArgs = { inherit inputs; };
-}
+  helpers.mkOverlays {
+    inherit root overlayFile;
+    extraArgs = { inherit inputs; };
+  }
 #+end_src
 
 A source can receive this environment explicitly and forward selected values:
 
 #+begin_src nix
-{ extraArgs }:
-final: prev: {
-  example = final.callPackage ./package.nix {
-    source = extraArgs.inputs.example;
-  };
-}
+  { extraArgs }:
+  final: prev: {
+    example = final.callPackage ./package.nix {
+      source = extraArgs.inputs.example;
+    };
+  }
 #+end_src
 
 Only =extraArgs= and =descendantOverlay= may be explicitly declared in the
@@ -291,11 +291,11 @@ are composed before automatic namespace overlays.
 When an immediate child of =root= has descendant overlays but no explicit
 =overlayFile=, =mkOverlays= selects a built-in rule by its directory name:
 
-| Directory | Default behavior |
-|-----------+------------------|
-| =emacsPackages= | Extend each =emacsPackagesFor emacs= scope through =overrideScope=; the factory owns the descendants. |
+| Directory         | Default behavior                                                                                             |
+|-------------------+--------------------------------------------------------------------------------------------------------------|
+| =emacsPackages=   | Extend each =emacsPackagesFor emacs= scope through =overrideScope=; the factory owns the descendants.        |
 | =texlivePackages= | Aggregate the namespace normally and expose its packages through the existing TeX Live selection interfaces. |
-| Other names | Use the generic namespace behavior above, including =piPackages=. |
+| Other names       | Use the generic namespace behavior above, including =piPackages=.                                            |
 
 Explicit parent overlays always take precedence. An ordinary explicit overlay
 still composes with descendant namespace aggregation; an explicit factory owns
@@ -325,10 +325,10 @@ namespace, and TeX selection reuses the shared =texlivePackages= subtree.
 =mkNixosModule= and =mkHomeModule= use the same discovery mechanism. For example:
 
 #+begin_src nix
-helpers.mkHomeModule {
-  root = ./pkgs;
-  modulePath = "home-module.nix";
-}
+  helpers.mkHomeModule {
+    root = ./pkgs;
+    modulePath = "home-module.nix";
+  }
 #+end_src
 
 The helper recursively searches child directories for the chosen =modulePath=.
@@ -339,8 +339,8 @@ descendants. The module file directly inside =root= is not included.
 =lib.tests= shares the directory-based overlay aggregation mechanism used by
 =lib.packages=, without package-specific defaults. Its public entry is =mkChecks=:
 
-| Function | Arguments | Result |
-|----------+-----------+--------|
+| Function   | Arguments                                                     | Result                                                                                    |
+|------------+---------------------------------------------------------------+-------------------------------------------------------------------------------------------|
 | =mkChecks= | =root=, =overlayFile=, optional =checks=, =args=, =separator= | Existing checks extended by test overlays, plus flattened directory-selected derivations. |
 
 =mkChecks= discovers and composes the overlays internally, constructing an
@@ -352,15 +352,15 @@ not extend =pkgs=. Test source files use the same constructor protocol, includin
 For example:
 
 #+begin_src nix
-llib.tests.mkChecks {
-  root = ./tests;
-  overlayFile = "test-overlay.nix";
-  checks = existingChecks;
-  args = {
-    inherit pkgs llib;
-    inherit (pkgs) writeText;
-  };
-}
+  llib.tests.mkChecks {
+    root = ./tests;
+    overlayFile = "test-overlay.nix";
+    checks = existingChecks;
+    args = {
+      inherit pkgs llib;
+      inherit (pkgs) writeText;
+    };
+  }
 #+end_src
 
 =checks= defaults to ={ }= and supplies existing check names to preserve.
@@ -386,13 +386,13 @@ a different filename. The root's own overlay file is ignored.
 for values at the corresponding paths. It does not enumerate arguments to find
 extra checks:
 
-| Discovered directory | Corresponding scope value | Action |
-|----------------------+---------------------------+--------|
-| Leaf with an overlay | Derivation | Extract it. |
-| Leaf with an overlay | Missing or non-derivation | Skip it. |
-| Leaf with an overlay | Ordinary attribute set | Skip it without traversing its attributes. |
-| Has descendant overlays | Non-derivation attribute set | Continue along the directory tree. |
-| Has descendant overlays | Missing, derivation, or other value | Report an invalid namespace path. |
+| Discovered directory    | Corresponding scope value           | Action                                     |
+|-------------------------+-------------------------------------+--------------------------------------------|
+| Leaf with an overlay    | Derivation                          | Extract it.                                |
+| Leaf with an overlay    | Missing or non-derivation           | Skip it.                                   |
+| Leaf with an overlay    | Ordinary attribute set              | Skip it without traversing its attributes. |
+| Has descendant overlays | Non-derivation attribute set        | Continue along the directory tree.         |
+| Has descendant overlays | Missing, derivation, or other value | Report an invalid namespace path.          |
 
 Directories with no matching overlay or descendant overlays are ignored.
 The internal scope may contain helper functions, evaluation results and other
@@ -421,14 +421,14 @@ subflake.
 
 The source is organized as follows:
 
-| Path | Purpose |
-|------+---------|
-| =flake.nix= | Consume the shared foundation, select public library exports, forward packages and assemble repository checks. |
-| =pkgs/flake.nix= | Assemble the foundation and define =lib.mkFlake=. |
-| =pkgs/lib/= | Shared merge, package/module discovery and test-assembly functions. |
-| =pkgs/pkgs/= | Package definitions and their internal overlay groups. |
-| =pkgs/modules/fp/= | Shared flake-parts modules, currently treefmt configuration. |
-| =tests/= | Library suites, independent test-assembly acceptance cases and fixtures. |
+| Path               | Purpose                                                                                                        |
+|--------------------+----------------------------------------------------------------------------------------------------------------|
+| =flake.nix=        | Consume the shared foundation, select public library exports, forward packages and assemble repository checks. |
+| =pkgs/flake.nix=   | Assemble the foundation and define =lib.mkFlake=.                                                              |
+| =pkgs/lib/=        | Shared merge, package/module discovery and test-assembly functions.                                            |
+| =pkgs/pkgs/=       | Package definitions and their internal overlay groups.                                                         |
+| =pkgs/modules/fp/= | Shared flake-parts modules, currently treefmt configuration.                                                   |
+| =tests/=           | Library suites, independent test-assembly acceptance cases and fixtures.                                       |
 
 The root exports =lib=, =packages=, =legacyPackages=, =devShells=, =formatter=
 and =checks=. This output inventory does not expand the public interface defined
@@ -442,7 +442,7 @@ with a caller-supplied Nixpkgs =lib=; this source-level import is outside the
 intended public interface:
 
 #+begin_src nix
-import ./pkgs/lib { inherit lib; }
+  import ./pkgs/lib { inherit lib; }
 #+end_src
 
 This direct import provides the merge, overlay, package/module and test helpers;
@@ -475,8 +475,8 @@ Its =passthru.baseNix= exposes the unmodified base derivation, and
 directly as =nix-flake-patched.baseNix= and =nix-flake-patched.patches=.
 
 #+begin_src sh
-nix build -L .#legacyPackages.x86_64-linux.nix-flake-patched
-./result/bin/nix --version
+  nix build -L .#legacyPackages.x86_64-linux.nix-flake-patched
+  ./result/bin/nix --version
 #+end_src
 
 The root also exposes this package as =packages.${system}.nix=. Build it with
@@ -583,8 +583,8 @@ track the current assembly and extraction contract.
 Run the merge suite alone from the repository root without loading flake inputs:
 
 #+begin_src sh
-nix-instantiate --eval --strict --readonly-mode \
-  --expr 'import ./tests/merge-attrs-recursive.nix { llib = import ./pkgs/lib { lib = {}; }; }'
+  nix-instantiate --eval --strict --readonly-mode \
+    --expr 'import ./tests/merge-attrs-recursive.nix { llib = import ./pkgs/lib { lib = {}; }; }'
 #+end_src
 
 The merge suite needs no Nixpkgs library functions, so this command supplies
@@ -603,8 +603,8 @@ Run all checks for the current system with =nix flake check=, or build the
 merge suite's report directly:
 
 #+begin_src sh
-nix build .#checks.x86_64-linux.mergeAttrsRecursive
-nix build .#checks.x86_64-linux.packages
-nix build .#checks.x86_64-linux.overlays
-nix build .#checks.x86_64-linux.testApi
+  nix build .#checks.x86_64-linux.mergeAttrsRecursive
+  nix build .#checks.x86_64-linux.packages
+  nix build .#checks.x86_64-linux.overlays
+  nix build .#checks.x86_64-linux.testApi
 #+end_src

@@ -1,7 +1,7 @@
-#+TITLE: Changelog
-#+TODO: TODO NEXT WAIT | DONE CANCELED
-#+STARTUP: logdone
-#+PROPERTY: TIMEZONE UTC
+#+title: Changelog
+#+todo: TODO NEXT WAIT | DONE CANCELED
+#+startup: logdone
+#+property: TIMEZONE UTC
 
 Notable changes to the intended public interface are recorded here: the root
 flake's =lib= output and functionality supplied through its functions.
