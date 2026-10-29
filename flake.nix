@@ -74,7 +74,6 @@
                 treefmt = {
                   flakeCheck = true;
                   settings.excludes = [
-                    "*.org"
                     "*.patch"
                     "LICENSE"
                     "flake.lock"
