@@ -1,13 +1,15 @@
 # Current project state
 
-## gitignore-fmt: static review and test design pending implementation
+## gitignore-fmt: optimized and 51 regressions passing, not committed
 
 The owner committed the whitelist-style formatter package, treefmt integration
 and formatted root .gitignore. At review HEAD is
-`style(git): format .gitignore with pkgs.gitignore-fmt`; project worktree is clean.
-The owner requests review/test design, including errors, idempotence and possible
-simplification (especially whether --check is useful), not source/test edits or
-execution yet. Inspected the complete 181-line script and current suite wiring.
+`style(git): format .gitignore with pkgs.gitignore-fmt`; project was clean at start.
+The owner initially requested review/test design, including errors, idempotence
+and simplification, then authorized optimizing the script and adding tests, with
+further fixes driven by test failures. Execution/format/build commands still
+require separate authorization. Inspected the complete 181-line script and
+current suite wiring.
 
 Static findings: format_file is invoked in an if condition, so its commands cannot
 rely on set -e for failure propagation (confirmed in the GNU Bash set manual).
@@ -17,10 +19,10 @@ by the following successful printf. cmp's different/error statuses are conflated
 by if ! cmp. Final cat > file truncates before writing and is not a safe commit
 boundary. These are static code-path findings, not executed reproductions.
 
-Proposed test contract: byte-exact golden fixtures, exit/status/diagnostic and
+Implemented test contract: byte-exact golden fixtures, exit/status/diagnostic and
 unchanged-input assertions; format twice equals once, then --check succeeds
 without writes for every valid fixture. Check mode returns 0 for formatted,
-1 for needs-formatting, 2 for invalid input/operational failure (proposal).
+1 for needs-formatting, 2 for invalid input/operational failure.
 Cover headers/sections, anchors, root/directory/glob grouping, stable sorting
 within detached-comment barriers, attached/EOF comments, CRLF/empty/missing-LF,
 escaped !/#/spaces and duplicate retention. Add CLI paths, mixed multi-file
@@ -33,9 +35,37 @@ treefmt integration uses normal mode. Prefer explicit error propagation and safe
 writeback before performance rewrites. Tests should run the packaged command via
 a small isolated suite using Python byte fixtures, injected arguments and the
 existing lib.tests path; no parent-directory imports or self-discovered test
-acceptance changes. No final implementation choice is adopted by the owner yet.
-Next: present review/design, then obtain source/test and command authorization
-before implementing or executing it.
+acceptance changes.
+Implementation written: explicit error propagation, separate rendering,
+same-directory temporary replacement preserving mode, explicit symlink rejection,
+and isolated package-level tests including command-failure injection. Wire the
+package through the root/test args as with nix-flake-patched, preserving independent
+mkChecks acceptance. Added a runner with 51 named cases (golden bytes, all-valid
+idempotence/check invariants, invalid inputs, paths/permissions/symlinks, mixed
+multi-file modes and nine command-failure injections). The owner authorized
+repeated scoped formatting and a targeted Nix build of the suite from worktree
+paths, since the new tests are untracked and omitted from Git flake sources.
+The first run passed 47/51: the mock cmp incorrectly assumed coreutils contains
+cmp, which also exposed the package's missing explicit diffutils dependency.
+Added diffutils to runtimeInputs and fixed the shim; the next build passed all
+51 cases. Subsequently strengthened fault tests to verify check mode never
+reaches writeback commands. The owner approved final package.nix formatting and
+a build through tests/default.nix; both passed, including all 51 strengthened
+tests through the real assembly/name guard. Normal package and fault-injection
+package builds passed writeShellApplication's checks. Validation is x86_64-linux
+only and does not run the heavy nix-flake-patched regression or full flake check.
+
+CLI now accepts -- before file names and rejects unknown leading flags, NUL
+bytes and symlinks explicitly. Normalization/order/comment rules are otherwise
+retained. Invalid/failed files are unchanged; multi-file processing continues and
+aggregates errors. Same-directory replacement preserves mode; already formatted
+files and --check preserve bytes, mode, mtime and inode. No claim of a lock or
+concurrent-writer exclusion is made. Final scoped formatting and diff --check
+passed. New suite files remain untracked, four tracked project files are modified
+(flake.nix, formatter script/package and tests/default.nix), none staged. No
+README edit or lockfile change. Await review or commit instructions; do not stage
+project files automatically. No exact committed snapshot contains this work yet,
+so this checkpoint has no new project parent.
 
 ## mkFlake argument diagnostics: committed
 
