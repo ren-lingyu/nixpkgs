@@ -1,6 +1,6 @@
 # Current project state
 
-## gitignore-fmt: optimized and 51 regressions passing, not committed
+## gitignore-fmt: hardening, root matching and activation committed
 
 The owner committed the whitelist-style formatter package, treefmt integration
 and formatted root .gitignore. At review HEAD is
@@ -44,7 +44,7 @@ mkChecks acceptance. Added a runner with 51 named cases (golden bytes, all-valid
 idempotence/check invariants, invalid inputs, paths/permissions/symlinks, mixed
 multi-file modes and nine command-failure injections). The owner authorized
 repeated scoped formatting and a targeted Nix build of the suite from worktree
-paths, since the new tests are untracked and omitted from Git flake sources.
+paths, since the new tests were initially untracked and omitted from Git flake sources.
 The first run passed 47/51: the mock cmp incorrectly assumed coreutils contains
 cmp, which also exposed the package's missing explicit diffutils dependency.
 Added diffutils to runtimeInputs and fixed the shim; the next build passed all
@@ -61,11 +61,27 @@ retained. Invalid/failed files are unchanged; multi-file processing continues an
 aggregates errors. Same-directory replacement preserves mode; already formatted
 files and --check preserve bytes, mode, mtime and inode. No claim of a lock or
 concurrent-writer exclusion is made. Final scoped formatting and diff --check
-passed. New suite files remain untracked, four tracked project files are modified
-(flake.nix, formatter script/package and tests/default.nix), none staged. No
-README edit or lockfile change. Await review or commit instructions; do not stage
-project files automatically. No exact committed snapshot contains this work yet,
-so this checkpoint has no new project parent.
+passed. The owner staged and committed all seven files as
+`fix(pkgs/pkgs/gitignore-fmt): handle failures safely and add regression coverage`.
+Every committed file blob and mode matches the reviewed staged implementation,
+including the runner and root/test wiring. Tests ran before commit, not after.
+
+The owner requested commit drafting, waiting for HEAD movement, then waiting for
+their root excludes edit/staging and a second draft/commit before updating GAW.
+After the first commit, the owner paused to correct formatter includes separately:
+`fix(treefmt): explicitly match root gitignore files` adds literal .gitignore
+alongside **/.gitignore. That committed diff was inspected. The owner then
+committed `feat(treefmt): include the root gitignore in formatting checks`, removing
+.gitignore from the root treefmt.settings.excludes list. Its full diff matches the
+reviewed staged deletion. No staged or unstaged project files remain. This
+checkpoint associates the inspected final activation snapshot, retaining the
+reviewed hardening and matching correction. No README or lockfile change was
+made. README still describes .gitignore as excluded and lacks this new tool/suite.
+
+No treefmt pattern-matching test, formatter execution or full flake check was run
+after the matching/exclusion edits. The owner described includes as seemingly
+fixed; this is not runtime evidence. The 51 passing script regressions validate
+the tool, not the final treefmt integration. Await the next instruction.
 
 ## mkFlake argument diagnostics: committed
 
