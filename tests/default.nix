@@ -3,6 +3,7 @@
   lib,
   pkgs,
   nix-flake-patched,
+  gitignore-fmt,
 }:
 let
   mkResultCheck_ =
@@ -20,12 +21,14 @@ let
         lib
         pkgs
         nix-flake-patched
+        gitignore-fmt
         ;
       mkResultCheck = mkResultCheck_;
     };
   };
   expectedNames_ = lib.sort builtins.lessThan (
     [
+      "gitignore-fmt"
       "mergeAttrsRecursive"
       "nix-flake-patched"
       "overlays"

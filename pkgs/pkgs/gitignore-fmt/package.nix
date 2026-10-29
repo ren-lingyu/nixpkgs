@@ -1,6 +1,13 @@
-{ writeShellApplication, coreutils }:
+{
+  writeShellApplication,
+  coreutils,
+  diffutils,
+}:
 writeShellApplication {
   name = "gitignore-fmt";
-  runtimeInputs = [ coreutils ];
+  runtimeInputs = [
+    coreutils
+    diffutils
+  ];
   text = builtins.readFile ./gitignore-fmt.sh;
 }

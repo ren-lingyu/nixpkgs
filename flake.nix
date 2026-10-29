@@ -63,6 +63,7 @@
                   pkgs = import inputs.nixpkgs { inherit system; };
                   lib = pkgs.lib;
                   nix-flake-patched = pkgs.nix-flake-patched;
+                  gitignore-fmt = pkgs.gitignore-fmt;
                 };
 
                 treefmt = {
