@@ -132,8 +132,8 @@ Subsequent full verification and next objective:
   Scoped formatting and repeated targeted builds were separately authorized for
   this task. Instrumented original execution passed 32/32, measuring 158 Emacs
   subprocesses and 33.688s inside the suite.
-- Optimization is implemented in only tests/suites/org-fmt/runner.nix and
-  semantics.nix, both unstaged. Ordinary valid fixtures share five processes:
+- Optimization is committed in only tests/suites/org-fmt/runner.nix and
+  semantics.nix. Ordinary valid fixtures share five processes:
   packaged CLI formatting, semantic comparisons, reverse-order idempotence,
   formatted check and original-input check. Every fixture retains goldens where
   specified, semantic comparison, byte/mode/mtime/inode snapshots, no-write checks
@@ -155,8 +155,11 @@ Subsequent full verification and next objective:
   using 48 processes in 9.504s. Relative to the instrumented baseline this is about
   72% less elapsed suite time (one local measurement per version, not a statistical
   benchmark; excludes Nix evaluation/build setup). Scoped nix fmt and diff --check
-  passed. No full flake check was rerun for this test-only optimization. Project
-  staging was untouched; no project commit was made. Next: owner review/commit.
+  passed. No full flake check was rerun for this test-only optimization. The owner
+  staged both files and committed `perf(tests/org-fmt): batch formatter and semantic
+  checks`. The committed blobs and modes match the reviewed/tested implementation.
+  Validation ran before commit, not after. No project staging or commit was
+  performed by the agent. The optimization/commit phase is complete.
 - README synchronization and remaining 0.1.0 release work remain pending. The last
   README describes the former root exclusion and lacks Org formatter/suite details.
 Keep the narrow v1 scope; expand only for real test defects, not speculative
