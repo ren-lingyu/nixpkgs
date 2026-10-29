@@ -3,10 +3,14 @@
 
 !/.gitignore
 !/.gitmodules
+!/CHANGELOG.org
 !/LICENSE
 !/README.org
 !/flake.lock
 !/flake.nix
+
+!/CHANGELOGS/
+!/CHANGELOGS/*.org
 
 !/pkgs/
 !/pkgs/flake.nix
