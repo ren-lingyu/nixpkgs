@@ -69,9 +69,9 @@
                 treefmt = {
                   flakeCheck = true;
                   settings.excludes = [
+                    "*.org"
                     "*.patch"
                     "LICENSE"
-                    "README.org"
                     "flake.lock"
                   ];
                 };
