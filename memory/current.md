@@ -1,6 +1,6 @@
 # Current project state
 
-## org-fmt v1: targeted regression suite verified, pre-0.1.0 work
+## org-fmt v1: committed and targeted regression suite verified
 
 The owner adopted the v1 design below, then authorized fixing review findings and
 constructing complex regression fixtures. They separately authorized repeated
@@ -8,9 +8,10 @@ scoped formatting, a targeted build and a build through tests/default.nix with
 README/CHANGELOG copies. No full flake check or heavy patched-Nix regressions ran.
 CHANGELOG under Added / lib.mkFlake now describes the implemented shared Org
 formatting, not a standalone public package or a published release. README feature
-synchronization remains future work. This is pre-0.1.0 work awaiting owner review;
-passing tests do not freeze scope or finalize a release. Org-TeXmacs is an unknown
-special-block regression sample, never a dedicated adapter or promised integration.
+synchronization remains future work. This is completed pre-0.1.0 implementation;
+passing tests and its commit do not freeze scope or finalize a release. Org-TeXmacs
+is an unknown special-block regression sample, never a dedicated adapter or
+promised integration.
 
 Adopted design and limits:
 - Use full org-element-parse-buffer -> AST transformation ->
@@ -47,12 +48,12 @@ Adopted design and limits:
   clean up temporary files, retain originals on failure, do not silently hide
   errors or follow symbolic links for modification. Keep file handling simple.
 
-Implementation and verification in the current worktree, not committed:
+Committed implementation and verification:
 - Package, overlay, shared registration, treefmt-group membership, .el whitelist
   and root/test wiring exist. The owner corrected the launcher to use
   lib.getExe' emacs-nox "emacs". writeShellApplication/emacs-nox/batch -Q is suitable;
-  the optional runtimeInputs was retained. No separate flake, compilation stage
-  or Emacs package framework was introduced.
+  the redundant runtimeInputs was removed by the owner. No separate flake,
+  compilation stage or Emacs package framework was introduced.
 - Root intentionally retains *.org exclusion by owner decision. Do not remove it
   automatically. Real-document tests use copies in an isolated build instead.
 - Tests exposed a real CLI defect: an existing file named --unknown was formatted
@@ -94,12 +95,19 @@ Implementation and verification in the current worktree, not committed:
   were not built by the targeted assembly check. Scoped nix fmt and git diff
   --check passed. No all-platform or full flake-check claim is made.
 
-The owner's original staging was preserved. Agent corrections, expanded tests,
-document-dependency wiring and CHANGELOG changes are unstaged; runner.nix and
-semantics.nix are new untracked files. No project staging/commit was performed.
-Git-flake sources omit new untracked files, so validation deliberately imported
-the suite/test entry from working-directory paths. Next: owner review and commit
-preparation when requested, README synchronization and remaining release work.
+The owner staged the complete 13-file implementation, removed redundant
+runtimeInputs, and requested the Elisp Commentary/Code header. They then requested
+a test rerun, commit message, waiting for HEAD movement, and GAW maintenance.
+The rerun through tests/default.nix passed 32/32 on x86_64-linux with those final
+changes and actual README/CHANGELOG copies. The owner committed it as
+`feat(treefmt): format Org files with native Emacs serialization`. All 13 committed
+blobs and modes exactly match the reviewed/tested index, including the new runner
+and semantic helper. No project staging or commit was performed by the agent.
+Tests ran before commit, not after. Earlier validation imported worktree paths
+while the new helpers were untracked; they are now present in the committed tree.
+The owner explicitly limited this maintenance to HEAD; do not incorporate or
+report changes outside that committed baseline in this handoff.
+Next: README synchronization and remaining release work when requested.
 Keep the narrow v1 scope; expand only for real test defects, not speculative
 complete Org coverage. Overall 0.1.0 scope remains unfrozen.
 
