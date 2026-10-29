@@ -25,6 +25,10 @@ behavior and suite wiring. CHANGELOG now summarizes public helpers and inherited
 treefmt/development-shell behavior; standalone package inventories, test counts
 and repository-only ignore fixes were removed from the release summary. Formatter
 failure safety and patched-Nix behavior remain through their mkFlake effects.
+The owner adopted an initial-release presentation: 0.1.0 has only Added entries,
+describing available capabilities rather than development fixes relative to an
+unreleased predecessor. mkFlake validation and gitignore failure safety/root and
+nested matching are folded into their corresponding capability descriptions.
 Both documents explicitly withhold compatibility promises. The TODO 0.1.0 state,
 version and release status are unchanged; NEXT/DONE transitions remain human-only.
 Both project documents are unstaged, awaiting owner review. Implementation
