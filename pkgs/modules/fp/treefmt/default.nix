@@ -13,7 +13,10 @@
           formatter = {
             gitignore-fmt = {
               command = lib.getExe pkgs.gitignore-fmt;
-              includes = [ "**/.gitignore" ];
+              includes = [
+                ".gitignore"
+                "**/.gitignore"
+              ];
             };
 
             lisplens = {
