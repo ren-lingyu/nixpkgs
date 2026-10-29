@@ -50,19 +50,21 @@ Observed worktree, not committed or executed:
 - Package, overlay, shared treefmt registration (*.org and **/*.org), treefmt-group
   membership, root test argument and tests/default.nix wiring/expected-name update
   exist. .gitignore admits package .el files. All ten implementation paths have
-  staged changes; org-fmt.el, package.nix and the test overlay additionally have
-  unstaged edits. Preserve that staging split.
+  staged changes. The owner subsequently staged the implementation refinements;
+  currently only the agent's CHANGELOG addition is unstaged. Preserve project index.
 - Read the full current org-fmt.el. It implements the selected headline transform,
   fixed settings, byte comparison, UTF-8 Unix rendering, nearby temp/rename with
   cleanup and mode copying, symlink/regular-file guards and per-file error handling.
   CLI also handles --help and --. These are static observations, not guarantees.
-- Important pending defect: the unstaged package.nix changes `exec emacs ...` to
-  `exec ${emacs-nox} ...`; the latter resolves to the derivation directory rather
-  than its bin/emacs executable and is expected to fail at startup. Reported to
-  owner, not fixed or reproduced. Verify/fix this before acceptance testing.
+- The owner corrected the startup command to use lib.getExe' emacs-nox "emacs"
+  before --batch -Q --script. Read package.nix and confirmed the executable is now
+  selected explicitly; the earlier directory-as-executable issue is resolved in
+  source. No runtime validation was performed, so do not infer a passing build.
 - Root treefmt.settings.excludes still contains *.org, so repository Org files
-  remain excluded despite shared registration. Decide activation separately;
-  registration is not evidence that real repository documents were checked.
+  remain excluded despite shared registration. The owner explicitly chose to
+  keep this exclusion for now. It is intentional, not a defect to fix or remove
+  automatically. Real-document acceptance can be verified separately from root
+  treefmt activation; registration does not prove those checks have occurred.
 - The basic check contains a byte-exact headline/planning/property/source-block
   fixture, second-pass idempotence, check-mode no-write comparison, and a leading
   LOGBOOK fixture. Its initial --check assertion only requires failure, not status
@@ -83,8 +85,8 @@ Acceptance still required in existing tests/suites and mkChecks:
   no writes in check mode, unchanged originals on errors, permissions and cleanup.
   The current small integration check is only a starting point.
 
-Next work is to resolve the startup command and activation decisions, expand and
-run authorized acceptance checks, then synchronize documentation with verified
+Next work is to expand and run authorized acceptance checks while retaining the
+root Org exclusion, then synchronize documentation with verified
 behavior. Preserve the chosen narrow v1 scope; expand only for real test defects.
 Meeting these requirements is sufficient for v1; do not delay adoption for
 speculative complete Org syntax coverage. Overall 0.1.0 scope remains unfrozen.
