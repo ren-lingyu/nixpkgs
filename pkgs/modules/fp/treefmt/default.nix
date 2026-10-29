@@ -19,6 +19,14 @@
               ];
             };
 
+            org-fmt = {
+              command = lib.getExe pkgs.org-fmt;
+              includes = [
+                "*.org"
+                "**/*.org"
+              ];
+            };
+
             lisplens = {
               command = lib.getExe pkgs.lisplens;
               options = [ "format" ];

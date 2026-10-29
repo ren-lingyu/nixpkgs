@@ -8,6 +8,7 @@
           "elisp-autofmt"
           "gitignore-fmt"
           "lisplens"
+          "org-fmt"
         ];
       };
 

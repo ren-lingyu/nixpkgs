@@ -26,6 +26,13 @@ nested files. The =.gitignore= formatter reports operational failures and preser
 original files on failure. Unmatched files are errors; consumers configure
 explicit exclusions.
 
+Provide Org-mode formatting through the shared treefmt configuration, using
+Emacs's native Org AST parse/interpret round-trip, with custom blank-line handling
+limited to headlines and their leading planning and
+drawer elements. Other normalization is delegated to Org's native serializer,
+without additional formatting of embedded programming languages or special-block
+adapters.
+
 Provide a =nix= development shell using patched Nix to address false circular
 imports and incorrect locked-source reuse with nested relative inputs.
 
