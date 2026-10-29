@@ -1,5 +1,37 @@
 # Current project state
 
+## Initial 0.1.0 changelog: development draft created, not frozen
+
+The owner plans 0.1.0 but explicitly says scope/TODOs are not frozen. They asked
+for CHANGELOG.org maintenance under the supplied git-maintenance changelog skill
+and a deeper review of commit history. No prior changelog or local release tags
+were found. Read bounded history from the initial commit through the current
+changelog-whitelist commit, including bodies and selected historical library API
+trees, and verified the resulting public source. Created only CHANGELOG.org,
+using the adopted Org lifecycle metadata and a new TODO 0.1.0 entry, with Fixed
+and Added summaries. No NEXT/DONE, CLOSED, early CUSTOM_ID, release date, tag or
+publication claim. No detailed CHANGELOGS file yet; scope/version identity and
+complete detailed notes remain prerequisites for later human freeze/release work.
+
+The draft covers the final shared library/constructor/group/mkChecks contracts,
+mkFlake argument function and per-system packages, treefmt/language support,
+formatter packages and patched-Nix outputs, independent checks and key fixes
+(diagnostics, safe formatter failures/writeback, root matcher and .gitmodules).
+Superseded development-only APIs were not mislabeled as upgrades from a released
+version. Baseline is committed source; no staged/worktree implementation change
+was used. Recent .gitignore commits corrected .gitmodules and explicitly admit
+CHANGELOG.org plus CHANGELOGS/*.org. Read-only check-ignore --no-index matches the
+root file's negation rule; it is untracked, not ignored. No project staging,
+build, formatter, test, README or configuration edit was performed.
+
+Remaining scope: owner review/freeze decisions, later detailed release manuscript
+and release verification. Root treefmt excludes README.org but not CHANGELOG.org,
+with on-unmatched=fatal and no configured Org formatter visible; matching/check
+behavior for this new document needs verification or a separately authorized
+configuration change. Existing README also predates formatter activation and
+root-input simplification. These were reported, not silently fixed. Await next
+instruction; preserve the new untracked CHANGELOG.org.
+
 ## gitignore-fmt: hardening, root matching and activation committed
 
 The owner committed the whitelist-style formatter package, treefmt integration
