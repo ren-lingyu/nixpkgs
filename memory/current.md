@@ -1,6 +1,6 @@
 # Current project state
 
-## Package-owned test migration: staged and build-verified, not committed
+## Package-owned test migration: committed and build-verified
 
 After evaluating Haskell/Perl for gitignore-fmt, the owner expressed a Haskell
 preference and authorized read-only review of their existing Haskell GAW project.
@@ -38,9 +38,8 @@ the three tests built successfully on x86_64-linux using that original selection
 The build reused cached results; no fresh test-process executions are claimed.
 Formatting and git diff --check passed. No full flake check was run; at validation
 time the new directories were untracked, so the command imported package definitions
-from the working directory. Only the
-three package definitions and suite entry files are edited, plus the eight moves;
-the pre-existing CHANGELOG edit is unrelated and was preserved.
+from the working directory. The migration changes only the three package
+definitions and suite entry files, plus the eight moves.
 
 The owner explicitly authorized staging the 22 new/old migration paths only.
 Staged diff shows eight R100 moves and six package/suite wiring edits, with no
@@ -48,10 +47,14 @@ test-content changes. The pre-existing CHANGELOG edit was excluded; README was
 not edited or staged. The staged diff is suitable as one commit and passes
 diff --check. Prepared tmp/commit.md with title
 `refactor(pkgs): colocate package regression tests`, describing the moves and
-passthru-backed suite entries. Project history has not been changed by the agent.
+passthru-backed suite entries. The owner committed it as
+`refactor(pkgs): colocate package regression tests`. Read-only verification found
+the expected eight R100 moves and six wiring edits; committed modes and blobs
+match the reviewed implementation. Validation was before commit, not after.
+No project history mutation was performed by the agent.
 
-Next: owner commit of the staged migration. Haskell implementation is a separate
-later task. Keep tests self-contained; do not restore README/CHANGELOG test inputs.
+The test migration phase is complete. Haskell implementation is a separate later
+task. Keep tests self-contained; do not restore README/CHANGELOG test inputs.
 The owner explicitly defers README maintenance until after the gitignore-fmt
 Haskell rewrite is complete; do not update README immediately after this migration.
 
