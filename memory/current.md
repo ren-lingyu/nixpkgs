@@ -1,6 +1,6 @@
 # Current project state
 
-## gitignore-fmt Haskell rewrite: implemented; final integration checks pending
+## gitignore-fmt Haskell rewrite: committed and build-verified
 
 The owner committed the package-test migration and Haskell source whitelist,
 then explicitly authorized the Haskell rewrite. This supersedes the migration
@@ -33,16 +33,34 @@ maintenance. These were actual fresh test executions, not cache reuse.
 README maintenance was deferred until this rewrite and is now updated against
 the worktree: Haskell implementation, package-owned tests, Org formatter inventory
 and current root formatting coverage. Preserve the pre-existing CHANGELOG edit.
-No project files have been staged by the agent in this task. Cabal files are
-untracked, so the Git flake source will omit them until explicitly staged.
-Next: obtain scoped staging permission and amend the formatting authorization
-(its original exact command references the now-deleted tests/check.nix), format
-and review, then run the already-authorized full flake check. The task permits
-repeated direct-package builds and full flake checks with timeout 120s and
---no-write-lock-file; do not infer authorization for other commands or staging.
-No full flake check has been run for the rewrite yet. Do not claim completion
-of final formatting/integration checks or attach project provenance to these
-dirty-worktree results. Tests must remain self-contained, without document inputs.
+The owner staged the 14 implementation/test paths and ran nix fmt themselves;
+README and CHANGELOG remain unstaged, with README explicitly planned as a separate
+commit. No project staging was performed by the agent. Both staged and unstaged
+diff --check pass; implementation worktree matches its index. The owner then
+authorized testing/building. A fresh direct-package build of the formatted source
+compiled and passed both native suites. The full nix flake check
+--no-write-lock-file -L passed on x86_64-linux, including treefmt and the unchanged
+assembly entry. Other incompatible systems were skipped by default. Existing
+checks may use cached derivations; only the direct-package suites are claimed as
+fresh executions. No lockfile changes or project mutations were performed by
+the agent during validation.
+
+Reviewed the complete staged diff: implementation, packaging, tests and suite
+wiring form one coupled refactor; no split needed. Prepared tmp/commit.md with
+`refactor(pkgs/pkgs/gitignore-fmt): rewrite the formatter in Haskell` and Chinese
+bullets for Cabal modules, native tests and the direct package check. The owner
+committed it under that title. Polling detected HEAD movement, and read-only
+verification compared all committed package/suite blobs and modes to the reviewed
+index: all match, including deletion of the three former shell/test files.
+Tests ran before commit; no post-commit rerun is claimed. No project staging or
+history mutation was performed by the agent.
+
+The implementation phase is complete. The owner next requests a separate README
+commit message after GAW maintenance. README covers this rewrite, the earlier
+package-test migration and current Org formatter wiring. Check staging before
+drafting; no README staging authorization was given to the agent. Preserve the
+unrelated CHANGELOG edit. Tests remain self-contained without document inputs.
+No project-parent association is claimed for dirty-worktree validation.
 
 ## Package-owned test migration: committed and build-verified
 
