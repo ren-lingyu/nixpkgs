@@ -1,5 +1,51 @@
 # Current project state
 
+## Package-owned test migration: prepared and build-verified, not committed
+
+After evaluating Haskell/Perl for gitignore-fmt, the owner expressed a Haskell
+preference and authorized read-only review of their existing Haskell GAW project.
+That reference project keeps Cabal sources/native tests together, separates pure
+rules from IO adapters and includes Cabal suites in the package check phase.
+No Haskell rewrite is authorized in this task: the owner explicitly selected only
+the first stage, migrating package-specific tests before rewriting gitignore-fmt.
+For now retain independent test derivations, not mandatory package check phases.
+
+Moved eight files byte-for-byte from tests/suites/{gitignore-fmt,org-fmt,
+nix-flake-patched}/ into each corresponding pkgs/pkgs/<name>/tests/ directory.
+They include check wrappers, runners, org semantic helper and patched-Nix fixtures.
+Compared every moved file to its original HEAD blob after migration: all eight
+match exactly. Do not change their assertions, error cases or expected output as
+part of the move. Suite test-overlay.nix entries remain at their existing paths,
+now selecting prev.<package>.tests.regressions; check names and tests/default.nix
+are unchanged. Independent mkChecks acceptance, library/package aggregation suites
+and ordinary test discovery remain intact.
+
+Each package exposes passthru.tests.regressions via its local test wrapper.
+Formatter tests depend on argument-overridable normal and fault-injected packages;
+their passthru passes callPackage ./package.nix args so the override interface and
+current package arguments are preserved. Passing the internal writeShellApplication
+result alone would lose the callPackage-level override interface. Patched Nix
+keeps baseNix/patches metadata, original overriding methods and existing upstream
+tests, adding the independent regressions test through its metadata extension.
+No test is put in the package's own build dependency chain, avoiding a self-cycle.
+
+The owner authorized scoped formatting and a three-package test build through
+the existing tests/default.nix entry. The first validation command incorrectly
+called nix-flake-patched with the default Nix (2.34.9), triggering its unchanged
+2.35.3 assertion. Read the original overlay: it explicitly supplies nix_2_35.
+After explaining and obtaining authorization for the corrected exact command,
+the three tests built successfully on x86_64-linux using that original selection.
+The build reused cached results; no fresh test-process executions are claimed.
+Formatting and git diff --check passed. No full flake check was run; new test
+directories are untracked, and validation imports package definitions from the
+working directory. No project Git staging or commit was performed. Only the
+three package definitions and suite entry files are edited, plus the eight moves;
+the pre-existing CHANGELOG edit is unrelated and was preserved.
+
+Next: owner review/staging/commit of the migration. Haskell implementation is a
+separate later task. Keep tests self-contained; do not restore README/CHANGELOG
+test inputs. README synchronization remains separate pending documentation work.
+
 ## org-fmt v1: committed and targeted regression suite verified
 
 Current test-design constraint (owner correction): the owner rejected feeding
