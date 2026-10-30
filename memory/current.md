@@ -1,12 +1,18 @@
 # Current project state
 
-## text-fmt v1 plan: reviewed, implementation not started
+## text-fmt v1: rules adopted, implementation authorized
 
 The owner requested workspace/memory inspection and review of a supplied v1
 development plan, not implementation. The proposed tool uses strict Haskell
 ByteString, converts CRLF to LF, and adds LF only to nonempty unterminated
-files. Preserve all other bytes/whitespace; reject NUL and every CR not
-immediately paired with LF. Keep packages independent, with no shared library
+files. The owner subsequently accepted four byte rules: reject NUL; replace
+original CRLF pairs with LF while preserving all other bytes; append LF to a
+nonempty unterminated result; reject if that candidate still contains CRLF.
+This supersedes blanket rejection of unpaired CR. Interior unpaired CR is
+preserved; a terminal CR or CR immediately before an original CRLF is rejected
+because conversion would create a new CRLF. Candidate CRLF detection is
+equivalent to comparing T(T(x)) with T(x), without generating another output.
+Keep packages independent, with no shared library
 or additional formatting rules. Proposed shared treefmt coverage is only *.txt
 and **/*.txt. No project edits, builds, checks or formatting were performed.
 
@@ -18,8 +24,8 @@ test organization. Important implementation details to add to the plan:
 - Existing Cabal .hs/.cabal/cabal.project whitelist already covers the suggested
   layout, but raw .txt fixtures would be ignored. Prefer byte fixtures in Haskell
   like gitignore-fmt; do not feed repository documents into native tests.
-- State unconditional rejection of unpaired CR consistently. Check successful
-  outputs remain valid and idempotent; generated valid byte inputs can strengthen
+- Update the original plan's CR policy to the four adopted rules above. Check
+  successful outputs remain valid and idempotent; generated valid byte inputs can strengthen
   the finite golden suite without a new testing framework.
 - Clarify atomic rename as the replacement commit point: pre-replacement failures
   protect the original; interruption after successful replacement cannot promise
@@ -31,8 +37,12 @@ test organization. Important implementation details to add to the plan:
 
 At inspection the only ordinary worktree edit was the owner's CHANGELOG.org
 sentence requesting a formatter for common .txt test files; preserve it. Formal
-GAW was healthy and clean on recovery. Await the owner's response to the review;
-the reviewed plan is not recorded as an implementation authorization.
+GAW was healthy and clean on recovery. The owner accepted the four byte rules
+and now explicitly requested a checkpoint before implementing text-fmt in Haskell,
+with continuing README and GAW maintenance. Scope includes the reviewed package,
+native tests, shared formatter/check wiring and documentation. Preserve the
+existing CHANGELOG edit. Build/format execution authority must be handled
+separately. No implementation or validation has occurred at this checkpoint.
 
 ## gitignore-fmt Haskell rewrite: committed and build-verified
 
