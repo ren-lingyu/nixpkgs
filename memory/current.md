@@ -2,6 +2,19 @@
 
 ## org-fmt v1: committed and targeted regression suite verified
 
+Current test-design constraint (owner correction): the owner rejected feeding
+README/CHANGELOG paths from root flake into org-fmt tests. Remove the entire
+org-fmt-documents/documents argument chain and generated JSON document list;
+suite fixtures must be self-contained. Do not recreate this coupling through
+ancestor-path reads or a differently named input. Normal root treefmt document
+formatting is separate and remains enabled. Earlier real-document test evidence
+below describes the superseded design, not an ongoing suite requirement.
+Five project files now remove that wiring and the two document cases, leaving
+30 self-contained cases. Scoped formatting and diff --check passed. The targeted
+build through tests/default.nix passed 30/30 on x86_64-linux, with 48 Emacs
+processes and 9.401s suite time. No full flake check was run for this correction.
+These corrections are unstaged, and no project staging/commit was performed.
+
 The owner adopted the v1 design below, then authorized fixing review findings and
 constructing complex regression fixtures. They separately authorized repeated
 scoped formatting, a targeted build and a build through tests/default.nix with
@@ -95,10 +108,10 @@ Committed implementation and verification:
   expanded it to 32. The build through tests/default.nix passed all 32 cases on
   x86_64-linux, including README/CHANGELOG copies. After CHANGELOG synchronization,
   the same authorized build was rerun and again passed 32/32 on final documents.
-- Root passes org-fmt-documents with explicit README/CHANGELOG paths;
-  tests/default.nix defaults it to {} and forwards it to the suite. Other suites
-  were not built by the targeted assembly check. Scoped nix fmt and git diff
-  --check passed. These targeted results alone did not establish a full flake check.
+- The original implementation passed org-fmt-documents from root through the test
+  scope. The owner subsequently prohibited that design; the correction above
+  removes the path. Earlier targeted checks did not build the other suites or
+  establish a full flake check.
 
 The owner staged the complete 13-file implementation, removed redundant
 runtimeInputs, and requested the Elisp Commentary/Code header. They then requested
