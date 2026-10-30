@@ -1,3 +1,1 @@
-{ }: final: prev: {
-  gitignore-fmt = final.callPackage ./check.nix { gitignore-fmt = prev.gitignore-fmt; };
-}
+{ }: final: prev: { gitignore-fmt = prev.gitignore-fmt.tests.regressions; }

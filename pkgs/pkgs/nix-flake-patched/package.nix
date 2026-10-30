@@ -1,4 +1,5 @@
 {
+  callPackage,
   fetchpatch,
   lib,
   nix,
@@ -21,7 +22,11 @@ let
   passthru = patchedNix.passthru // {
     baseNix = nix;
     inherit patches;
+    tests = (patchedNix.passthru.tests or { }) // {
+      regressions = callPackage ./tests/check.nix { nix-flake-patched = package; };
+    };
   };
+  # Preserve overriding methods and propagate metadata to all outputs.
+  package = lib.extendDerivation true (passthru // { inherit passthru; }) patchedNix;
 in
-# Preserve the upstream overriding methods and propagate metadata to all outputs.
-lib.extendDerivation true (passthru // { inherit passthru; }) patchedNix
+package

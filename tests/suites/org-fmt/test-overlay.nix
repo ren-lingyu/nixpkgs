@@ -1,1 +1,1 @@
-{ }: final: prev: { org-fmt = final.callPackage ./check.nix { org-fmt = prev.org-fmt; }; }
+{ }: final: prev: { org-fmt = prev.org-fmt.tests.regressions; }
