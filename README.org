@@ -68,7 +68,7 @@ check by default through =lib.mkDefault true=. It derives =projectRootFile= from
 the basename of =moduleLocation=, forces treefmt's default excludes off, and
 defaults the explicit exclude list to =[ ]=. Unmatched files are fatal, so
 consumers must configure exclusions for files outside their formatter coverage.
-The root repository excludes =*.org=, =*.patch=, =LICENSE= and =flake.lock=;
+The root repository excludes =*.patch=, =LICENSE= and =flake.lock=;
 these repository-specific exclusions are not inherited by consumers.
 
 | Files                              | Formatter                                                                                       |
@@ -83,6 +83,7 @@ these repository-specific exclusions are not inherited by consumers.
 | TOML                               | taplo.                                                                                          |
 | Scheme (=.scm=)                    | =lisplens format=.                                                                              |
 | Emacs Lisp (=.el=)                 | elisp-autofmt.                                                                                  |
+| Org (=.org=)                       | org-fmt, using Emacs's native Org parser and serializer.                                        |
 | Root and nested =.gitignore= files | gitignore-fmt, for the whitelist convention described under internal maintenance below.         |
 
 * Shared library
@@ -449,8 +450,8 @@ This direct import provides the merge, overlay, package/module and test helpers;
 =mkFlake= is assembled by the subflake and is available through its flake library.
 
 ** Internal packages
-=legacyPackages.${system}= contains =elisp-autofmt=, =gitignore-fmt=, =lisplens=
-and =nix-flake-patched=. Their definitions live under =pkgs/pkgs/=, with
+=legacyPackages.${system}= contains =elisp-autofmt=, =gitignore-fmt=, =lisplens=,
+=nix-flake-patched= and =org-fmt=. Their definitions live under =pkgs/pkgs/=, with
 =overlay.nix= entries assembled by
 =lib.packages.mkOverlays=. =elisp-autofmt= and =lisplens= provide
 =nix-update-script= update scripts.
@@ -489,8 +490,8 @@ can be expensive. It runs offline using private local stores and synthetic
 Flakes modeled on the consumer repositories, including their repeated
 =path:./pkgs= inputs and =follows=. These tests do not build the real consumers.
 
-The internal =treefmt= group selects =lisplens=, =elisp-autofmt= and
-=gitignore-fmt=, while the =nix= group selects =nix-flake-patched=; neither adds a
+The internal =treefmt= group selects =lisplens=, =elisp-autofmt=, =gitignore-fmt=
+and =org-fmt=, while the =nix= group selects =nix-flake-patched=; neither adds a
 selection export.
 The =legacy= group selects all packages and adds the directory-selected
 =legacyPackages= attribute.
@@ -499,6 +500,11 @@ by system. The root forwards it directly. These overlay groups are internal;
 neither flake exports an =overlays= output.
 
 *** Gitignore formatting convention
+The formatter is a Haskell Cabal project under =pkgs/pkgs/gitignore-fmt/cabal/=,
+built with Nixpkgs's Haskell package set. Pure formatting, file operations and the
+command-line interface are separate modules; its native tests run in the package
+check phase.
+
 The shared formatter uses the repository's whitelist convention, rather than
 accepting arbitrary ignore-file organization. Its three sections are the =*=
 and =*/= header, negated allow rules, and final ignore rules. Missing header
@@ -519,17 +525,20 @@ files are still processed. These command details describe the internal formatter
 used by treefmt; they do not promise a standalone package interface.
 
 ** Repository tests
-=tests/default.nix= accepts ={ llib, lib, pkgs, nix-flake-patched, gitignore-fmt }=
+=tests/default.nix= accepts
+={ llib, lib, pkgs, nix-flake-patched, gitignore-fmt, org-fmt }=
 and returns the complete check derivation set. Ordinary suites live under
 =tests/suites/=, each with a =cases.nix= expression, a =test-overlay.nix= entry,
 and any local fixtures.
-The functional =nix-flake-patched= and =gitignore-fmt= suites instead use check
-wrappers and Python runners embedded in Nix files. The explicit
-=nix-flake-patched= argument is the package derivation supplied by the root.
-The =nix-flake-patched= suite reads its base Nix and patch paths from the package's
-=passthru= metadata. Its overlay explicitly supplies =prev.nix-flake-patched= to the check
-wrapper because the check has the same name as the package argument; this avoids
-resolving the argument to the check itself through the final test scope.
+Package-specific fixtures and runners live beside their packages. The
+=gitignore-fmt= suite selects the package itself, whose Cabal check phase runs
+the native test suites. The =org-fmt= and =nix-flake-patched= suites select
+=prev.<package>.tests.regressions=, independent test derivations assembled from
+each package's local =tests/= directory. These use Python runners embedded in
+Nix files; =org-fmt= also uses an Emacs Lisp semantic projection. Selecting from
+=prev= avoids resolving the check name to itself through the final test scope.
+The patched-Nix wrapper reads its base Nix and patch paths from the package's
+=passthru= metadata.
 The entry passes existing API checks and shared arguments to =lib.tests.mkChecks=,
 which builds the test scope, applies discovered overlays, and extracts checks.
 =callPackage= supplies each report wrapper's arguments;
@@ -562,11 +571,16 @@ laziness and invalid configurations. It uses small evaluation fixtures on all
 systems, with additional real Emacs and TeX package-set evaluation on
 =x86_64-linux=. It does not build large editor or TeX environments.
 
-The =gitignore-fmt= suite has 51 named cases covering byte-exact output,
-comments, grouping, sorting, Git pattern syntax, invalid inputs, multi-file
-processing and operational failures. Valid fixtures also check idempotence and
-read-only =--check= behavior. Fault injection covers command and writeback
-failures; metadata checks cover unchanged files and replacement permissions.
+The =gitignore-fmt= package has pure formatting and CLI test suites. Shared
+fixtures cover byte-exact output, comments, grouping, sorting, Git pattern
+syntax and invalid inputs. Tests also cover input permutations, arbitrary
+pattern bytes, idempotence, read-only =--check= behavior, multi-file processing,
+file metadata and symlink rejection. Injected IO failures and interruption
+verify original-file preservation and temporary-file cleanup.
+
+The =org-fmt= suite uses self-contained fixtures to test native Org round-trip
+formatting, headline spacing, structural semantics, idempotence, CLI behavior
+and file-operation failures. It does not take repository documents as inputs.
 
 The =testApi= suite verifies the public test helpers with independent fixtures,
 including scope dependencies, extraction boundaries, separators and factory
@@ -574,7 +588,7 @@ paths. Three extracted =pkgs.writeText= checks under =testApi/= are also built
 through the flake. The API suite and these real checks are supplied as existing
 =checks= at the root, independently of ordinary-suite discovery. The root also requires
 the complete output names to match the existing API checks plus =mergeAttrsRecursive=,
-=overlays=, =packages=, =gitignore-fmt= and =nix-flake-patched=, so missing or
+=overlays=, =packages=, =gitignore-fmt=, =org-fmt= and =nix-flake-patched=, so missing or
 unexpected checks fail evaluation.
 Adding an ordinary suite also requires updating this expected-name set.
 Existing aggregation assertions and report/check names are retained; API tests
