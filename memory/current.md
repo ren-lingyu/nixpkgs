@@ -1,6 +1,6 @@
 # Current project state
 
-## text-fmt v1: rules adopted, implementation authorized
+## text-fmt v1: implemented and build-verified
 
 The owner requested workspace/memory inspection and review of a supplied v1
 development plan, not implementation. The proposed tool uses strict Haskell
@@ -13,11 +13,12 @@ preserved; a terminal CR or CR immediately before an original CRLF is rejected
 because conversion would create a new CRLF. Candidate CRLF detection is
 equivalent to comparing T(T(x)) with T(x), without generating another output.
 Keep packages independent, with no shared library
-or additional formatting rules. Proposed shared treefmt coverage is only *.txt
-and **/*.txt. No project edits, builds, checks or formatting were performed.
+or additional formatting rules. Shared treefmt coverage is only *.txt and
+**/*.txt. The initial review performed no project edits or builds; subsequent
+authorized implementation and verification are recorded below.
 
 Review of current sources supports reusing gitignore-fmt packaging and native
-test organization. Important implementation details to add to the plan:
+test organization. The implementation addresses these review requirements:
 - Wire text-fmt explicitly through root flake.nix into tests/default.nix's
   arguments and mkChecks.args, as well as the suite overlay and expected names.
   Passing pkgs does not inject its members into the independent test scope.
@@ -42,7 +43,45 @@ and now explicitly requested a checkpoint before implementing text-fmt in Haskel
 with continuing README and GAW maintenance. Scope includes the reviewed package,
 native tests, shared formatter/check wiring and documentation. Preserve the
 existing CHANGELOG edit. Build/format execution authority must be handled
-separately. No implementation or validation has occurred at this checkpoint.
+separately. The required pre-implementation checkpoint was created with
+`chore(memory): record adopted text-fmt rules and implementation scope`.
+
+Implementation now exists under pkgs/pkgs/text-fmt/cabal with independent Format,
+File and Cli modules. File/CLI follow the existing formatter's safety boundary;
+pure conversion uses a Builder and checks candidate CRLF. Native suites include
+byte fixtures, an independent short-input oracle, all non-NUL interior byte values,
+CLI/metadata/nonregular-file cases, eight injected IO failures and interruption.
+Package, treefmt group, .txt-only registration, root test arguments, suite overlay
+and expected names are wired. README and CHANGELOG describe current behavior;
+the owner's pending CHANGELOG request was replaced by the implemented entry.
+The owner authorized repeated 120s nix fmt, combined package
+and package-check builds, and full nix flake check with --no-write-lock-file in
+tmp/text-fmt-source; format results may be synchronized back to scoped project
+paths. Use the isolated source snapshot to include untracked files without staging.
+
+Validation on x86_64-linux succeeded: after correcting a migrated function name,
+the direct package build compiled with GHC 9.10.3 and freshly passed both native
+suites. Pure tests include 55,987 short byte sequences and 255 individual non-NUL
+interior bytes. Package and check select the same derivation, not independent
+test executions. Full flake check passed with the original independent API checks
+intact; treefmt traversed 174 files, processed 171 and changed none. Other systems
+were skipped. Existing unrelated check outputs may have been cached.
+
+Snapshot execution details: this Nix's fmt forwards positional arguments, so use
+`nix run --no-write-lock-file path:<snapshot>#formatter.x86_64-linux -- --walk filesystem`
+inside the snapshot. The wrapper already sets tree-root-file=flake.nix; an extra
+tree-root flag conflicts. Git traversal sees the ignored snapshot as empty, so
+the filesystem flag is necessary. Build/check use explicit path:<snapshot>
+references. Formatting changes were copied back only to intended project paths.
+No project staging, commit or lockfile change was performed. The final full check
+after README punctuation correction also passed, with 174 files traversed and
+171 processed unchanged. A byte/mode comparison confirms all 174 files and the
+complete source file set match the validation snapshot. Ordinary diff --check
+passed. Implementation is ready for owner review/staging; 12 new paths remain
+untracked and six existing paths modified. Do not claim a normal Git-flake build
+includes the new files until they are tracked. Temporary source snapshot remains
+under the ignored tmp directory. No current project-parent association is claimed
+for dirty-worktree implementation or validation.
 
 ## gitignore-fmt Haskell rewrite: committed and build-verified
 
