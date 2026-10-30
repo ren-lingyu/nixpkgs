@@ -30,12 +30,12 @@ native suites on x86_64-linux, including eight injected IO failures and an
 asynchronous-interruption cleanup test. git diff --check passed before README
 maintenance. These were actual fresh test executions, not cache reuse.
 
-README maintenance was deferred until this rewrite and is now updated against
-the worktree: Haskell implementation, package-owned tests, Org formatter inventory
-and current root formatting coverage. Preserve the pre-existing CHANGELOG edit.
+README maintenance was deferred until this rewrite and is now committed: Haskell
+implementation, package-owned tests, Org formatter inventory and current root
+formatting coverage. Preserve the pre-existing CHANGELOG edit.
 The owner staged the 14 implementation/test paths and ran nix fmt themselves;
-README and CHANGELOG remain unstaged, with README explicitly planned as a separate
-commit. No project staging was performed by the agent. Both staged and unstaged
+At validation time README and CHANGELOG were unstaged, with README explicitly
+planned as a separate commit. No project staging was performed by the agent. Both staged and unstaged
 diff --check pass; implementation worktree matches its index. The owner then
 authorized testing/building. A fresh direct-package build of the formatted source
 compiled and passed both native suites. The full nix flake check
@@ -55,12 +55,17 @@ index: all match, including deletion of the three former shell/test files.
 Tests ran before commit; no post-commit rerun is claimed. No project staging or
 history mutation was performed by the agent.
 
-The implementation phase is complete. The owner next requests a separate README
-commit message after GAW maintenance. README covers this rewrite, the earlier
-package-test migration and current Org formatter wiring. Check staging before
-drafting; no README staging authorization was given to the agent. Preserve the
-unrelated CHANGELOG edit. Tests remain self-contained without document inputs.
-No project-parent association is claimed for dirty-worktree validation.
+Implementation and README synchronization are complete. After the implementation
+checkpoint, the owner separately staged README. Reviewed its entire staged diff
+and prepared `docs(readme): document native formatter tests and Org integration`.
+The owner committed that README-only change under the prepared title; read-only
+verification confirms its 33 additions/19 deletions and exact reviewed README
+blob/mode. The commit immediately follows the Haskell rewrite commit. README
+covers this rewrite, the earlier package-test migration and current Org formatter
+wiring; no additional checks were needed for committing that already-validated
+content. No ordinary Git writes were performed by the agent. Preserve unrelated
+changes outside this completed scope. Tests remain self-contained without document
+inputs. No project-parent association is claimed for dirty-worktree validation.
 
 ## Package-owned test migration: committed and build-verified
 
