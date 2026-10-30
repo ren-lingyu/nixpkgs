@@ -1,5 +1,39 @@
 # Current project state
 
+## text-fmt v1 plan: reviewed, implementation not started
+
+The owner requested workspace/memory inspection and review of a supplied v1
+development plan, not implementation. The proposed tool uses strict Haskell
+ByteString, converts CRLF to LF, and adds LF only to nonempty unterminated
+files. Preserve all other bytes/whitespace; reject NUL and every CR not
+immediately paired with LF. Keep packages independent, with no shared library
+or additional formatting rules. Proposed shared treefmt coverage is only *.txt
+and **/*.txt. No project edits, builds, checks or formatting were performed.
+
+Review of current sources supports reusing gitignore-fmt packaging and native
+test organization. Important implementation details to add to the plan:
+- Wire text-fmt explicitly through root flake.nix into tests/default.nix's
+  arguments and mkChecks.args, as well as the suite overlay and expected names.
+  Passing pkgs does not inject its members into the independent test scope.
+- Existing Cabal .hs/.cabal/cabal.project whitelist already covers the suggested
+  layout, but raw .txt fixtures would be ignored. Prefer byte fixtures in Haskell
+  like gitignore-fmt; do not feed repository documents into native tests.
+- State unconditional rejection of unpaired CR consistently. Check successful
+  outputs remain valid and idempotent; generated valid byte inputs can strengthen
+  the finite golden suite without a new testing framework.
+- Clarify atomic rename as the replacement commit point: pre-replacement failures
+  protect the original; interruption after successful replacement cannot promise
+  rollback. No concurrency/transaction framework is proposed.
+- Package and its mkChecks entry select the same derivation, so two successful
+  builds are not necessarily two fresh test executions. Format before final
+  validation and ensure new files enter the validation source explicitly without
+  implicit project staging. Preserve independent mkChecks API acceptance.
+
+At inspection the only ordinary worktree edit was the owner's CHANGELOG.org
+sentence requesting a formatter for common .txt test files; preserve it. Formal
+GAW was healthy and clean on recovery. Await the owner's response to the review;
+the reviewed plan is not recorded as an implementation authorization.
+
 ## gitignore-fmt Haskell rewrite: committed and build-verified
 
 The owner committed the package-test migration and Haskell source whitelist,
