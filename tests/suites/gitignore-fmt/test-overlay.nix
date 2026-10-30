@@ -1,1 +1,1 @@
-{ }: final: prev: { gitignore-fmt = prev.gitignore-fmt.tests.regressions; }
+{ }: final: prev: { gitignore-fmt = prev.gitignore-fmt; }
