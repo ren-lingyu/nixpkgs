@@ -26,6 +26,9 @@
 !/pkgs/pkgs/**/*.nix
 !/pkgs/pkgs/**/*.patch
 !/pkgs/pkgs/**/*.sh
+!/pkgs/pkgs/**/cabal/**/*.hs
+!/pkgs/pkgs/**/cabal/*.cabal
+!/pkgs/pkgs/**/cabal/cabal.project
 
 !/tests/
 !/tests/**/
