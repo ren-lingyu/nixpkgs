@@ -5,7 +5,6 @@
   nix-flake-patched,
   gitignore-fmt,
   org-fmt,
-  org-fmt-documents ? { },
 }:
 let
   mkResultCheck_ =
@@ -25,7 +24,6 @@ let
         nix-flake-patched
         gitignore-fmt
         org-fmt
-        org-fmt-documents
         ;
       mkResultCheck = mkResultCheck_;
     };

@@ -1,8 +1,4 @@
-{
-  pkgs,
-  org-fmt,
-  documents ? { },
-}:
+{ pkgs, org-fmt }:
 let
   # Fault advice exercises the packaged CLI without production test switches.
   faults = pkgs.writeText "org-fmt-faults.el" ''
@@ -29,10 +25,9 @@ let
   faulty = org-fmt.override { emacs-nox = faultyEmacs; };
   runner = pkgs.writeText "org-fmt-tests.py" (import ./runner.nix);
   semantics = pkgs.writeText "org-fmt-semantics.el" (import ./semantics.nix);
-  documentList = pkgs.writeText "org-fmt-documents.json" (builtins.toJSON documents);
 in
 pkgs.runCommand "org-fmt-regressions" { nativeBuildInputs = [ pkgs.python3 ]; } ''
   ${pkgs.python3}/bin/python ${runner} \
     ${pkgs.lib.getExe org-fmt} ${pkgs.lib.getExe faulty} \
-    ${pkgs.lib.getExe' pkgs.emacs-nox "emacs"} ${semantics} ${documentList} "$out"
+    ${pkgs.lib.getExe' pkgs.emacs-nox "emacs"} ${semantics} "$out"
 ''

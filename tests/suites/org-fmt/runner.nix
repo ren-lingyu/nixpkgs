@@ -8,7 +8,7 @@
   import tempfile
   import time
 
-  command, faulty, emacs, semantics, document_list, output = sys.argv[1:]
+  command, faulty, emacs, semantics, output = sys.argv[1:]
   results = {}
   process_count = 0
   suite_started = time.perf_counter()
@@ -184,8 +184,6 @@
 
   cases = list(golden)
   cases.extend((name, text.encode(), None) for name, text in complex_cases.items())
-  cases.extend(("document-" + name, Path(source).read_bytes(), None)
-               for name, source in json.loads(Path(document_list).read_text()).items())
   fixture_batch(cases)
 
   def cli(root):

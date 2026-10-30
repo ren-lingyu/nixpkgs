@@ -65,10 +65,6 @@
                   nix-flake-patched = pkgs.nix-flake-patched;
                   gitignore-fmt = pkgs.gitignore-fmt;
                   org-fmt = pkgs.org-fmt;
-                  org-fmt-documents = {
-                    readme = ./README.org;
-                    changelog = ./CHANGELOG.org;
-                  };
                 };
 
                 treefmt = {
