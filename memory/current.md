@@ -1,14 +1,58 @@
 # Current project state
 
+## gitignore-fmt Haskell rewrite: implemented; final integration checks pending
+
+The owner committed the package-test migration and Haskell source whitelist,
+then explicitly authorized the Haskell rewrite. This supersedes the migration
+phase's earlier restriction below. Keep Cabal sources inside
+pkgs/pkgs/gitignore-fmt/cabal, with separate pure formatting, file operations,
+CLI modules and native format/CLI suites. Preserve the whitelist convention,
+byte handling, comment barriers, duplicates, CLI statuses and file safety.
+The former shell script and package-local Python test wrapper/runner are removed;
+26 golden and 10 invalid fixtures are retained in native tests, with permutation,
+arbitrary-byte, multi-file, metadata, IO-failure and interruption coverage.
+
+The owner suggested removing unnecessary let/in from package.nix. It now returns
+haskell.lib.overrideCabal (haskellPackages.callCabal2nix ... ) directly, with
+doCheck=true, doHaddock=false and mainProgram set. No recursive package binding
+or passthru alias is needed: tests/suites/gitignore-fmt/test-overlay.nix selects
+prev.gitignore-fmt itself, whose check phase executes Cabal tests. Other packages
+retain their independent passthru.tests.regressions. Independent mkChecks
+assembly tests and tests/default.nix are unchanged.
+
+An initial build found overrideCabal cannot accept meta as a generic-builder
+argument; mainProgram is a direct override field. A later build found Setup
+test does not put the package's executable on PATH despite build-tool-depends;
+the CLI test locates the sibling built executable from its own executable path,
+falling back to the Cabal-provided PATH. Both issues are fixed. The final
+authorized direct-package Nix build compiled with GHC 9.10.3 and passed both
+native suites on x86_64-linux, including eight injected IO failures and an
+asynchronous-interruption cleanup test. git diff --check passed before README
+maintenance. These were actual fresh test executions, not cache reuse.
+
+README maintenance was deferred until this rewrite and is now updated against
+the worktree: Haskell implementation, package-owned tests, Org formatter inventory
+and current root formatting coverage. Preserve the pre-existing CHANGELOG edit.
+No project files have been staged by the agent in this task. Cabal files are
+untracked, so the Git flake source will omit them until explicitly staged.
+Next: obtain scoped staging permission and amend the formatting authorization
+(its original exact command references the now-deleted tests/check.nix), format
+and review, then run the already-authorized full flake check. The task permits
+repeated direct-package builds and full flake checks with timeout 120s and
+--no-write-lock-file; do not infer authorization for other commands or staging.
+No full flake check has been run for the rewrite yet. Do not claim completion
+of final formatting/integration checks or attach project provenance to these
+dirty-worktree results. Tests must remain self-contained, without document inputs.
+
 ## Package-owned test migration: committed and build-verified
 
 After evaluating Haskell/Perl for gitignore-fmt, the owner expressed a Haskell
 preference and authorized read-only review of their existing Haskell GAW project.
 That reference project keeps Cabal sources/native tests together, separates pure
 rules from IO adapters and includes Cabal suites in the package check phase.
-No Haskell rewrite is authorized in this task: the owner explicitly selected only
-the first stage, migrating package-specific tests before rewriting gitignore-fmt.
-For now retain independent test derivations, not mandatory package check phases.
+At that earlier phase, the owner selected only test migration. The later Haskell
+rewrite above supersedes that phase restriction for gitignore-fmt; the other
+packages retain independent test derivations, not mandatory package check phases.
 
 Moved eight files byte-for-byte from tests/suites/{gitignore-fmt,org-fmt,
 nix-flake-patched}/ into each corresponding pkgs/pkgs/<name>/tests/ directory.
@@ -53,10 +97,9 @@ the expected eight R100 moves and six wiring edits; committed modes and blobs
 match the reviewed implementation. Validation was before commit, not after.
 No project history mutation was performed by the agent.
 
-The test migration phase is complete. Haskell implementation is a separate later
-task. Keep tests self-contained; do not restore README/CHANGELOG test inputs.
-The owner explicitly defers README maintenance until after the gitignore-fmt
-Haskell rewrite is complete; do not update README immediately after this migration.
+The test migration phase is complete. The separately authorized Haskell rewrite
+is described above. Keep tests self-contained; do not restore README/CHANGELOG
+test inputs. README maintenance was deferred from migration to that rewrite.
 
 ## org-fmt v1: committed and targeted regression suite verified
 
