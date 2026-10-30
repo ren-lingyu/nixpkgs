@@ -19,6 +19,14 @@
               ];
             };
 
+            text-fmt = {
+              command = lib.getExe pkgs.text-fmt;
+              includes = [
+                "*.txt"
+                "**/*.txt"
+              ];
+            };
+
             org-fmt = {
               command = lib.getExe pkgs.org-fmt;
               includes = [
