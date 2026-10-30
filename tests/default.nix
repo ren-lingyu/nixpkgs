@@ -5,6 +5,7 @@
   nix-flake-patched,
   gitignore-fmt,
   org-fmt,
+  text-fmt,
 }:
 let
   mkResultCheck_ =
@@ -24,6 +25,7 @@ let
         nix-flake-patched
         gitignore-fmt
         org-fmt
+        text-fmt
         ;
       mkResultCheck = mkResultCheck_;
     };
@@ -34,6 +36,7 @@ let
       "mergeAttrsRecursive"
       "nix-flake-patched"
       "org-fmt"
+      "text-fmt"
       "overlays"
       "packages"
     ]

@@ -65,6 +65,7 @@
                   nix-flake-patched = pkgs.nix-flake-patched;
                   gitignore-fmt = pkgs.gitignore-fmt;
                   org-fmt = pkgs.org-fmt;
+                  text-fmt = pkgs.text-fmt;
                 };
 
                 treefmt = {

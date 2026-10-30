@@ -9,6 +9,7 @@
           "gitignore-fmt"
           "lisplens"
           "org-fmt"
+          "text-fmt"
         ];
       };
 

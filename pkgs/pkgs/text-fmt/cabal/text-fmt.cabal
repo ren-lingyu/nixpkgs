@@ -1,0 +1,64 @@
+cabal-version: 3.0
+name:          text-fmt
+version:       0.1.0
+synopsis:      Normalize plain text line endings
+license:       MIT
+build-type:    Simple
+
+library
+  hs-source-dirs:   src
+  exposed-modules:
+    TextFmt.Cli
+    TextFmt.File
+    TextFmt.Format
+
+  build-depends:
+    , base        >=4.16 && <5
+    , bytestring
+    , directory
+    , filepath
+    , unix
+
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+executable text-fmt
+  hs-source-dirs:   app
+  main-is:          Main.hs
+  build-depends:
+    , base      >=4.16 && <5
+    , text-fmt
+
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+test-suite format-tests
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Format.hs
+  other-modules:    Fixtures
+  build-depends:
+    , base        >=4.16 && <5
+    , bytestring
+    , text-fmt
+
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+test-suite cli-tests
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test
+  main-is:            Cli.hs
+  other-modules:      Fixtures
+  build-tool-depends: text-fmt:text-fmt
+  build-depends:
+    , base        >=4.16 && <5
+    , bytestring
+    , directory
+    , filepath
+    , process
+    , text-fmt
+    , unix
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall
