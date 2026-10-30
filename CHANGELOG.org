@@ -17,40 +17,43 @@ entry does not record a release date or publication.
 
 ** Added
 *** =lib.mkFlake=
+**** Flake construction
 Construct flakes with flake-parts, shared module arguments and configurable
 per-system Nixpkgs overlays, with explicit argument validation and diagnostics.
 
-Provide a shared treefmt formatter and default formatting check, covering source
-languages and the project's whitelist-style =.gitignore= convention for root and
-nested files. The =.gitignore= formatter reports operational failures and preserves
-original files on failure. Unmatched files are errors; consumers configure
-explicit exclusions.
+**** Treefmt integration
+- Provide a shared treefmt formatter and default formatting check, covering
+  Nix, shell, Prettier-supported files, Haskell, Cabal, XML, Python and TOML.
+  Unmatched files are errors; consumers configure explicit exclusions.
+- Extend treefmt with =gitignore-fmt= for root and nested =.gitignore= files,
+  following the project's whitelist convention. Operational failures are
+  reported explicitly, and original files are preserved on failure.
+- Extend treefmt with Lisp formatters: =lisplens= for Scheme and
+  =elisp-autofmt= for Emacs Lisp.
+- Extend treefmt with Org-mode formatting through Emacs's native Org AST
+  parse/interpret round-trip. Custom blank-line handling is limited to
+  headlines and their leading planning and drawer elements. Other
+  normalization is delegated to Org's native serializer, without formatting
+  embedded programming languages or adding special-block adapters.
+- Extend treefmt with =text-fmt= for root and nested =.txt= files.
+  Normalize CRLF to LF and append a final LF to nonempty unterminated files,
+  preserving other bytes including whitespace and blank lines. Reject NUL
+  and inputs whose normalization would not be idempotent.
 
-Provide Org-mode formatting through the shared treefmt configuration, using
-Emacs's native Org AST parse/interpret round-trip, with custom blank-line handling
-limited to headlines and their leading planning and drawer elements.
-Other normalization is delegated to Org's native serializer, without additional
-formatting of embedded programming languages or special-block adapters.
-
-Provide =text-fmt= for root and nested =.txt= files through shared treefmt.
-Normalize CRLF to LF and add a final LF to nonempty unterminated files, preserving
-other bytes including whitespace and blank lines. Reject NUL and inputs whose
-normalization would not be idempotent.
-
+**** Development environment
 Provide a =nix= development shell using patched Nix to address false circular
 imports and incorrect locked-source reuse with nested relative inputs.
 
 *** =lib.mergeAttrsRecursive=
-Merge attribute sets recursively with conflict diagnostics and optional
-later-entry override precedence.
+- Merge attribute sets recursively with conflict diagnostics and optional
+  later-entry override precedence.
 
 *** =lib.packages=
-=mkOverlays= provides directory-based overlays, nested scopes, Emacs and TeX Live
-integration, and independent groups with =include=, =exclude=, external =overlays=
-and directory-constrained package exports.
-
-=mkNixosModule= and =mkHomeModule= provide recursive module discovery.
+- =mkOverlays= provides directory-based overlays, nested scopes, Emacs and TeX Live
+  integration, and independent groups with =include=, =exclude=, external
+  =overlays= and directory-constrained package exports.
+- =mkNixosModule= and =mkHomeModule= provide recursive module discovery.
 
 *** =lib.tests=
-=mkChecks= assembles an independent test scope, preserving existing checks and
-extracting directory-selected derivations with configurable names.
+- =mkChecks= assembles an independent test scope, preserving existing checks and
+  extracting directory-selected derivations with configurable names.
