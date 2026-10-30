@@ -1,87 +1,90 @@
 # Current project state
 
-## text-fmt v1: implemented and build-verified
+## text-fmt v1: committed and build-verified
 
-The owner requested workspace/memory inspection and review of a supplied v1
-development plan, not implementation. The proposed tool uses strict Haskell
-ByteString, converts CRLF to LF, and adds LF only to nonempty unterminated
-files. The owner subsequently accepted four byte rules: reject NUL; replace
-original CRLF pairs with LF while preserving all other bytes; append LF to a
-nonempty unterminated result; reject if that candidate still contains CRLF.
-This supersedes blanket rejection of unpaired CR. Interior unpaired CR is
-preserved; a terminal CR or CR immediately before an original CRLF is rejected
-because conversion would create a new CRLF. Candidate CRLF detection is
-equivalent to comparing T(T(x)) with T(x), without generating another output.
-Keep packages independent, with no shared library
-or additional formatting rules. Shared treefmt coverage is only *.txt and
-**/*.txt. The initial review performed no project edits or builds; subsequent
-authorized implementation and verification are recorded below.
-
-Review of current sources supports reusing gitignore-fmt packaging and native
-test organization. The implementation addresses these review requirements:
-- Wire text-fmt explicitly through root flake.nix into tests/default.nix's
-  arguments and mkChecks.args, as well as the suite overlay and expected names.
-  Passing pkgs does not inject its members into the independent test scope.
-- Existing Cabal .hs/.cabal/cabal.project whitelist already covers the suggested
-  layout, but raw .txt fixtures would be ignored. Prefer byte fixtures in Haskell
-  like gitignore-fmt; do not feed repository documents into native tests.
-- Update the original plan's CR policy to the four adopted rules above. Check
-  successful outputs remain valid and idempotent; generated valid byte inputs can strengthen
-  the finite golden suite without a new testing framework.
-- Clarify atomic rename as the replacement commit point: pre-replacement failures
-  protect the original; interruption after successful replacement cannot promise
-  rollback. No concurrency/transaction framework is proposed.
-- Package and its mkChecks entry select the same derivation, so two successful
-  builds are not necessarily two fresh test executions. Format before final
-  validation and ensure new files enter the validation source explicitly without
-  implicit project staging. Preserve independent mkChecks API acceptance.
-
-At inspection the only ordinary worktree edit was the owner's CHANGELOG.org
-sentence requesting a formatter for common .txt test files; preserve it. Formal
-GAW was healthy and clean on recovery. The owner accepted the four byte rules
-and now explicitly requested a checkpoint before implementing text-fmt in Haskell,
-with continuing README and GAW maintenance. Scope includes the reviewed package,
-native tests, shared formatter/check wiring and documentation. Preserve the
-existing CHANGELOG edit. Build/format execution authority must be handled
-separately. The required pre-implementation checkpoint was created with
+The owner reviewed a minimal plain-text formatter plan, then authorized Haskell
+implementation, continuing README/GAW maintenance and an implementation-before
+checkpoint. That checkpoint used
 `chore(memory): record adopted text-fmt rules and implementation scope`.
 
-Implementation now exists under pkgs/pkgs/text-fmt/cabal with independent Format,
-File and Cli modules. File/CLI follow the existing formatter's safety boundary;
-pure conversion uses a Builder and checks candidate CRLF. Native suites include
-byte fixtures, an independent short-input oracle, all non-NUL interior byte values,
-CLI/metadata/nonregular-file cases, eight injected IO failures and interruption.
-Package, treefmt group, .txt-only registration, root test arguments, suite overlay
-and expected names are wired. README and CHANGELOG describe current behavior;
-the owner's pending CHANGELOG request was replaced by the implemented entry.
-The owner authorized repeated 120s nix fmt, combined package
-and package-check builds, and full nix flake check with --no-write-lock-file in
-tmp/text-fmt-source; format results may be synchronized back to scoped project
-paths. Use the isolated source snapshot to include untracked files without staging.
+Adopted byte contract (supersedes the original blanket rejection of unpaired CR):
+1. Reject NUL.
+2. Replace original CRLF pairs with LF, preserving every other byte.
+3. Append LF to a nonempty result if it lacks a final LF.
+4. Reject if that candidate still contains CRLF, which would change on another pass.
+Interior unpaired CR is retained. A terminal CR or an extra CR immediately before
+an original CRLF is rejected. Candidate CRLF detection is equivalent to comparing
+T(T(x)) with T(x), without producing a second output. Keep all other whitespace,
+blank lines, BOM and non-UTF-8 bytes; no extra rules, encoding conversion, shared
+formatter library or general fallback dispatch. Shared treefmt matches only
+*.txt and **/*.txt.
 
-Validation on x86_64-linux succeeded: after correcting a migrated function name,
-the direct package build compiled with GHC 9.10.3 and freshly passed both native
-suites. Pure tests include 55,987 short byte sequences and 255 individual non-NUL
-interior bytes. Package and check select the same derivation, not independent
-test executions. Full flake check passed with the original independent API checks
-intact; treefmt traversed 174 files, processed 171 and changed none. Other systems
-were skipped. Existing unrelated check outputs may have been cached.
+Implementation under pkgs/pkgs/text-fmt/cabal has independent Format, File and
+Cli modules. Strict ByteString conversion uses a Builder and candidate CRLF
+validation. File/CLI follow gitignore-fmt: multi-file processing, --check,
+maximum status 0/1/2, no rewrite on unchanged bytes, symlink/nonregular rejection,
+same-directory temporary replacement, permission preservation and exception
+cleanup. Atomic rename is the commit point; interruption after successful
+replacement cannot promise rollback. No concurrency/transaction framework.
 
-Snapshot execution details: this Nix's fmt forwards positional arguments, so use
+Package uses callCabal2nix, doCheck=true, doHaddock=false and mainProgram=text-fmt.
+Native format/CLI tests live with the package; Haskell byte fixtures avoid raw
+.txt fixtures being ignored or normalized by treefmt. Do not couple tests to
+README/CHANGELOG inputs. tests/suites/text-fmt/test-overlay.nix selects the package
+itself from prev. Root flake.nix, tests/default.nix args/mkChecks.args and expected
+names are wired explicitly. Passing pkgs never implicitly injects its members.
+Group membership in pkgs/pkgs/default.nix accompanies root test wiring because
+root pkgs only applies treefmt and nix groups; legacy automatically exports it.
+Independent mkChecks API acceptance remains intact.
+
+Authorized validation on x86_64-linux: the formatted package freshly compiled
+with GHC 9.10.3 and passed both native suites. Pure tests cover 55,987 short byte
+sequences against an independent oracle, 255 individual non-NUL interior byte
+values, goldens, unsupported inputs and idempotence. CLI tests cover filenames,
+statuses, multiple files, metadata, symlink/directory/FIFO rejection, eight injected
+IO failures and interrupted-write cleanup. Package and its check select the same
+derivation, not two independent test executions. Full flake check passed;
+treefmt traversed 174 files, processed 171 and changed none. Other systems were
+skipped and unrelated checks may have reused cache. A byte/mode comparison of
+all 174 files and complete file sets matched the validation snapshot. These tests
+ran before project commits, not as post-commit reruns.
+
+Validation used tmp/text-fmt-source to include then-untracked sources without
+staging. This Nix's fmt forwards positional args, so invoke the snapshot with
 `nix run --no-write-lock-file path:<snapshot>#formatter.x86_64-linux -- --walk filesystem`
-inside the snapshot. The wrapper already sets tree-root-file=flake.nix; an extra
-tree-root flag conflicts. Git traversal sees the ignored snapshot as empty, so
-the filesystem flag is necessary. Build/check use explicit path:<snapshot>
-references. Formatting changes were copied back only to intended project paths.
-No project staging, commit or lockfile change was performed. The final full check
-after README punctuation correction also passed, with 174 files traversed and
-171 processed unchanged. A byte/mode comparison confirms all 174 files and the
-complete source file set match the validation snapshot. Ordinary diff --check
-passed. Implementation is ready for owner review/staging; 12 new paths remain
-untracked and six existing paths modified. Do not claim a normal Git-flake build
-includes the new files until they are tracked. Temporary source snapshot remains
-under the ignored tmp directory. No current project-parent association is claimed
-for dirty-worktree implementation or validation.
+from its root. Wrapper tree-root-file=flake.nix conflicts with extra tree-root;
+Git walking sees ignored snapshot files as absent. Build/check use explicit
+path:<snapshot> references. Formatting was synchronized only to scoped project
+files. No lockfile change. The snapshot remains in ignored tmp/; source files
+are now committed, so the earlier untracked-file limitation is resolved.
+
+The owner requested three commits, each following request staging -> draft
+message -> wait for owner commit -> next batch. Each batch was explicitly
+authorized, staged with explicit paths, reviewed in full and passed staged
+whitespace checks. The owner committed:
+- Package/native tests and root check/group wiring (15 files, 508 added lines) as
+  `feat(pkgs/pkgs/text-fmt): add a Haskell plain text formatter`.
+- Shared treefmt .txt registration only (8 added lines) as
+  `feat(treefmt): normalize plain text files with text-fmt`.
+- README and CHANGELOG as
+  `docs: document plain text formatting and native tests`.
+After each commit, all 174 committed blobs/modes exactly matched its reviewed
+index. No project commits were executed by the agent. Project worktree is clean.
+
+Before document staging, read readme/changelog skill workflows and complete
+documents; audited changes since the last README commit against the now-committed
+package and module. README covers byte rules, CLI/safety, package export, group,
+check wiring, native tests and package/check build examples (same derivation).
+CHANGELOG records the shared .txt behavior under lib.mkFlake, leaving internal
+implementation detail in README. Preserve public-interface boundaries and Org
+TODO 0.1.0 state/time; no release, freeze or publication is claimed. Scoped snapshot
+formatting processed both final documents without changes and matched their
+staged bytes. No full flake check was rerun for that final document-only revision.
+The original pending CHANGELOG request was replaced by the implemented entry.
+
+This implementation and three-commit delivery are complete. Await the next
+objective; no further staging or tests are pending. Final source inspection and
+commit verification do not establish fresh post-commit runtime validation.
 
 ## gitignore-fmt Haskell rewrite: committed and build-verified
 
