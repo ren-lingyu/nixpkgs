@@ -83,6 +83,7 @@ these repository-specific exclusions are not inherited by consumers.
 | TOML                               | taplo.                                                                                          |
 | Scheme (=.scm=)                    | =lisplens format=.                                                                              |
 | Emacs Lisp (=.el=)                 | elisp-autofmt.                                                                                  |
+| Plain text (=.txt=)                | text-fmt, converting CRLF to LF and adding a final LF to nonempty files when needed.            |
 | Org (=.org=)                       | org-fmt, using Emacs's native Org parser and serializer.                                        |
 | Root and nested =.gitignore= files | gitignore-fmt, for the whitelist convention described under internal maintenance below.         |
 
@@ -451,8 +452,8 @@ This direct import provides the merge, overlay, package/module and test helpers;
 
 ** Internal packages
 =legacyPackages.${system}= contains =elisp-autofmt=, =gitignore-fmt=, =lisplens=,
-=nix-flake-patched= and =org-fmt=. Their definitions live under =pkgs/pkgs/=, with
-=overlay.nix= entries assembled by
+=nix-flake-patched=, =org-fmt= and =text-fmt=. Their definitions live under
+=pkgs/pkgs/=, with =overlay.nix= entries assembled by
 =lib.packages.mkOverlays=. =elisp-autofmt= and =lisplens= provide
 =nix-update-script= update scripts.
 
@@ -490,9 +491,9 @@ can be expensive. It runs offline using private local stores and synthetic
 Flakes modeled on the consumer repositories, including their repeated
 =path:./pkgs= inputs and =follows=. These tests do not build the real consumers.
 
-The internal =treefmt= group selects =lisplens=, =elisp-autofmt=, =gitignore-fmt=
-and =org-fmt=, while the =nix= group selects =nix-flake-patched=; neither adds a
-selection export.
+The internal =treefmt= group selects =lisplens=, =elisp-autofmt=, =gitignore-fmt=,
+=org-fmt= and =text-fmt=, while the =nix= group selects =nix-flake-patched=;
+neither adds a selection export.
 The =legacy= group selects all packages and adds the directory-selected
 =legacyPackages= attribute.
 The subflake applies =legacy= to its own package set and exports that selection
@@ -524,15 +525,58 @@ rendering, preserving file permissions. Failed files remain unchanged and later
 files are still processed. These command details describe the internal formatter
 used by treefmt; they do not promise a standalone package interface.
 
+*** Plain text formatting
+=text-fmt= is an independent Haskell Cabal package built with Nixpkgs's Haskell
+package set. Shared treefmt selects only root and nested =.txt= files; it is not
+a fallback formatter for unmatched files.
+
+The formatter operates on raw bytes using four rules:
+
+1. Reject input containing NUL.
+2. Convert original CRLF pairs to LF, preserving every other byte.
+3. Append LF if the result is nonempty and does not end in LF.
+4. Reject the result if it still contains CRLF, which would change on another pass.
+
+Empty files remain empty. Trailing spaces, tabs, indentation, blank lines,
+multiple final LF bytes, BOM and non-UTF-8 bytes are preserved. Interior unpaired
+CR is retained. A terminal CR or an extra CR immediately before CRLF is rejected
+because normalization would otherwise violate idempotence. No encoding conversion
+or paragraph wrapping is performed.
+
+#+begin_src sh
+  text-fmt FILE...
+  text-fmt --check FILE...
+  text-fmt -- FILE...
+#+end_src
+
+Exit status is 0 for success, 1 when check mode finds changes needed, and 2 for
+argument errors, unsupported input or IO failures. Files after a failed file are
+still processed; the highest status wins. Check mode never writes. Symlinks and
+nonregular files are rejected. Unchanged files are not rewritten. Changed files
+are rendered completely, written to a temporary file in the same directory,
+and atomically replaced with permission bits preserved. Errors or interruption
+before replacement preserve the original and clean up the temporary file;
+a successful replacement is the commit point, without rollback afterward.
+
+Build the internal package or its check from the repository root:
+
+#+begin_src sh
+  nix build -L .#legacyPackages.x86_64-linux.text-fmt
+  nix build -L .#checks.x86_64-linux.text-fmt
+#+end_src
+
+Both select the same package derivation, whose check phase runs its native tests.
+
 ** Repository tests
 =tests/default.nix= accepts
-={ llib, lib, pkgs, nix-flake-patched, gitignore-fmt, org-fmt }=
+={ llib, lib, pkgs, nix-flake-patched, gitignore-fmt, org-fmt, text-fmt }=
 and returns the complete check derivation set. Ordinary suites live under
 =tests/suites/=, each with a =cases.nix= expression, a =test-overlay.nix= entry,
 and any local fixtures.
 Package-specific fixtures and runners live beside their packages. The
-=gitignore-fmt= suite selects the package itself, whose Cabal check phase runs
-the native test suites. The =org-fmt= and =nix-flake-patched= suites select
+=gitignore-fmt= and =text-fmt= suites select their packages themselves, whose
+Cabal check phases run the native test suites. The =org-fmt= and
+=nix-flake-patched= suites select
 =prev.<package>.tests.regressions=, independent test derivations assembled from
 each package's local =tests/= directory. These use Python runners embedded in
 Nix files; =org-fmt= also uses an Emacs Lisp semantic projection. Selecting from
@@ -578,6 +622,14 @@ pattern bytes, idempotence, read-only =--check= behavior, multi-file processing,
 file metadata and symlink rejection. Injected IO failures and interruption
 verify original-file preservation and temporary-file cleanup.
 
+The =text-fmt= package also owns pure formatting and CLI suites. Byte fixtures
+cover whitespace, BOM, UTF-8 and arbitrary bytes, preserved CR and rejected
+unstable newline sequences. Exhaustive short inputs over a representative byte
+alphabet are checked against an independent oracle and for idempotence. CLI tests
+cover statuses, multiple files, metadata, symlinks, nonregular files, eight injected
+IO failures and interrupted-write cleanup. Fixtures are Haskell byte values,
+not repository documents or raw files subject to treefmt.
+
 The =org-fmt= suite uses self-contained fixtures to test native Org round-trip
 formatting, headline spacing, structural semantics, idempotence, CLI behavior
 and file-operation failures. It does not take repository documents as inputs.
@@ -588,8 +640,8 @@ paths. Three extracted =pkgs.writeText= checks under =testApi/= are also built
 through the flake. The API suite and these real checks are supplied as existing
 =checks= at the root, independently of ordinary-suite discovery. The root also requires
 the complete output names to match the existing API checks plus =mergeAttrsRecursive=,
-=overlays=, =packages=, =gitignore-fmt=, =org-fmt= and =nix-flake-patched=, so missing or
-unexpected checks fail evaluation.
+=overlays=, =packages=, =gitignore-fmt=, =org-fmt=, =text-fmt= and
+=nix-flake-patched=, so missing or unexpected checks fail evaluation.
 Adding an ordinary suite also requires updating this expected-name set.
 Existing aggregation assertions and report/check names are retained; API tests
 track the current assembly and extraction contract.

@@ -32,6 +32,11 @@ limited to headlines and their leading planning and drawer elements.
 Other normalization is delegated to Org's native serializer, without additional
 formatting of embedded programming languages or special-block adapters.
 
+Provide =text-fmt= for root and nested =.txt= files through shared treefmt.
+Normalize CRLF to LF and add a final LF to nonempty unterminated files, preserving
+other bytes including whitespace and blank lines. Reject NUL and inputs whose
+normalization would not be idempotent.
+
 Provide a =nix= development shell using patched Nix to address false circular
 imports and incorrect locked-source reuse with nested relative inputs.
 
