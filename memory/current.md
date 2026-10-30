@@ -3,9 +3,9 @@
 ## org-fmt v1: committed and targeted regression suite verified
 
 Current test-design constraint (owner correction): the owner rejected feeding
-README/CHANGELOG paths from root flake into org-fmt tests. Remove the entire
-org-fmt-documents/documents argument chain and generated JSON document list;
-suite fixtures must be self-contained. Do not recreate this coupling through
+README/CHANGELOG paths from root flake into org-fmt tests. The entire
+org-fmt-documents/documents argument chain and generated JSON document list were
+removed; suite fixtures must be self-contained. Do not recreate this coupling through
 ancestor-path reads or a differently named input. Normal root treefmt document
 formatting is separate and remains enabled. Earlier real-document test evidence
 below describes the superseded design, not an ongoing suite requirement.
@@ -13,7 +13,11 @@ Five project files now remove that wiring and the two document cases, leaving
 30 self-contained cases. Scoped formatting and diff --check passed. The targeted
 build through tests/default.nix passed 30/30 on x86_64-linux, with 48 Emacs
 processes and 9.401s suite time. No full flake check was run for this correction.
-These corrections are unstaged, and no project staging/commit was performed.
+The owner staged and committed all five corrections as
+`test(org-fmt): remove repository document dependencies`. The committed blobs and
+modes exactly match the reviewed/tested files. Validation ran before commit, not
+after. No project staging or commit was performed by the agent. This correction
+is complete; the self-contained fixture requirement remains a design constraint.
 
 The owner adopted the v1 design below, then authorized fixing review findings and
 constructing complex regression fixtures. They separately authorized repeated
