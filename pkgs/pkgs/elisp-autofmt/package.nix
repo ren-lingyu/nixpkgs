@@ -21,6 +21,8 @@ stdenvNoCC.mkDerivation {
     hash = "sha256-5UHY8xkdVlB+YZdXdaDYBeUg0tFYuU2gdNlVspm4Ons=";
   };
 
+  patches = [ ./load-use-package.patch ];
+
   nativeBuildInputs = [ makeWrapper ];
 
   dontConfigure = true;

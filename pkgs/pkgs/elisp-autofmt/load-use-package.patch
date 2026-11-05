@@ -1,0 +1,13 @@
+diff --git a/elisp-autofmt-cmd.py b/elisp-autofmt-cmd.py
+--- a/elisp-autofmt-cmd.py
++++ b/elisp-autofmt-cmd.py
+@@ -65,6 +65,9 @@
+         '--eval', '''
+ (progn
++ (require 'use-package)
++ (setq-default elisp-autofmt-load-packages-local
++               '("use-package" "use-package-core"))
+  (setq elisp-autofmt-python-bin (getenv "PYTHON_BIN"))
+  (let ((use-stdout (string-equal "1" (getenv "USE_STDOUT")))
+        (error-count 0))
+    (dolist (buf (buffer-list))

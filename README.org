@@ -459,6 +459,8 @@ This direct import provides the merge, overlay, package/module and test helpers;
 
 =elisp-autofmt= installs the upstream Emacs Lisp formatter scripts and configuration,
 with a Python command wrapper providing Emacs and Pygments at runtime.
+A local patch makes the launcher preload =use-package= and sets
+=elisp-autofmt-load-packages-local= to =("use-package" "use-package-core")=.
 =lisplens= is built with =rustPlatform.buildRustPackage= and provides Lisp formatting
 and structural editing commands.
 
