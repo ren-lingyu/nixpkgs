@@ -10,6 +10,14 @@
       url = "git+https://github.com/numtide/treefmt-nix.git?ref=refs/heads/main&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    elisp-autofmt = {
+      url = "git+https://github.com/emacsmirror/elisp-autofmt.git?ref=refs/heads/master&shallow=1";
+      flake = false;
+    };
+    lisplens = {
+      url = "git+https://github.com/rigortype/lisplens.git?ref=refs/tags/v0.6.0&shallow=1";
+      flake = false;
+    };
   };
 
   outputs =
@@ -24,7 +32,10 @@
           in
           rec {
             llib = import ./lib { inherit lib; };
-            lpkgs = import ./pkgs { inherit llib; };
+            lpkgs = import ./pkgs {
+              inherit llib;
+              sources = { inherit (inputs) elisp-autofmt lisplens; };
+            };
           };
       }
       (

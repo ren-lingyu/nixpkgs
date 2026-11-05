@@ -1,19 +1,13 @@
 {
+  src,
   lib,
-  fetchFromGitHub,
   rustPlatform,
-  nix-update-script,
 }:
 rustPlatform.buildRustPackage {
+  inherit src;
+
   pname = "lisplens";
   version = "0.6.0";
-
-  src = fetchFromGitHub {
-    owner = "rigortype";
-    repo = "lisplens";
-    rev = "v0.6.0";
-    hash = "sha256-K0QzGwW7pSQ5hJn5W6iJffqaQeaGx1guPHomLKEXzzc=";
-  };
 
   cargoHash = "sha256-P5tHg8le05a45SC6iRPs9S9yxPLkvrBB0+WP8IvvP0M=";
 
@@ -25,6 +19,4 @@ rustPlatform.buildRustPackage {
     mainProgram = "lisplens";
     platforms = lib.platforms.unix;
   };
-
-  passthru.updateScript = nix-update-script { extraArgs = [ "--flake" ]; };
 }

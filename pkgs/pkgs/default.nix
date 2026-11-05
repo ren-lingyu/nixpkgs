@@ -1,4 +1,4 @@
-{ llib }: {
+{ sources, llib }: {
   overlays = llib.packages.mkOverlays {
     root = ./.;
     overlayFile = "overlay.nix";
@@ -21,5 +21,6 @@
         export = true;
       };
     };
+    extraArgs = { inherit sources; };
   };
 }

@@ -1,25 +1,19 @@
 {
+  src,
   lib,
   stdenvNoCC,
-  fetchFromGitHub,
   makeWrapper,
   emacs-nox,
   python3,
-  nix-update-script,
 }:
 let
   python = python3.withPackages (pythonPackages: [ pythonPackages.pygments ]);
 in
 stdenvNoCC.mkDerivation {
-  pname = "elisp-autofmt";
-  version = "0-unstable-2026-08-11";
+  inherit src;
 
-  src = fetchFromGitHub {
-    owner = "emacsmirror";
-    repo = "elisp-autofmt";
-    rev = "a41fe15d3d2c69a6f069bab4d90caab8a4b62be7";
-    hash = "sha256-5UHY8xkdVlB+YZdXdaDYBeUg0tFYuU2gdNlVspm4Ons=";
-  };
+  pname = "elisp-autofmt";
+  version = "0.1";
 
   patches = [ ./load-use-package.patch ];
 
@@ -70,12 +64,5 @@ stdenvNoCC.mkDerivation {
     license = lib.licenses.gpl3Plus;
     mainProgram = "elisp-autofmt";
     platforms = lib.platforms.unix;
-  };
-
-  passthru.updateScript = nix-update-script {
-    extraArgs = [
-      "--flake"
-      "--version=branch=master"
-    ];
   };
 }

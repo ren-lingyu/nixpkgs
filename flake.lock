@@ -1,5 +1,23 @@
 {
   "nodes": {
+    "elisp-autofmt": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786424162,
+        "narHash": "sha256-5UHY8xkdVlB+YZdXdaDYBeUg0tFYuU2gdNlVspm4Ons=",
+        "ref": "refs/heads/master",
+        "rev": "a41fe15d3d2c69a6f069bab4d90caab8a4b62be7",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/emacsmirror/elisp-autofmt.git"
+      },
+      "original": {
+        "ref": "refs/heads/master",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/emacsmirror/elisp-autofmt.git"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
@@ -20,9 +38,29 @@
         "url": "https://github.com/hercules-ci/flake-parts.git"
       }
     },
+    "lisplens": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784324509,
+        "narHash": "sha256-K0QzGwW7pSQ5hJn5W6iJffqaQeaGx1guPHomLKEXzzc=",
+        "ref": "refs/tags/v0.6.0",
+        "rev": "2662b944d8d93a2734bc78464864b140ec9e0b8f",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/rigortype/lisplens.git"
+      },
+      "original": {
+        "ref": "refs/tags/v0.6.0",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/rigortype/lisplens.git"
+      }
+    },
     "local-nixpkgs": {
       "inputs": {
+        "elisp-autofmt": "elisp-autofmt",
         "flake-parts": "flake-parts",
+        "lisplens": "lisplens",
         "nixpkgs": [
           "nixpkgs"
         ],
