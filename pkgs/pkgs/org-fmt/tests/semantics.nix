@@ -47,6 +47,9 @@
                       (_ nil)))
                    (values (mapcar (lambda (key) (org-element-property key node)) keys)))
               (pcase type
+                ('node-property
+                 ;; Org property names are case-insensitive; values are not.
+                 (setq values (cons (upcase (car values)) (cdr values))))
                 ('item
                  ;; Org renumbers an ordered bullet with an explicit [@counter].
                  ;; Keep its delimiter/style and the parsed counter, not spelling.

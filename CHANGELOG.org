@@ -31,10 +31,11 @@ per-system Nixpkgs overlays, with explicit argument validation and diagnostics.
 - Extend treefmt with Lisp formatters: =lisplens= for Scheme and
   =elisp-autofmt= for Emacs Lisp.
 - Extend treefmt with Org-mode formatting through Emacs's native Org AST
-  parse/interpret round-trip. Custom blank-line handling is limited to
-  headlines and their leading planning and drawer elements. Other
-  normalization is delegated to Org's native serializer, without formatting
-  embedded programming languages or adding special-block adapters.
+  parse/interpret round-trip. Normalize blank lines around headlines and their
+  leading planning and drawer elements, and uppercase all node-property names
+  without changing property values, order or duplicates. Other normalization
+  is delegated to Org's native serializer, without formatting embedded
+  programming languages or adding special-block adapters.
 - Extend treefmt with =text-fmt= for root and nested =.txt= files.
   Normalize CRLF to LF and append a final LF to nonempty unterminated files,
   preserving other bytes including whitespace and blank lines. Reject NUL

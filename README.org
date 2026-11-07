@@ -533,6 +533,15 @@ rendering, preserving file permissions. Failed files remain unchanged and later
 files are still processed. These command details describe the internal formatter
 used by treefmt; they do not promise a standalone package interface.
 
+*** Org formatting
+=org-fmt= parses and serializes files through Emacs's native Org AST. Alongside
+headline-adjacent blank-line normalization, it uppercases every property name
+in =:PROPERTIES:= drawers, including custom names and additive =NAME+= keys.
+Property values, order and duplicate entries remain unchanged; properties are
+not sorted or deduplicated. This transformation does not apply to file-level
+=#+PROPERTY:= declarations, ordinary drawer contents or embedded source text.
+Other output details are delegated to Org's native serializer.
+
 *** Plain text formatting
 =text-fmt= is an independent Haskell Cabal package built with Nixpkgs's Haskell
 package set. Shared treefmt selects only root and nested =.txt= files; it is not
@@ -639,7 +648,8 @@ IO failures and interrupted-write cleanup. Fixtures are Haskell byte values,
 not repository documents or raw files subject to treefmt.
 
 The =org-fmt= suite uses self-contained fixtures to test native Org round-trip
-formatting, headline spacing, structural semantics, idempotence, CLI behavior
+formatting, headline spacing, uppercase property names, preserved values and
+repeated keys, case-insensitive property-key semantics, idempotence, CLI behavior
 and file-operation failures. It does not take repository documents as inputs.
 
 The =testApi= suite verifies the public test helpers with independent fixtures,

@@ -3,8 +3,9 @@
 ;;; Commentary:
 ;;
 ;; Parse and serialize Org files using Org's native AST machinery.
-;; Custom transformations only remove blank lines owned by headlines and
-;; their leading planning, property-drawer and drawer elements.
+;; Custom transformations remove blank lines owned by headlines and their
+;; leading planning, property-drawer and drawer elements, and uppercase
+;; node-property names.  Property values remain unchanged.
 ;;
 ;; Other normalization is delegated to Org's serializer.  Embedded source
 ;; languages and custom special blocks receive no additional processing.
@@ -34,6 +35,16 @@
              (setq elements (cdr elements))))))))
   ast)
 
+(defun org-fmt--normalize-properties (ast)
+  "Uppercase node-property names in AST."
+  (org-element-map
+   ast 'node-property
+   (lambda (property)
+     (org-element-put-property
+      property
+      :key (upcase (org-element-property :key property)))))
+  ast)
+
 (defun org-fmt--render (file)
   "Render FILE through Org's native AST serializer."
   (with-temp-buffer
@@ -44,7 +55,8 @@
           (org-odd-levels-only nil))
       (org-mode)
       (org-element-interpret-data
-       (org-fmt--normalize-headlines (org-element-parse-buffer))))))
+       (org-fmt--normalize-properties
+        (org-fmt--normalize-headlines (org-element-parse-buffer)))))))
 
 (defun org-fmt--file-bytes (file)
   "Read FILE without modifying its bytes."

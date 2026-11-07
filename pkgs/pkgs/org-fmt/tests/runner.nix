@@ -80,20 +80,31 @@
                                      f"actual {actual[path]!r}, expected {expected!r}"))
 
               def compare_semantics():
-                  # A known mismatch must be reported without hiding later pairs.
+                  # Distinguish case-only property renames from changed values.
                   negative = root / "semantic-negative.org"
                   negative.write_text("* Deliberately different heading\n")
+                  property_original = root / "property-value-original.org"
+                  property_changed = root / "property-value-changed.org"
+                  property_original.write_text("* Entry\n:PROPERTIES:\n:Owner: Alice\n:END:\n")
+                  property_changed.write_text("* Entry\n:PROPERTIES:\n:OWNER: Bob\n:END:\n")
                   pairs = [str(path) for row in rows for path in (row[4], row[3])]
                   proc = run_process([emacs, "--batch", "-Q", "--script", semantics,
-                                      str(rows[0][4]), str(negative), *pairs], cwd=root)
+                                      str(rows[0][4]), str(negative),
+                                      str(property_original), str(property_changed),
+                                      *pairs], cwd=root)
                   require(proc.returncode == 0, f"semantic helper failed: {proc.stderr!r}")
                   comparisons = json.loads(proc.stdout)
-                  require(set(comparisons) == set(paths) | {str(negative)},
+                  require(set(comparisons) == set(paths) | {str(negative), str(property_changed)},
                           "missing/unexpected semantic results")
                   require(isinstance(comparisons[str(negative)], str)
                           and comparisons[str(negative)].startswith("Semantic mismatch"),
                           "semantic helper accepted a changed heading")
+                  require(isinstance(comparisons[str(property_changed)], str)
+                          and comparisons[str(property_changed)].startswith("Semantic mismatch"),
+                          "semantic helper accepted a changed property value")
                   negative.unlink()
+                  property_original.unlink()
+                  property_changed.unlink()
                   for name, data, expected, path, original in rows:
                       verify(name, lambda path=path:
                              require(comparisons[str(path)] is True,
@@ -149,6 +160,14 @@
        b"* A\n:LOGBOOK:\n- Note\n:END:\nBody.\n"),
       ("source-indentation", b"* A\n\n#+begin_src nix\n{ pkgs }:\n  pkgs.hello\n#+end_src\n",
        b"* A\n#+begin_src nix\n  { pkgs }:\n    pkgs.hello\n#+end_src\n"),
+      ("property-names-uppercase",
+       b"* A\n:PROPERTIES:\n:id: xYz\n:Custom_Id: Mixed Case\n:owner: Alice\n:labels+: left Right\n:END:\n",
+       b"* A\n:PROPERTIES:\n:ID:       xYz\n:CUSTOM_ID: Mixed Case\n:OWNER:    Alice\n:LABELS+:  left Right\n:END:\n"),
+      ("case-only-duplicate-properties",
+       b"* A\n:PROPERTIES:\n:Id: first\n:ID: second\n:END:\n",
+       b"* A\n:PROPERTIES:\n:ID:       first\n:ID:       second\n:END:\n"),
+      ("property-like-plain-text", b"* A\nText :mixed_key: remains.\n",
+       b"* A\nText :mixed_key: remains.\n"),
   ]
   complex_cases = {
       "empty": "",
