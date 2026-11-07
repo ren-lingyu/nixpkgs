@@ -14,8 +14,12 @@
             gitignore-fmt = {
               command = lib.getExe pkgs.gitignore-fmt;
               includes = [
+                "gitignore"
+                "**/gitignore"
                 ".gitignore"
                 "**/.gitignore"
+                "*.gitignore"
+                "**/*.gitignore"
               ];
             };
 
