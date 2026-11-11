@@ -1,5 +1,46 @@
 # Current project state
 
+## Isolated native BibTeX experiment: completed; formal test wiring undecided
+
+The owner requested a real isolated flake experiment to determine whether native
+TeXmacs acceptance tests have discriminating value, then authorized autonomous
+commands within that experiment directory. Created only
+tmp/bibtex-native-experiment/{flake.nix,check.nix,probe.scm,run.py,complex.bib} and
+its reports. The flake uses the project Git flake input's locked Nixpkgs and actual
+treefmt-wrapper. A 120s nix build with --no-write-lock-file and --no-link completed;
+no root or experiment lockfile was changed. TeXmacs 2.1.5 was fetched from the
+binary cache (39.8 MiB download, 97.5 MiB unpacked). No org-texmacs dependency,
+worker or test driver was used. No formal test wiring or project source changed.
+
+Three isolated headless TeXmacs processes captured original, formatted and control
+observations: 25 parse calls and 75 plain/alpha/abbrv bibliography-format calls.
+All eight positive groups (basic, UTF-8, math, strings, multiline, duplicate/empty
+fields, crossref, complex nine-key fixture) retained exact expected key multisets,
+bibitem counts and expected citation labels before/after formatting. Formatter
+idempotence also passed. The build records observations rather than asserting
+malformed controls must fail; successful build is not strict validity proof.
+
+Controls establish limits: plain text can return a document, but expected-key
+checks detect that it contains no entries. Entry removal, key renaming and key
+duplication are caught by expected keys/items/labels. Missing closing braces and
+missing equals signs are recovered and still yield all expected keys/items/labels.
+For missing equals, native output retains an entry with no fields and emits only
+its bibliography item/label. Some malformed controls log convert-error while
+returning successfully; missing-brace recovery also defeats simple diagnostic
+scanning. Empty title remains accepted, as expected for a non-semantic predicate.
+
+Conclusion: a small native test has real bounded value as citation/entry
+availability regression coverage, not a syntax validator or semantic preservation
+proof. A fixed-key probe plus at least one native style is reasonable; three styles
+add style-path coverage but are not independent syntax checks. No full org-texmacs
+export/PDF guarantee is claimed. Keep generic formatter tests separate and await
+owner decision before adding permanent passthru.tests/flake checks.
+Self-contained report is tmp/bibtex-native-experiment/REPORT.md, with copied
+summary.json and native tree/log evidence. These ignored artifacts are retained
+for review, not required persistent memory inputs. The original config.nix change
+remains staged by the owner. Earlier static-only/draft limits below describe the
+preceding phase and are superseded by this specific native experiment evidence.
+
 ## BibTeX treefmt integration: implemented and verified; not committed
 
 The owner committed the preceding README/CHANGELOG synchronization under
@@ -65,9 +106,9 @@ western encodings, so non-UTF-8 sources can be damaged by formatting. Its
 formatValue always unwraps input value newlines and normalizes page-range dashes;
 --no-wrap only disables output wrapping. Invalid/extended BibLaTeX, math commands,
 font coverage and duplicate used keys retain consumer-side limits. No parameter
-change was made for this static review, and no new tests/builds ran. End-to-end
-before/after native parse/render comparisons remain unperformed. Await the
-owner's next direction on compatibility validation or scope decisions.
+change was made for that static review, and no tests/builds ran at that stage.
+The later isolated native parse/bibliography experiment is described above;
+full consumer export and PDF/render comparisons remain unperformed.
 
 The owner narrowed acceptance to originally accepted UTF-8 .bib files remaining
 accepted after formatting; exact semantic/native-tree/rendering equality is not
