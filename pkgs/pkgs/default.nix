@@ -1,4 +1,9 @@
-{ sources, llib }: {
+{
+  sources,
+  llib,
+  treefmt-nix-lib,
+}:
+{
   overlays = llib.packages.mkOverlays {
     root = ./.;
     overlayFile = "overlay.nix";
@@ -10,6 +15,7 @@
           "lisplens"
           "org-fmt"
           "text-fmt"
+          "treefmt-wrapper"
         ];
       };
 
@@ -21,6 +27,6 @@
         export = true;
       };
     };
-    extraArgs = { inherit sources; };
+    extraArgs = { inherit sources treefmt-nix-lib; };
   };
 }

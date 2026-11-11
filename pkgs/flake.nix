@@ -35,6 +35,7 @@
             lpkgs = import ./pkgs {
               inherit llib;
               sources = { inherit (inputs) elisp-autofmt lisplens; };
+              treefmt-nix-lib = inputs.treefmt-nix.lib;
             };
           };
       }
