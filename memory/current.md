@@ -42,9 +42,32 @@ Full flake check passed on x86_64-linux; treefmt traversed 178 files, processed
 may reuse cached results. git diff --check passed. No lockfile or project staging
 changes were performed. Current implementation diff is the single treefmt
 config.nix; temporary verification is in ignored tmp/, not a new repository test
-framework. README/CHANGELOG do not yet describe BibTeX support. Await owner review
-or commit/documentation direction; keep current public boundary and deferred
+framework. The owner has since staged config.nix; the agent did not stage it.
+README/CHANGELOG do not yet describe BibTeX support. Keep current public boundary and deferred
 canonical changelog-header synchronization intact.
+
+The owner requires TeXmacs and org-texmacs acceptance and explicitly requested
+static review first. They authorized locating org-texmacs under ~/Projects.
+Read only its relevant local source/docs/tests, without editing that repository
+or executing either application. Its default native citation worker delegates
+.bib text to TeXmacs parse-bibtex-snippet; native input ownership preserves
+duplicate fields/entries, while used keys must resolve uniquely. Its documented
+CSL path has separate math limitations; native acceptance does not certify CSL.
+Local packaging targets TeXmacs 2.1.5. Upstream TeXmacs parser/encoding source
+was inspected on master, not an exact runtime-tested 2.1.5 snapshot.
+
+Static findings: ordinary valid UTF-8 BibTeX is a plausible compatible target;
+indentation/alignment/blank lines do not add a consumer-specific syntax obstacle.
+No-sort and preserved keys, braces/quotes, case and Unicode avoid unnecessary
+changes to native reader inputs. This is not a semantic-equivalence guarantee.
+bibtex-tidy 1.14.0 always decodes/writes UTF-8; TeXmacs also accepts some legacy
+western encodings, so non-UTF-8 sources can be damaged by formatting. Its
+formatValue always unwraps input value newlines and normalizes page-range dashes;
+--no-wrap only disables output wrapping. Invalid/extended BibLaTeX, math commands,
+font coverage and duplicate used keys retain consumer-side limits. No parameter
+change was made for this static review, and no new tests/builds ran. End-to-end
+before/after native parse/render comparisons remain unperformed. Await the
+owner's next direction on compatibility validation or scope decisions.
 
 ## Shared treefmt rules: owned by the committed wrapper package
 
