@@ -15,7 +15,7 @@ preserving existing passthru/tests/imports and avoiding a package build self-cyc
 The treefmt-wrapper suite selects prev.treefmt-wrapper.tests.bibtex. Root flake
 and tests/default.nix pass the wrapper explicitly and add the expected check name;
 independent mkChecks API assembly tests are unchanged. No formatter settings,
-lockfile, README, CHANGELOG or project index changes were made by the agent.
+lockfile or project index changes were made by the agent.
 
 Ten named checks cover eight golden outputs and second-pass byte equality, one
 root/nested/space/Chinese-name multi-file batch, and one invalid whitespace-key
@@ -34,10 +34,19 @@ reuse cache. Treefmt processed 178 of 182 files, reporting one changed file in i
 build sandbox while the check passed. No project source rewriting by that check
 is claimed. Other incompatible systems were skipped. git diff --check passed.
 
-Current changes remain unstaged except the owner's pre-existing staged BibTeX
-config. No project staging/commit was performed. Next: owner review/staging/commit
-direction; documentation remains a separate task. The regression suite freezes
-previously accepted outputs, not a proof of arbitrary consumer compatibility.
+The owner subsequently staged the implementation and requested documentation
+synchronization. README now describes BibTeX settings, normalization limits,
+the package-local passthru test and flake check entry, ten checks and their lack
+of consumer/runtime experiment dependencies. CHANGELOG's open 0.1.0 Added entry
+under lib.mkFlake / Treefmt integration records the new formatter capability;
+test implementation details stay in README. Header synchronization remains
+explicitly deferred and no release state/time was changed. These edits describe
+the verified current implementation, not HEAD alone. Documentation passed
+git diff --check; no new runtime or formatting command was run for these edits.
+Implementation is staged by the owner; README/CHANGELOG remain unstaged.
+No project staging/commit was performed by the agent. Next: owner review/commit
+direction. The regression suite freezes previously accepted outputs, not a proof
+of arbitrary consumer compatibility.
 
 ## Isolated native BibTeX experiment: completed; formal test wiring undecided
 
