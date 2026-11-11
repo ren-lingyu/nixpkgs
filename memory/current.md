@@ -20,11 +20,25 @@ flake formatter, not the standalone wrapper. The standalone wrapper has no
 projectRootFile marker or root-specific exclusions. Existing public-interface
 and compatibility boundaries remain applicable to this internal package.
 
-This review did not run Nix evaluation, builds, formatting or tests; no runtime
-success is claimed. README's internal package inventory and treefmt-group list
-omit treefmt-wrapper, and the ownership description should explain the extracted
-rules. The owner requested inspection only; no project files were edited.
-Await further direction on documentation or validation.
+The initial review did not run Nix evaluation, builds, formatting or tests; no
+runtime success is claimed. The owner then authorized README/CHANGELOG updates
+against HEAD and a commit draft based on both document diffs even if unstaged.
+README now covers wrapper package/group membership, extracted rule ownership,
+library/module passing and standalone-versus-flake configuration boundaries.
+Both documents now include the earlier committed root/nested gitignore,
+.gitignore and *.gitignore matching, which was still missing from their summaries.
+Existing Org uppercase-property documentation already matches committed behavior.
+CHANGELOG retains the public-interface scope and TODO 0.1.0; it does not add a
+standalone-package release entry. Its missing canonical description header was
+previously deferred by the owner and remains unchanged pending separate consent.
+
+The owner has an independent unstaged config.nix edit; use committed HEAD, not
+that edit, as this documentation's implementation baseline. The complete document
+diff passes git diff --check. No formatting, build or test ran for these edits.
+tmp/commit.md contains `docs(treefmt): describe shared wrapper and gitignore coverage`,
+based only on the two document changes as explicitly requested. Documentation is
+not staged by the agent; no project Git mutations occurred. Await owner review
+and commit direction, and avoid mixing newer config changes into this draft.
 
 ## text-fmt v1: committed and build-verified
 
