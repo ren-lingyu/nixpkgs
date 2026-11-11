@@ -1,5 +1,31 @@
 # Current project state
 
+## Shared treefmt rules: owned by the committed wrapper package
+
+Read-only review of the owner's committed treefmt refactor found a clean project
+worktree. pkgs/pkgs/treefmt-wrapper/config.nix now owns enableDefaultExcludes,
+settings and formatter programs previously in pkgs/modules/fp/treefmt/default.nix.
+The moved rule values match the preceding module. package.nix calls
+treefmt-nix-lib.mkWrapper with caller-provided imports and projectRootFile=null,
+preserving existing passthru while adding passthru.imports. Its overlay supplies
+config.nix. The subflake passes inputs.treefmt-nix.lib into the package aggregator
+as treefmt-nix-lib through extraArgs; the treefmt group now includes the wrapper.
+The legacy group discovers and exports it automatically.
+
+The shared flake-parts module imports pkgs.treefmt-wrapper.passthru.imports,
+then sets flakeFormatter=true, flakeCheck=lib.mkDefault true and projectRootFile
+from moduleLocation. It reuses configuration modules, not the independently
+evaluated package derivation: consumer overrides and root exclusions affect the
+flake formatter, not the standalone wrapper. The standalone wrapper has no
+projectRootFile marker or root-specific exclusions. Existing public-interface
+and compatibility boundaries remain applicable to this internal package.
+
+This review did not run Nix evaluation, builds, formatting or tests; no runtime
+success is claimed. README's internal package inventory and treefmt-group list
+omit treefmt-wrapper, and the ownership description should explain the extracted
+rules. The owner requested inspection only; no project files were edited.
+Await further direction on documentation or validation.
+
 ## text-fmt v1: committed and build-verified
 
 The owner reviewed a minimal plain-text formatter plan, then authorized Haskell
