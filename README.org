@@ -10,13 +10,13 @@ repository's original use as a personal NUR repository.
 * Public interface and compatibility
 The intended interface for use by other projects is the root flake's =lib=
 output, together with the functionality supplied through those functions.
-This includes the shared development shell and treefmt integration supplied by
-=lib.mkFlake=. Compatibility is not currently promised, even for this intended
-public interface.
+This includes the shared development shell, project formatting and
+=pkgs.treefmt-wrapper= for package builds supplied through =lib.mkFlake=.
+Compatibility is not currently promised, even for this intended public interface.
 
 Other accessible outputs and implementation details are not intended as direct
 interfaces for external use and carry no compatibility guarantee. These include
-the repository's individual packages and package outputs, internal overlays,
+direct use of the repository's package outputs, internal overlays,
 the local subflake, source-level imports and repository checks. Their accessibility
 or documentation does not make them public interfaces. In particular, the
 public =lib.packages= helpers are distinct from the repository's package outputs.
@@ -71,21 +71,35 @@ consumers must configure exclusions for files outside their formatter coverage.
 The root repository excludes =*.patch=, =LICENSE= and =flake.lock=;
 these repository-specific exclusions are not inherited by consumers.
 
-| Files                              | Formatter                                                                                       |
-|------------------------------------+-------------------------------------------------------------------------------------------------|
-| Nix                                | nixfmt, width 100, indent 2, strict mode.                                                       |
-| Shell                              | shfmt, indent 2, simplification disabled.                                                       |
-| Prettier-supported files           | prettier, width 100, tab width 2, preserved prose wrapping and LF endings.                      |
-| Haskell                            | fourmolu.                                                                                       |
-| Cabal                              | cabal-fmt; the cabal-project-fmt entry formats project files using =--no-cabal-file --inplace=. |
-| XML                                | xmllint.                                                                                        |
-| Python                             | ruff-format, line length 100.                                                                   |
-| TOML                               | taplo.                                                                                          |
-| Scheme (=.scm=)                    | =lisplens format=.                                                                              |
-| Emacs Lisp (=.el=)                 | elisp-autofmt.                                                                                  |
-| Plain text (=.txt=)                | text-fmt, converting CRLF to LF and adding a final LF to nonempty files when needed.            |
-| Org (=.org=)                       | org-fmt, using Emacs's native Org parser and serializer.                                        |
-| Root and nested =.gitignore= files | gitignore-fmt, for the whitelist convention described under internal maintenance below.         |
+| Files                    | Formatter                                                                                       |
+|--------------------------+-------------------------------------------------------------------------------------------------|
+| Nix                      | nixfmt, width 100, indent 2, strict mode.                                                       |
+| Shell                    | shfmt, indent 2, simplification disabled.                                                       |
+| Prettier-supported files | prettier, width 100, tab width 2, preserved prose wrapping and LF endings.                      |
+| Haskell                  | fourmolu.                                                                                       |
+| Cabal                    | cabal-fmt; the cabal-project-fmt entry formats project files using =--no-cabal-file --inplace=. |
+| XML                      | xmllint.                                                                                        |
+| Python                   | ruff-format, line length 100.                                                                   |
+| TOML                     | taplo.                                                                                          |
+| Scheme (=.scm=)          | =lisplens format=.                                                                              |
+| Emacs Lisp (=.el=)       | elisp-autofmt.                                                                                  |
+| Plain text (=.txt=)      | text-fmt, converting CRLF to LF and adding a final LF to nonempty files when needed.            |
+| Org (=.org=)             | org-fmt, using Emacs's native Org parser and serializer.                                        |
+| Gitignore files          | gitignore-fmt, matching root and nested =gitignore=, =.gitignore= and =*.gitignore= files.      |
+
+** Formatting in package builds
+=lib.mkFlake= includes =treefmt-wrapper= in the downstream per-system =pkgs=
+through its default =treefmt= overlay group. Package definitions evaluated with
+that package set's =callPackage= can request a =treefmt-wrapper= argument and
+add it to =nativeBuildInputs= to invoke the shared formatter during builds.
+This packaging support is supplied through =mkFlake=; consumers do not need to
+apply the overlay separately.
+
+The package and flake formatter share configuration modules but evaluate them
+separately. The package sets =projectRootFile = null= and defaults its exclude
+list to =[ ]=. Consumer =perSystem.treefmt= overrides, including project-root
+settings and exclusions, configure the flake formatter and do not change
+=pkgs.treefmt-wrapper=.
 
 * Shared library
 The flake's =lib= output provides functions for use by other repositories.
@@ -430,7 +444,7 @@ The source is organized as follows:
 | =pkgs/flake.nix=   | Assemble the foundation and define =lib.mkFlake=.                                                              |
 | =pkgs/lib/=        | Shared merge, package/module discovery and test-assembly functions.                                            |
 | =pkgs/pkgs/=       | Package definitions and their internal overlay groups.                                                         |
-| =pkgs/modules/fp/= | Shared flake-parts modules, currently treefmt configuration.                                                   |
+| =pkgs/modules/fp/= | Shared flake-parts integration, including formatter, check and project-root settings.                          |
 | =tests/=           | Library suites, independent test-assembly acceptance cases and fixtures.                                       |
 
 The root exports =lib=, =packages=, =legacyPackages=, =devShells=, =formatter=
@@ -453,8 +467,8 @@ This direct import provides the merge, overlay, package/module and test helpers;
 
 ** Internal packages
 =legacyPackages.${system}= contains =elisp-autofmt=, =gitignore-fmt=, =lisplens=,
-=nix-flake-patched=, =org-fmt= and =text-fmt=. Their definitions live under
-=pkgs/pkgs/=, with =overlay.nix= entries assembled by
+=nix-flake-patched=, =org-fmt=, =text-fmt= and =treefmt-wrapper=.
+Their definitions live under =pkgs/pkgs/=, with =overlay.nix= entries assembled by
 =lib.packages.mkOverlays=.
 
 The subflake passes the =elisp-autofmt= and =lisplens= source inputs as =sources=
@@ -500,13 +514,26 @@ Flakes modeled on the consumer repositories, including their repeated
 =path:./pkgs= inputs and =follows=. These tests do not build the real consumers.
 
 The internal =treefmt= group selects =lisplens=, =elisp-autofmt=, =gitignore-fmt=,
-=org-fmt= and =text-fmt=, while the =nix= group selects =nix-flake-patched=;
-neither adds a selection export.
+=org-fmt=, =text-fmt= and =treefmt-wrapper=, while the =nix= group selects
+=nix-flake-patched=; neither adds a selection export.
 The =legacy= group selects all packages and adds the directory-selected
 =legacyPackages= attribute.
 The subflake applies =legacy= to its own package set and exports that selection
 by system. The root forwards it directly. These overlay groups are internal;
 neither flake exports an =overlays= output.
+
+*** Treefmt wrapper
+=pkgs/pkgs/treefmt-wrapper/config.nix= holds the shared formatter programs,
+file patterns and settings. The subflake supplies =inputs.treefmt-nix.lib= as
+=treefmt-nix-lib= through =mkOverlays.extraArgs=; the package's overlay passes
+that library and an =imports= list containing =config.nix= to its package definition.
+The package builds an independent wrapper with =treefmt-nix.lib.mkWrapper= and
+exposes the same module list through =passthru.imports=.
+
+The shared module at =pkgs/modules/fp/treefmt/default.nix= imports
+=pkgs.treefmt-wrapper.passthru.imports=, enables the flake formatter and default
+formatting check, and derives =projectRootFile= from =moduleLocation=.
+Consumers can configure the resulting formatter through =perSystem.treefmt=.
 
 *** Gitignore formatting convention
 The formatter is a Haskell Cabal project under =pkgs/pkgs/gitignore-fmt/cabal/=,
@@ -514,7 +541,9 @@ built with Nixpkgs's Haskell package set. Pure formatting, file operations and t
 command-line interface are separate modules; its native tests run in the package
 check phase.
 
-The shared formatter uses the repository's whitelist convention, rather than
+Shared treefmt selects root and nested files named =gitignore=, =.gitignore=,
+or ending in =.gitignore=, such as =Node.gitignore=.
+The formatter uses the repository's whitelist convention, rather than
 accepting arbitrary ignore-file organization. Its three sections are the =*=
 and =*/= header, negated allow rules, and final ignore rules. Missing header
 lines are inserted; duplicate header lines, empty negations and invalid section

@@ -25,9 +25,13 @@ per-system Nixpkgs overlays, with explicit argument validation and diagnostics.
 - Provide a shared treefmt formatter and default formatting check, covering
   Nix, shell, Prettier-supported files, Haskell, Cabal, XML, Python and TOML.
   Unmatched files are errors; consumers configure explicit exclusions.
-- Extend treefmt with =gitignore-fmt= for root and nested =.gitignore= files,
-  following the project's whitelist convention. Operational failures are
-  reported explicitly, and original files are preserved on failure.
+- Make =pkgs.treefmt-wrapper= available through =mkFlake='s per-system package
+  set for formatting during package builds. It shares the formatter defaults
+  and is configured independently of =perSystem.treefmt=.
+- Extend treefmt with =gitignore-fmt= for root and nested =gitignore=,
+  =.gitignore= and =*.gitignore= files, following the project's whitelist
+  convention. Operational failures are reported explicitly, and original files
+  are preserved on failure.
 - Extend treefmt with Lisp formatters: =lisplens= for Scheme and
   =elisp-autofmt= for Emacs Lisp.
 - Extend treefmt with Org-mode formatting through Emacs's native Org AST
