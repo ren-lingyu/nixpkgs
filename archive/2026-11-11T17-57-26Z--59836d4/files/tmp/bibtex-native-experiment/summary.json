@@ -1,0 +1,300 @@
+{
+  "positive": {
+    "basic": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "unicode": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "math": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "strings": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "multiline": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "duplicate-fields": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "crossref": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "complex": {
+      "before": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      },
+      "after": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    }
+  },
+  "controls": {
+    "empty": {
+      "mutation": "no bibliography remains",
+      "observed": {
+        "parse_returns_document": false,
+        "expected_keys_match": false,
+        "styles_and_labels": {
+          "plain": false,
+          "alpha": false,
+          "abbrv": false
+        },
+        "strong_oracle": false
+      }
+    },
+    "plain-text": {
+      "mutation": "no bibliography syntax",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": false,
+        "styles_and_labels": {
+          "plain": false,
+          "alpha": false,
+          "abbrv": false
+        },
+        "strong_oracle": false
+      }
+    },
+    "missing-braces": {
+      "mutation": "unclosed value and entry",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "missing-equals": {
+      "mutation": "invalid field assignment",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "removed-entry": {
+      "mutation": "one expected entry removed",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": false,
+        "styles_and_labels": {
+          "plain": false,
+          "alpha": false,
+          "abbrv": false
+        },
+        "strong_oracle": false
+      }
+    },
+    "renamed-key": {
+      "mutation": "citation key changed",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": false,
+        "styles_and_labels": {
+          "plain": false,
+          "alpha": false,
+          "abbrv": false
+        },
+        "strong_oracle": false
+      }
+    },
+    "duplicate-key": {
+      "mutation": "citation key became ambiguous",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": false,
+        "styles_and_labels": {
+          "plain": false,
+          "alpha": false,
+          "abbrv": false
+        },
+        "strong_oracle": false
+      }
+    },
+    "empty-title": {
+      "mutation": "content change; not necessarily rejected",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    },
+    "valid-two-entries": {
+      "mutation": "positive control for entry removal",
+      "observed": {
+        "parse_returns_document": true,
+        "expected_keys_match": true,
+        "styles_and_labels": {
+          "plain": true,
+          "alpha": true,
+          "abbrv": true
+        },
+        "strong_oracle": true
+      }
+    }
+  },
+  "formatter_idempotent": true
+}

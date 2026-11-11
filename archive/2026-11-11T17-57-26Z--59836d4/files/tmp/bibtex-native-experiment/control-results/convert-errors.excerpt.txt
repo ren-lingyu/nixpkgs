@@ -1,0 +1,6 @@
+TeXmacs] convert-error, BibTeX parse error encountered
+TeXmacs] convert-error, Expected '{' or '(' instead of 'i'
+TeXmacs] convert-error, BibTeX parse error in Basic2026
+TeXmacs] convert-error, Invalid char: '{', expected '='
+TeXmacs] convert-error, BibTeX parse error in Basic2026
+TeXmacs] convert-error, Invalid char: '{', expected '}'

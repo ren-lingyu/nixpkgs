@@ -35,11 +35,18 @@ proof. A fixed-key probe plus at least one native style is reasonable; three sty
 add style-path coverage but are not independent syntax checks. No full org-texmacs
 export/PDF guarantee is claimed. Keep generic formatter tests separate and await
 owner decision before adding permanent passthru.tests/flake checks.
-Self-contained report is tmp/bibtex-native-experiment/REPORT.md, with copied
-summary.json and native tree/log evidence. These ignored artifacts are retained
-for review, not required persistent memory inputs. The original config.nix change
-remains staged by the owner. Earlier static-only/draft limits below describe the
-preceding phase and are superseded by this specific native experiment evidence.
+At the owner's explicit request, selected original experiment evidence is now
+archived under archive/2026-11-11T17-57-26Z--59836d4; read its MANIFEST.md for
+selection, source mapping, provenance and limits. The snapshot retains scripts,
+fixture, report, summary, the staged uncommitted formatter configuration, four
+small native recovery outputs and a marked diagnostic excerpt. It contains 13
+evidence files totaling 27,806 bytes, each source copy verified byte for byte;
+the manifest records SHA-256 values. No full logs, dependencies or build artifacts
+were captured. This is immutable historical evidence, not executable instructions
+or an adopted permanent test suite. Original tmp artifacts remain for convenience.
+The original config.nix change remains staged by the owner. Earlier static-only
+and draft limits below describe the preceding phase and are superseded by the
+specific native experiment evidence above.
 
 ## BibTeX treefmt integration: implemented and verified; not committed
 

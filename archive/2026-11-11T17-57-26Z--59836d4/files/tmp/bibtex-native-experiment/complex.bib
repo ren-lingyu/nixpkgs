@@ -1,0 +1,76 @@
+% UTF-8 compatibility fixture. These citation keys are intentionally ASCII.
+@string{CompatJournal = "Journal of Compatibility"}
+@preamble{"\newcommand{\CompatMacro}{A}"}
+@comment{Formatter compatibility fixture}
+
+@ARTICLE(Basic2026,
+Title="A quoted title with {NASA}",
+Author={Doe, Jane and Example, Ada},
+year="2026",
+journal={Example Journal},
+pages={12 - 14},
+)
+
+@article{Unicode2026,
+author={García, José and 王, 小明},
+title={中文标题与 UTF-8 café — naïve},
+year={2026},
+journal={Unicode Journal}
+}
+
+@book{Math2026,
+author={Example, Ada},
+title={Study of $\alpha_i$ and $\frac{a}{b}$ with {NASA}},
+year={2026},
+publisher={Example Press}
+}
+
+@article{Macros2026,
+author={Example, Ada},
+title={A macro-based entry},
+journal=CompatJournal # { Supplement},
+year=2026,
+month=jan
+}
+
+@misc{Multiline2026,
+title={A multiline
+  title with protected {API}},
+note={First paragraph.
+
+  Second paragraph.},
+year={2026}
+}
+
+@misc{Duplicate2026,
+title={Repeated and empty fields},
+note={First note},
+note={Second note},
+howpublished={},
+year={2026}
+}
+
+@book{Parent2026,
+editor={Example, Ada},
+title={Collected Examples},
+publisher={Example Press},
+year={2026}
+}
+
+@incollection{Child2026,
+author={Doe, Jane},
+title={A child entry},
+booktitle={Collected Examples},
+crossref={Parent2026},
+pages={20--30},
+year={2026}
+}
+
+@misc{Verbatim2026,
+title={Paths, URLs, and escaped text},
+url={https://example.invalid/paper?id=1&part=a_b},
+doi={10.0000/example_test},
+file={papers/example_file.pdf},
+note={An escaped \& and protected {Title}},
+year={2026}
+}

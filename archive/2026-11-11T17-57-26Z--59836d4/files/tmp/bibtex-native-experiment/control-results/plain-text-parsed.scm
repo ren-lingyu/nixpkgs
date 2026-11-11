@@ -1,0 +1,1 @@
+(document (bib-comment (document)))
