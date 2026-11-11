@@ -69,6 +69,26 @@ change was made for this static review, and no new tests/builds ran. End-to-end
 before/after native parse/render comparisons remain unperformed. Await the
 owner's next direction on compatibility validation or scope decisions.
 
+The owner narrowed acceptance to originally accepted UTF-8 .bib files remaining
+accepted after formatting; exact semantic/native-tree/rendering equality is not
+required. They prefer no TeXmacs/org-texmacs test dependency, but explicitly allow
+TeXmacs as a fallback while excluding org-texmacs. Recommended design is a
+TeXmacs-only independent passthru.tests.bibtex derivation: direct native parsing
+plus plain/alpha/abbrv bibliography generation before and after formatting, fixed
+expected keys/item counts to detect empty recovery, and existing idempotence checks.
+No Emacs test driver, org-texmacs worker/code or cross-repository imports. This
+exercises org-texmacs's shared native parser/style core, not its full export layer.
+A no-TeXmacs test can validate formatting but cannot establish consumer acceptance.
+
+Created only ignored tmp/bibtex-compatibility-draft.md and a companion .bib with
+nine expected citation keys covering basic syntax, UTF-8, math, string macros,
+preamble/comments, multiline values, duplicate/empty fields, crossref and verbatim
+fields. These are a test specification and fixture, not an implemented or executed
+suite. Proposed permanent paths are treefmt-wrapper/tests plus the existing suite
+entry mechanism, with explicit dependency passing/check-name wiring. TeXmacs
+headless invocation shape and native entry points were checked read-only against
+consumer examples and upstream source; no new process execution/build occurred.
+
 ## Shared treefmt rules: owned by the committed wrapper package
 
 Read-only review of the owner's committed treefmt refactor found a clean project
