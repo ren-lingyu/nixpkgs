@@ -1,5 +1,51 @@
 # Current project state
 
+## BibTeX treefmt integration: implemented and verified; not committed
+
+The owner committed the preceding README/CHANGELOG synchronization under
+`docs(treefmt): document mkFlake formatter support for package builds`.
+Read-only inspection confirms a document-only commit with the intended packaging
+path, separate configuration boundary and expanded gitignore matching; README
+table formatting was also normalized by the owner. No post-commit runtime
+verification of that document commit is claimed.
+
+The next objective is BibTeX formatting. The owner already added a bibtex-tidy
+entry to pkgs/pkgs/treefmt-wrapper/config.nix, using locked Nixpkgs's
+bibtex-tidy 1.14.0 for *.bib and **/*.bib. Keep that choice and explicit
+formatting options: two-space indentation, alignment 14, blank lines, in-place
+write/no backup, and disabled sorting, curly/numeric conversion, Unicode escaping,
+lowercasing, duplicate/empty-field removal, comment stripping and value wrapping.
+
+Integration validation found and fixed two concrete problems:
+- With nonterminal stdin, upstream v1.14.0 CLI's automatic stdin detection causes
+  its argument parser to lose trailing filenames after options; treefmt then
+  fails with '--modify/-m is only valid when specifying input files'. A small
+  writeShellScriptBin launcher exports PRE_COMMIT=1 before exec, using upstream's
+  existing switch to disable that detection for file-based callers. The scope
+  is only the formatter process, not the user's environment.
+- --blank-lines together with --no-tidy-comments adds an inter-entry blank line
+  on every pass. The owner explicitly chose to retain blank lines and enable
+  --tidy-comments, accepting normalization of whitespace around comments.
+
+The owner authorized repeated 120s builds of tmp/bibtex-treefmt-check.nix and
+full nix flake check --no-write-lock-file -L for this task only. The self-contained
+temporary integration derivation invokes the independent wrapper with DEVNULL
+stdin against root/nested fixtures. After fixes, fresh execution passed content
+checks for comment text, entry/field case, key/field order, Unicode, duplicate and
+empty fields, string concatenation and crossrefs, no backups and byte-exact
+second-pass idempotence. This is fixture evidence, not a general proof of all
+BibTeX/BibLaTeX semantics. Upstream v1.14.0 CLI/option/format source and the locked
+Nixpkgs package declaration were inspected through the GitHub connector.
+
+Full flake check passed on x86_64-linux; treefmt traversed 178 files, processed
+174 with zero changes. Other incompatible systems were skipped; existing suites
+may reuse cached results. git diff --check passed. No lockfile or project staging
+changes were performed. Current implementation diff is the single treefmt
+config.nix; temporary verification is in ignored tmp/, not a new repository test
+framework. README/CHANGELOG do not yet describe BibTeX support. Await owner review
+or commit/documentation direction; keep current public boundary and deferred
+canonical changelog-header synchronization intact.
+
 ## Shared treefmt rules: owned by the committed wrapper package
 
 Read-only review of the owner's committed treefmt refactor found a clean project
@@ -54,8 +100,8 @@ tmp/commit.md now contains
 `docs(treefmt): document mkFlake formatter support for package builds`, based only
 on both document changes as explicitly requested. The final document diff passes
 git diff --check. No formatting/build/test ran; no project staging occurred.
-Await owner review and commit direction; avoid mixing newer config changes into
-this draft.
+The owner committed this documentation, as recorded above. The former draft is
+no longer pending. New BibTeX config changes belong to the subsequent task.
 
 ## text-fmt v1: committed and build-verified
 
