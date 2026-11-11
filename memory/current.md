@@ -18,7 +18,8 @@ from moduleLocation. It reuses configuration modules, not the independently
 evaluated package derivation: consumer overrides and root exclusions affect the
 flake formatter, not the standalone wrapper. The standalone wrapper has no
 projectRootFile marker or root-specific exclusions. Existing public-interface
-and compatibility boundaries remain applicable to this internal package.
+and compatibility boundaries remain applicable, with the packaging role clarified
+below.
 
 The initial review did not run Nix evaluation, builds, formatting or tests; no
 runtime success is claimed. The owner then authorized README/CHANGELOG updates
@@ -28,17 +29,33 @@ library/module passing and standalone-versus-flake configuration boundaries.
 Both documents now include the earlier committed root/nested gitignore,
 .gitignore and *.gitignore matching, which was still missing from their summaries.
 Existing Org uppercase-property documentation already matches committed behavior.
-CHANGELOG retains the public-interface scope and TODO 0.1.0; it does not add a
-standalone-package release entry. Its missing canonical description header was
+CHANGELOG retains the public-interface scope and TODO 0.1.0. Its missing canonical
+description header was
 previously deferred by the owner and remains unchanged pending separate consent.
 
-The owner has an independent unstaged config.nix edit; use committed HEAD, not
-that edit, as this documentation's implementation baseline. The complete document
-diff passes git diff --check. No formatting, build or test ran for these edits.
-tmp/commit.md contains `docs(treefmt): describe shared wrapper and gitignore coverage`,
-based only on the two document changes as explicitly requested. Documentation is
-not staged by the agent; no project Git mutations occurred. Await owner review
-and commit direction, and avoid mixing newer config changes into this draft.
+The documentation baseline remains committed HEAD; exclude any independent
+config.nix edits. The complete document diff passes git diff --check.
+No formatting, build or test ran for these edits.
+The owner then clarified the intended packaging role: downstream users should
+obtain the shared formatter in their package builds through mkFlake's default
+treefmt overlay group. The agent initially suggested a new public overlay export
+would be needed; that was wrong. Existing mkFlake already supplies the group to
+downstream per-system pkgs, including pkgs.treefmt-wrapper. It is part of the
+functionality intentionally carried by mkFlake, not a new standalone root-overlay
+API or a broad promise for accessible package outputs. Compatibility remains
+unpromised. Packages using that pkgs.callPackage can request treefmt-wrapper and
+put it in nativeBuildInputs. No separate overlay import is necessary.
+
+README now explains this path in its public mkFlake section and distinguishes
+direct root package-output use from this intended packaging support. CHANGELOG
+records the packaging formatter under lib.mkFlake / Treefmt integration.
+Internal configuration ownership remains documented under repository maintenance.
+tmp/commit.md now contains
+`docs(treefmt): document mkFlake formatter support for package builds`, based only
+on both document changes as explicitly requested. The final document diff passes
+git diff --check. No formatting/build/test ran; no project staging occurred.
+Await owner review and commit direction; avoid mixing newer config changes into
+this draft.
 
 ## text-fmt v1: committed and build-verified
 
