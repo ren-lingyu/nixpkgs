@@ -1,6 +1,6 @@
 # Current project state
 
-## BibTeX golden regressions: implemented and validated; awaiting project commit
+## BibTeX formatting and golden regressions: committed
 
 The owner approved implementation of the no-consumer-dependency regression plan.
 treefmt-wrapper/tests now contains check.nix, fixtures.nix and runner.nix. Eight
@@ -43,12 +43,15 @@ test implementation details stay in README. Header synchronization remains
 explicitly deferred and no release state/time was changed. These edits describe
 the verified current implementation, not HEAD alone. Documentation passed
 git diff --check; no new runtime or formatting command was run for these edits.
-Implementation is staged by the owner; README/CHANGELOG remain unstaged.
-No project staging/commit was performed by the agent. Next: owner review/commit
-direction. The regression suite freezes previously accepted outputs, not a proof
-of arbitrary consumer compatibility.
+The owner committed all ten implementation/test/documentation files as
+`feat(treefmt): add BibTeX formatting with regression checks`. Read-only inspection
+confirmed the commit scope and a clean project worktree. No project staging or
+commit was performed by the agent. No post-commit runtime revalidation is claimed;
+the successful checks above predate the final documentation edits. No pending
+implementation work remains for this task. The regression suite freezes previously
+accepted outputs, not a proof of arbitrary consumer compatibility.
 
-## Isolated native BibTeX experiment: completed; formal test wiring undecided
+## Isolated native BibTeX experiment: historical evidence for the adopted fixtures
 
 The owner requested a real isolated flake experiment to determine whether native
 TeXmacs acceptance tests have discriminating value, then authorized autonomous
