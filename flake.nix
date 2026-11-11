@@ -66,6 +66,7 @@
                   gitignore-fmt = pkgs.gitignore-fmt;
                   org-fmt = pkgs.org-fmt;
                   text-fmt = pkgs.text-fmt;
+                  treefmt-wrapper = pkgs.treefmt-wrapper;
                 };
 
                 treefmt = {

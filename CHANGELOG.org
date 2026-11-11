@@ -34,6 +34,8 @@ per-system Nixpkgs overlays, with explicit argument validation and diagnostics.
   are preserved on failure.
 - Extend treefmt with Lisp formatters: =lisplens= for Scheme and
   =elisp-autofmt= for Emacs Lisp.
+- Extend treefmt with =bibtex-tidy= for root and nested UTF-8 =.bib= files,
+  using two-space indentation, aligned fields and blank lines between entries.
 - Extend treefmt with Org-mode formatting through Emacs's native Org AST
   parse/interpret round-trip. Normalize blank lines around headlines and their
   leading planning and drawer elements, and uppercase all node-property names

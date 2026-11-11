@@ -61,6 +61,37 @@
           "**/cabal.project.local"
         ];
       };
+
+      bibtex-tidy = {
+        command = lib.getExe (
+          pkgs.writeShellScriptBin "bibtex-tidy" ''
+            # Treefmt supplies file paths even when stdin is not a terminal.
+            export PRE_COMMIT=1
+            exec ${lib.getExe pkgs.bibtex-tidy} "$@"
+          ''
+        );
+        options = [
+          "--modify"
+          "--no-backup"
+          "--space=2"
+          "--align=14"
+          "--blank-lines"
+          "--no-sort"
+          "--no-curly"
+          "--no-numeric"
+          "--no-escape"
+          "--no-lowercase"
+          "--no-remove-dupe-fields"
+          "--tidy-comments"
+          "--no-strip-comments"
+          "--no-remove-empty-fields"
+          "--no-wrap"
+        ];
+        includes = [
+          "*.bib"
+          "**/*.bib"
+        ];
+      };
     };
   };
 

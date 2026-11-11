@@ -6,6 +6,7 @@
   gitignore-fmt,
   org-fmt,
   text-fmt,
+  treefmt-wrapper,
 }:
 let
   mkResultCheck_ =
@@ -26,6 +27,7 @@ let
         gitignore-fmt
         org-fmt
         text-fmt
+        treefmt-wrapper
         ;
       mkResultCheck = mkResultCheck_;
     };
@@ -37,6 +39,7 @@ let
       "nix-flake-patched"
       "org-fmt"
       "text-fmt"
+      "treefmt-wrapper"
       "overlays"
       "packages"
     ]

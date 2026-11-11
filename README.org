@@ -85,6 +85,7 @@ these repository-specific exclusions are not inherited by consumers.
 | Emacs Lisp (=.el=)       | elisp-autofmt.                                                                                  |
 | Plain text (=.txt=)      | text-fmt, converting CRLF to LF and adding a final LF to nonempty files when needed.            |
 | Org (=.org=)             | org-fmt, using Emacs's native Org parser and serializer.                                        |
+| BibTeX (=.bib=)          | bibtex-tidy, indent 2, field alignment 14 and blank lines between entries.                      |
 | Gitignore files          | gitignore-fmt, matching root and nested =gitignore=, =.gitignore= and =*.gitignore= files.      |
 
 ** Formatting in package builds
@@ -571,6 +572,25 @@ not sorted or deduplicated. This transformation does not apply to file-level
 =#+PROPERTY:= declarations, ordinary drawer contents or embedded source text.
 Other output details are delegated to Org's native serializer.
 
+*** BibTeX formatting
+Shared treefmt selects root and nested =.bib= files with =bibtex-tidy=.
+It formats UTF-8 input in place without backups, using two-space indentation,
+field alignment of 14 and blank lines between entries. Entry sorting,
+quote-to-brace and numeric conversion, Unicode escaping, lowercasing, duplicate
+field removal and empty-field removal are disabled. Comments are retained;
+=--tidy-comments= normalizes their surrounding whitespace and keeps repeated
+formatting stable with =--blank-lines=.
+
+Output wrapping is disabled, but the formatter can still join existing value
+lines and normalize page ranges. These settings do not promise byte-for-byte
+preservation of field values. The launcher sets =PRE_COMMIT=1= for the formatter
+process so file arguments work with treefmt's nonterminal stdin.
+
+Regression fixtures retain outputs checked in an isolated TeXmacs experiment.
+They guard those UTF-8 examples against later changes; they do not establish
+compatibility for every previously accepted bibliography or full org-texmacs
+export and rendering. See the repository tests below for their scope.
+
 *** Plain text formatting
 =text-fmt= is an independent Haskell Cabal package built with Nixpkgs's Haskell
 package set. Shared treefmt selects only root and nested =.txt= files; it is not
@@ -615,7 +635,7 @@ Both select the same package derivation, whose check phase runs its native tests
 
 ** Repository tests
 =tests/default.nix= accepts
-={ llib, lib, pkgs, nix-flake-patched, gitignore-fmt, org-fmt, text-fmt }=
+={ llib, lib, pkgs, nix-flake-patched, gitignore-fmt, org-fmt, text-fmt, treefmt-wrapper }=
 and returns the complete check derivation set. Ordinary suites live under
 =tests/suites/=, each with a =cases.nix= expression, a =test-overlay.nix= entry,
 and any local fixtures.
@@ -629,6 +649,8 @@ Nix files; =org-fmt= also uses an Emacs Lisp semantic projection. Selecting from
 =prev= avoids resolving the check name to itself through the final test scope.
 The patched-Nix wrapper reads its base Nix and patch paths from the package's
 =passthru= metadata.
+The =treefmt-wrapper= suite selects =prev.treefmt-wrapper.tests.bibtex=,
+an independent derivation using the package's local fixtures and Python runner.
 The entry passes existing API checks and shared arguments to =lib.tests.mkChecks=,
 which builds the test scope, applies discovered overlays, and extracts checks.
 =callPackage= supplies each report wrapper's arguments;
@@ -681,14 +703,28 @@ formatting, headline spacing, uppercase property names, preserved values and
 repeated keys, case-insensitive property-key semantics, idempotence, CLI behavior
 and file-operation failures. It does not take repository documents as inputs.
 
+The =treefmt-wrapper= suite runs the actual wrapper with filesystem walking,
+disabled caching and nonterminal stdin. Ten named checks cover eight fixed
+UTF-8 input/output pairs, a multi-file batch with root, nested, space-containing
+and Chinese filenames, and invalid input that must fail without changing the
+file. Fixtures include Unicode, math, string macros, multiline values,
+duplicate and empty fields, cross-references and a complex bibliography.
+Successful cases compare exact output bytes on both the first and second pass;
+file-set checks detect unwanted backup files. Expected outputs are static data,
+and the tests require neither TeXmacs nor org-texmacs, repository documents,
+temporary experiment directories or GAW archives.
+
+Run this suite alone with =nix build .#checks.x86_64-linux.treefmt-wrapper=.
+
 The =testApi= suite verifies the public test helpers with independent fixtures,
 including scope dependencies, extraction boundaries, separators and factory
 paths. Three extracted =pkgs.writeText= checks under =testApi/= are also built
 through the flake. The API suite and these real checks are supplied as existing
 =checks= at the root, independently of ordinary-suite discovery. The root also requires
 the complete output names to match the existing API checks plus =mergeAttrsRecursive=,
-=overlays=, =packages=, =gitignore-fmt=, =org-fmt=, =text-fmt= and
-=nix-flake-patched=, so missing or unexpected checks fail evaluation.
+=overlays=, =packages=, =gitignore-fmt=, =org-fmt=, =text-fmt=,
+=nix-flake-patched= and =treefmt-wrapper=, so missing or unexpected checks fail
+evaluation.
 Adding an ordinary suite also requires updating this expected-name set.
 Existing aggregation assertions and report/check names are retained; API tests
 track the current assembly and extraction contract.
