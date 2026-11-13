@@ -50,6 +50,8 @@ per-system Nixpkgs overlays, with explicit argument validation and diagnostics.
 **** Development environment
 Provide a =nix= development shell using patched Nix to address false circular
 imports and incorrect locked-source reuse with nested relative inputs.
+The patched Nix uses a pinned upstream release flake with its own locked build
+dependencies, independently of the caller's Nixpkgs.
 
 *** =lib.mergeAttrsRecursive=
 - Merge attribute sets recursively with conflict diagnostics and optional

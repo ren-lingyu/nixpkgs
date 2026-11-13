@@ -2,7 +2,7 @@
   sources,
   llib,
   treefmt-nix-lib,
-  nix-2_35_3,
+  nix-2_35_6,
 }:
 {
   overlays = llib.packages.mkOverlays {
@@ -28,6 +28,6 @@
         export = true;
       };
     };
-    extraArgs = { inherit sources treefmt-nix-lib nix-2_35_3; };
+    extraArgs = { inherit sources treefmt-nix-lib nix-2_35_6; };
   };
 }

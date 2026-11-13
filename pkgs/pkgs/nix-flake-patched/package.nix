@@ -5,7 +5,7 @@
   nix,
 }:
 let
-  # Nix 2.35.3: recheck both patches whenever the 2.35 series is updated.
+  # Recheck both patches whenever the pinned Nix release is updated.
   # Remove each patch separately once its fix is included upstream.
   patches = [
     # https://github.com/NixOS/nix/issues/4811

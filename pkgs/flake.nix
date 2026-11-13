@@ -3,8 +3,9 @@
     nixpkgs = {
       url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1";
     };
-    nixpkgs-for-nix-2_35_3 = {
-      url = "git+https://github.com/NixOS/nixpkgs.git?rev=9d3b8db48266c17be0b5f9c6360c3ecfbac3d1f5&shallow=1";
+    # Keep the upstream release's build dependencies independent of the caller's Nixpkgs.
+    nix-2_35_6 = {
+      url = "git+https://github.com/NixOS/nix.git?ref=refs/tags/2.35.6&shallow=1";
     };
     flake-parts = {
       url = "git+https://github.com/hercules-ci/flake-parts.git?ref=refs/heads/main&shallow=1";
@@ -38,7 +39,7 @@
             lpkgs = import ./pkgs {
               inherit llib;
               sources = { inherit (inputs) elisp-autofmt lisplens; };
-              nix-2_35_3 = inputs.nixpkgs-for-nix-2_35_3;
+              nix-2_35_6 = builtins.mapAttrs (_: packages: packages.nix) inputs.nix-2_35_6.packages;
               treefmt-nix-lib = inputs.treefmt-nix.lib;
             };
           };

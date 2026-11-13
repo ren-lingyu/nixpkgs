@@ -9,7 +9,7 @@ let
     builtins.toJSON (import ./fixtures.nix)
   );
 in
-assert base.version == "2.35.3";
+assert base.version == "2.35.6";
 assert pkgs.lib.isDerivation nix-flake-patched;
 assert nix-flake-patched.drvPath != base.drvPath;
 pkgs.runCommand "nix-flake-patched-regressions" { nativeBuildInputs = [ pkgs.python3 ]; } ''
