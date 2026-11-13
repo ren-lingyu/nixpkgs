@@ -8,33 +8,13 @@ let
     ;
 
   selectPackages_ =
-    node_: pkgs_:
-    lib.mapAttrs
-      (
-        name_: child_:
-        if !(builtins.hasAttr name_ pkgs_) then
-          builtins.throw "packages.mkOverlays: namespace `${toString child_.path_}` does not exist in the package set"
-        else if lib.isDerivation pkgs_.${name_} then
-          if child_.hasDescendants then
-            builtins.throw "packages.mkOverlays: derivation `${name_}` has descendant overlays in `${toString child_.path_}`"
-          else
-            pkgs_.${name_}
-        else if builtins.isAttrs pkgs_.${name_} then
-          selectPackages_ child_ pkgs_.${name_}
-        else
-          builtins.throw "packages.mkOverlays: `${toString child_.path_}` is not a package namespace"
-      )
-      (
-        lib.filterAttrs (
-          name_: child_:
-          if child_.hasDescendants then
-            true
-          else if child_.hasOverlay then
-            lib.isDerivation (pkgs_.${name_} or null)
-          else
-            false
-        ) node_.children
-      );
+    path_: tree_: scope_:
+    overlayTree.selectDerivations {
+      path = path_;
+      tree = tree_;
+      scope = scope_;
+      context = "packages.mkOverlays";
+    };
 
   validateGroup_ =
     overlays_: name_: config_:
@@ -98,7 +78,7 @@ let
         if builtins.hasAttr exportName_ prev_ then
           builtins.throw "packages.mkOverlays: group `${name_}`: export name `${exportName_}` already exists"
         else
-          { ${exportName_} = selectPackages_ groupTree_ final_; }
+          { ${exportName_} = selectPackages_ [ ] groupTree_ final_; }
       )
     );
 
@@ -134,7 +114,7 @@ in
           texlivePackages =
             { }:
             import ./rules/texlivePackages.nix {
-              selectPackages = selectPackages_ tree.children.texlivePackages;
+              selectPackages = selectPackages_ [ "texlivePackages" ] tree.children.texlivePackages;
             };
         };
       };

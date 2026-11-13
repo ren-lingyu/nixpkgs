@@ -1,35 +1,97 @@
 { lib, overlayTree }:
 let
-  inherit (overlayTree) getDirectories_ hasPath_ hasEntries_;
+  # A declared test tree fixes the selected paths. The final scope supplies
+  # their values, but its additional members are not part of the selection.
+  # recurseIntoAttrs adds metadata, not a check or a traversal instruction.
+  testMembers_ = lib.filterAttrs (
+    name_: value_: !(name_ == "recurseForDerivations" && value_ == true)
+  );
 
-  collect_ =
-    overlayFile_: separator_: path_: root_: scope_:
-    builtins.concatLists (
-      lib.mapAttrsToList (
-        name_: child_:
-        let
-          path = path_ ++ [ name_ ];
-          label = builtins.toJSON path;
-          value = scope_.${name_} or null;
-        in
-        if hasEntries_ overlayFile_ child_ then
-          if !(builtins.hasAttr name_ scope_) then
-            builtins.throw "tests.mkChecks: missing namespace at ${label}"
-          else if !(builtins.isAttrs value) || lib.isDerivation value then
-            builtins.throw "tests.mkChecks: expected a non-derivation namespace at ${label}"
-          else
-            collect_ overlayFile_ separator_ path child_ value
-        else if hasPath_ overlayFile_ child_ && lib.isDerivation value then
+  # Derivations are attribute sets, but are leaves of a test tree.
+  describeType_ = value_: if lib.isDerivation value_ then "derivation" else builtins.typeOf value_;
+
+  selectExplicit_ =
+    path_: declared_: resolved_:
+    if lib.isDerivation declared_ then
+      if lib.isDerivation resolved_ then
+        resolved_
+      else
+        builtins.throw "tests.mkChecks: expected a derivation at ${builtins.toJSON path_}, found ${describeType_ resolved_}"
+    else if builtins.isAttrs declared_ then
+      if builtins.isAttrs resolved_ && !lib.isDerivation resolved_ then
+        selectExplicitMembers_ path_ declared_ resolved_
+      else
+        builtins.throw "tests.mkChecks: expected a non-derivation namespace at ${builtins.toJSON path_}, found ${describeType_ resolved_}"
+    else
+      builtins.throw "tests.mkChecks: invalid explicit check at ${builtins.toJSON path_}, found ${describeType_ declared_}";
+
+  # Enumerate only declared members. In particular, an empty declaration
+  # need not force the final root scope, and scope management members or
+  # unselected dependencies (even recursive ones) are never traversed.
+  # Declared namespaces must form a finite, acyclic tree.
+  selectExplicitMembers_ =
+    path_: declared_: resolved_:
+    lib.mapAttrs (
+      name_: child_:
+      let
+        childPath_ = path_ ++ [ name_ ];
+      in
+      selectExplicit_ childPath_ child_ (
+        resolved_.${name_}
+          or (builtins.throw "tests.mkChecks: missing explicit check at ${builtins.toJSON childPath_}")
+      )
+    ) (testMembers_ declared_);
+
+  # Both trees select values from the same final scope. Merge namespaces,
+  # never derivation attributes; an overlapping path denotes one test.
+  # Visit both selected trees so an explicit subtree cannot hide an invalid
+  # directory namespace through a shallow, lazy replacement. Inconsistent
+  # node types would violate the shared-scope invariant.
+  mergeCheckTrees_ =
+    path_: trees_:
+    lib.zipAttrsWith (
+      name_: values_:
+      if builtins.length values_ == 1 then
+        builtins.head values_
+      else if builtins.all lib.isDerivation values_ then
+        builtins.head values_
+      else if builtins.all (value_: builtins.isAttrs value_ && !lib.isDerivation value_) values_ then
+        mergeCheckTrees_ (path_ ++ [ name_ ]) values_
+      else
+        builtins.throw "tests.mkChecks: incompatible selected values at ${
+          builtins.toJSON (path_ ++ [ name_ ])
+        }"
+    ) trees_;
+
+  # Flatten only the selected tree. The defensive invalid-leaf check guards
+  # the invariant established by both selectors and the structural merge.
+  flattenChecks_ =
+    separator_: tree_:
+    let
+      collect_ =
+        path_: value_:
+        if lib.isDerivation value_ then
           [
             {
-              name = builtins.concatStringsSep separator_ path;
-              inherit value;
+              name = builtins.concatStringsSep separator_ path_;
+              inherit path_ value_;
             }
           ]
+        else if builtins.isAttrs value_ then
+          builtins.concatLists (
+            lib.mapAttrsToList (name_: child_: collect_ (path_ ++ [ name_ ]) child_) value_
+          )
         else
-          [ ]
-      ) (getDirectories_ root_)
-    );
+          builtins.throw "tests.mkChecks: invalid test at ${builtins.toJSON path_}";
+      groups_ = lib.groupBy (entry_: entry_.name) (collect_ [ ] tree_);
+      conflicts_ = lib.filterAttrs (unused_name_: entries_: builtins.length entries_ > 1) groups_;
+    in
+    if conflicts_ != { } then
+      builtins.throw "tests.mkChecks: ambiguous flattened names: ${
+        builtins.toJSON (lib.mapAttrs (unused_name_: map (entry_: entry_.path_)) conflicts_)
+      }"
+    else
+      lib.mapAttrs (unused_name_: entries_: (builtins.head entries_).value_) groups_;
 in
 {
   mkChecks =
@@ -41,34 +103,55 @@ in
       separator ? "/",
     }:
     let
-      overlays_ = overlayTree.mkOverlays { inherit root overlayFile; };
-      newScope_ = extra_: lib.callPackageWith (args // extra_);
+      tree_ = overlayTree.discoverTree { inherit root overlayFile; };
+      overlays_ = overlayTree.mkOverlaysFromTree { tree = tree_; };
+      newScope_ =
+        extra_:
+        lib.callPackageWith (
+          lib.mergeAttrsList [
+            args
+            extra_
+          ]
+        );
       overlay_ = lib.composeManyExtensions (builtins.attrValues overlays_);
       # Keep the test definitions in the fixed point, without makeScope's
       # reserved `packages` member masking a same-named check.
       scope_ = lib.fix (
         final_:
         let
-          initial_ = {
-            callPackage = newScope_ final_;
-            newScope = extra_: newScope_ (final_ // extra_);
-          }
-          // args
-          // checks;
+          initial_ = lib.mergeAttrsList [
+            {
+              callPackage = newScope_ final_;
+              newScope =
+                extra_:
+                newScope_ (
+                  lib.mergeAttrsList [
+                    final_
+                    extra_
+                  ]
+                );
+            }
+            args
+            checks
+          ];
         in
-        initial_ // overlay_ final_ initial_
+        lib.mergeAttrsList [
+          initial_
+          (overlay_ final_ initial_)
+        ]
       );
-      existing_ = builtins.mapAttrs (
-        name_: unused_:
-        let
-          value_ = scope_.${name_};
-        in
-        if lib.isDerivation value_ then
-          value_
-        else
-          builtins.throw "tests.mkChecks: existing check `${name_}` is not a derivation after overlays"
-      ) checks;
-      discovered_ = builtins.listToAttrs (collect_ overlayFile separator [ ] root scope_);
+      existing_ = selectExplicitMembers_ [ ] checks scope_;
+      discovered_ = overlayTree.selectDerivations {
+        tree = tree_;
+        scope = scope_;
+        context = "tests.mkChecks";
+      };
     in
-    existing_ // discovered_;
+    # Unlike a nested test tree, the root must be a namespace. Validate it
+    # without inspecting the final scope: empty discovery and declarations
+    # must not force args or scope construction.
+    if !(builtins.isAttrs checks) || lib.isDerivation checks then
+      builtins.throw "tests.mkChecks: checks must be a non-derivation attribute set at [], found ${describeType_ checks}"
+    else
+      flattenChecks_ separator (mergeCheckTrees_ [ ] [ existing_ discovered_ ]);
 }

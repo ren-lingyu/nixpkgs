@@ -91,6 +91,62 @@ let
       extraArgs.marker = "args-member";
     };
   };
+  structuredRoot_ = ./fixtures/test-api/structured;
+  structured_ = helpers_.mkChecks {
+    root = structuredRoot_;
+    overlayFile = "overlay.nix";
+    separator = "-";
+    args = args_;
+    checks = {
+      group = {
+        first = initial_;
+        unlisted = drv_;
+        empty = { };
+      };
+      bundle.nested.check = initial_;
+      ordinary = {
+        packages = drv_;
+        callPackage = drv_;
+      };
+      empty = { };
+    };
+  };
+  explicitOnly_ =
+    checks_: separator_:
+    helpers_.mkChecks {
+      root = basicRoot_ + "/empty";
+      overlayFile = "overlay.nix";
+      checks = checks_;
+      separator = separator_;
+    };
+  replaceGroup_ =
+    declared_: replacement_:
+    helpers_.mkChecks {
+      root = ./fixtures/test-api/explicit-shape;
+      overlayFile = "overlay.nix";
+      args = args_ // {
+        replacement = replacement_;
+      };
+      checks.group = declared_;
+    };
+  resolvedScope_ = replaceGroup_ { first = initial_; } (
+    lib.makeScope
+      (
+        extra_:
+        lib.callPackageWith (
+          lib.mergeAttrsList [
+            args_
+            extra_
+          ]
+        )
+      )
+      (self_: {
+        first = drv_;
+        extra = self_.first;
+        helper = value_: value_;
+        self = self_;
+      })
+  );
   tests_ = {
     constructorEnvironmentDefaultsEmpty = constructorChecks_.probe.constructorIsEmpty;
     constructorDoesNotConsumeScopeArgs = constructorChecks_.probe.scopeMarker == "scope-only";
@@ -131,6 +187,120 @@ let
         checks.invalid = "not a derivation";
       }
     );
+    invalidExplicitRootDerivation = rejects_ (explicitOnly_ drv_ "-");
+    invalidExplicitRootBoolean = rejects_ (explicitOnly_ false "-");
+    invalidExplicitRootMarkedDerivation = rejects_ (explicitOnly_ (lib.recurseIntoAttrs drv_) "-");
+    structuredNames =
+      builtins.attrNames structured_ == [
+        "bundle-nested-check"
+        "group-first"
+        "group-second"
+        "group-unlisted"
+        "ordinary-callPackage"
+        "ordinary-packages"
+      ];
+    structuredDerivations = builtins.all lib.isDerivation (builtins.attrValues structured_);
+    nestedCheckOverride = structured_.group-first.testMarker == "overridden";
+    nestedDependencyFromExplicitCheck = structured_.group-second.dependencyMarker == "initial";
+    nestedSiblingUsesFinalOverride = structured_.group-second.testMarker == "overridden";
+    finalScopeMembersNotSelected = builtins.attrNames resolvedScope_ == [ "group/first" ];
+    finalScopeOverride = resolvedScope_."group/first".drvPath == drv_.drvPath;
+    explicitPathsDoNotExpand =
+      builtins.attrNames (
+        replaceGroup_ { first = initial_; } {
+          first = drv_;
+          extra = drv_;
+          helper = value_: value_;
+          poison = throw "unselected final member must stay lazy";
+        }
+      ) == [ "group/first" ];
+    emptyExplicitNamespaceDoesNotExpand = replaceGroup_ { } { extra = drv_; } == { };
+    missingExplicitPath = rejects_ (replaceGroup_ { nested.check = drv_; } { nested = { }; });
+    explicitNamespaceCannotBecomeDerivation = rejects_ (replaceGroup_ { check = drv_; } drv_);
+    explicitDerivationCannotBecomeNamespace = rejects_ (replaceGroup_ drv_ { check = drv_; });
+    explicitNamespaceCannotBecomeScalar = rejects_ (replaceGroup_ { check = drv_; } false);
+    invalidInitialCheckCannotBeRepairedByOverlay = rejects_ (replaceGroup_ false drv_);
+    explicitMarkedRootAndNamespace =
+      builtins.attrNames (
+        explicitOnly_ (lib.recurseIntoAttrs {
+          alpha = drv_;
+          nested = lib.recurseIntoAttrs { beta = drv_; };
+        }) "-"
+      ) == [
+        "alpha"
+        "nested-beta"
+      ];
+    explicitFalseMarkerRejected = rejects_ (explicitOnly_ { recurseForDerivations = false; } "-");
+    explicitNestedFalseMarkerRejected = rejects_ (
+      explicitOnly_ { nested.recurseForDerivations = false; } "-"
+    );
+    explicitMarkerNameDerivation =
+      builtins.attrNames (explicitOnly_ { recurseForDerivations = drv_; } "-")
+      == [ "recurseForDerivations" ];
+    explicitMarkerNameNamespace =
+      builtins.attrNames (explicitOnly_ { recurseForDerivations.check = drv_; } "-")
+      == [ "recurseForDerivations-check" ];
+    explicitOtherBooleanRejected = rejects_ (explicitOnly_ { other = true; } "-");
+    explicitFunctionRejected = rejects_ (explicitOnly_ { group.helper = value_: value_; } "-");
+    explicitMarkerDoesNotSelectFinalMember =
+      builtins.attrNames (
+        replaceGroup_ (lib.recurseIntoAttrs { first = drv_; }) {
+          first = drv_;
+          recurseForDerivations = drv_;
+        }
+      ) == [ "group/first" ];
+    nestedExplicitSeparator =
+      builtins.attrNames (explicitOnly_ { one.two.three = drv_; } ".") == [ "one.two.three" ];
+    nestedExplicitEmptySeparator =
+      builtins.attrNames (explicitOnly_ { one.two = drv_; } "") == [ "onetwo" ];
+    nestedExplicitInvalidLeaf = rejects_ (explicitOnly_ { one.two = false; } "-");
+    nestedExplicitEmptyTree = explicitOnly_ { one.two = { }; } "-" == { };
+    derivationIsLeaf =
+      builtins.attrNames (
+        explicitOnly_ {
+          one.two = lib.mergeAttrsList [
+            drv_
+            { poison = throw "must not traverse derivation"; }
+          ];
+        } "-"
+      ) == [ "one-two" ];
+    markedDerivationIsLeaf =
+      let
+        marked_ = explicitOnly_ { alpha = lib.recurseIntoAttrs drv_; } "-";
+      in
+      builtins.attrNames marked_ == [ "alpha" ]
+      && lib.isDerivation marked_.alpha
+      && marked_.alpha.drvPath == drv_.drvPath
+      && marked_.alpha.recurseForDerivations;
+    flattenedNameCollision = rejects_ (
+      builtins.attrNames (
+        explicitOnly_ {
+          one-two = drv_;
+          one.two = drv_;
+        } "-"
+      )
+    );
+    explicitDiscoveredNameCollision = rejects_ (
+      helpers_.mkChecks {
+        root = extractionRoot_;
+        overlayFile = "overlay.nix";
+        args = {
+          branch = branch_;
+        };
+        checks."branch/child" = drv_;
+      }
+    );
+    explicitSelectionDoesNotMaskInvalidDirectoryNamespace = rejects_ (
+      helpers_.mkChecks {
+        root = extractionRoot_;
+        overlayFile = "overlay.nix";
+        checks.branch = drv_;
+      }
+    );
+    nestedMkChecks =
+      builtins.attrNames (explicitOnly_ { wrapper = explicitOnly_ { group.check = drv_; } "-"; } "-")
+      == [ "wrapper-group-check" ];
+    markedLeafStillSkipped = skipLeaf_ (lib.recurseIntoAttrs { hidden = drv_; });
     onlyMkChecksPublic = builtins.attrNames helpers_ == [ "mkChecks" ];
     callPackageAndNewScopeAvailable = checks_.validators.scopeObservation.helpersAvailable;
     siblingDependency = checks_."checks/alpha".testMarker == "scope-dependency:alpha";
@@ -175,7 +345,7 @@ let
       !(checks_ ? callPackage) && !(checks_ ? newScope) && !(checks_ ? overrideScope);
     helperFunctionNotExported =
       checks_.validators.scopeObservation.helperIsFunction && !(checks_ ? helpers);
-    overriddenCheckMustRemainDerivation = rejects_ (
+    overriddenCheckMustRemainValidTestTree = rejects_ (
       helpers_.mkChecks {
         root = basicRoot_;
         overlayFile = "overlay.nix";

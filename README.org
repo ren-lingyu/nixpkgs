@@ -356,9 +356,9 @@ descendants. The module file directly inside =root= is not included.
 =lib.tests= shares the directory-based overlay aggregation mechanism used by
 =lib.packages=, without package-specific defaults. Its public entry is =mkChecks=:
 
-| Function   | Arguments                                                     | Result                                                                                    |
-|------------+---------------------------------------------------------------+-------------------------------------------------------------------------------------------|
-| =mkChecks= | =root=, =overlayFile=, optional =checks=, =args=, =separator= | Existing checks extended by test overlays, plus flattened directory-selected derivations. |
+| Function   | Arguments                                                     | Result                                                      |
+|------------+---------------------------------------------------------------+-------------------------------------------------------------|
+| =mkChecks= | =root=, =overlayFile=, optional =checks=, =args=, =separator= | Flattened explicit and directory-selected derivation trees. |
 
 =mkChecks= discovers and composes the overlays internally, constructing an
 independent test scope. Test overlays are an internal organization mechanism;
@@ -380,19 +380,54 @@ For example:
   }
 #+end_src
 
-=checks= defaults to ={ }= and supplies existing check names to preserve.
+=checks= defaults to ={ }= and must be a non-derivation attribute set. Its
+members are explicitly registered test trees. Its original structure declares
+the attribute paths of the tests and provides their initial definitions. A test
+tree is a finite, acyclic tree of namespaces and derivation leaves. The only
+non-derivation leaf allowed is
+=recurseForDerivations = true=, the metadata added by =lib.recurseIntoAttrs=.
+This marker is ignored during selection, at the root and in nested namespaces;
+it does not determine whether to recurse. A derivation or namespace named
+=recurseForDerivations= is still a normal declaration, but a false marker or
+any other scalar or function leaf is invalid. A derivation marked with
+=lib.recurseIntoAttrs= remains a single leaf; its attributes are not traversed.
+
+For example:
+
+#+begin_src nix
+  checks = {
+    package = somePackage.tests;
+    wrappers = {
+      graphical = graphicalChecks;
+      terminal = terminalChecks;
+    };
+  };
+#+end_src
+
 =args= defaults to ={ }= and supplies dependencies to the test scope and its
 =callPackage=. Dependencies such as =writeText= must be passed explicitly;
 passing =pkgs= does not implicitly inject its members. Initial checks take
 precedence over same-named arguments. Standard overlay semantics apply: =prev=
 sees earlier definitions, =final= sees the final test scope, and later overlays
-can replace existing checks. Existing names are read from the final definitions
-and must remain derivations, even when no corresponding directory exists.
+can replace existing checks or extend their namespaces. The final values are
+selected using the original declared attribute paths, even when no corresponding
+directory exists. Every declared derivation must remain a derivation and every
+declared namespace must remain a non-derivation attribute set. Missing paths
+and invalid initial declarations are errors. An empty declared namespace
+contributes no checks, even if overlays add members to it.
 
 Arguments are not automatically exported, including derivation-valued helpers.
-The output includes final values for existing check names and flattened
-directory-selected derivations (the latter win if output names coincide).
-There are no special directory roles or test runner.
+Overlay-added members are not selected merely because they belong to an explicitly
+registered namespace. In particular, dependencies, helper functions and scope
+management members are not traversed unless separately selected. The original
+=checks= tree is still injected unchanged into the initial scope. A package's
+=passthru.tests= can be registered directly if it satisfies the test tree contract;
+an arbitrary package scope is not a test tree.
+
+The directory selector preserves the namespace structure, just as package
+exports do. The explicit and directory-selected trees are combined before
+flattening. Overlapping selections of the same path denote the same final
+check. There are no special directory roles or test runner.
 
 Scope resolution and =callPackage= can supply dependencies from other directories
 without parent-directory imports. The chosen =root= and =overlayFile= determine
@@ -413,8 +448,8 @@ extra checks:
 
 Directories with no matching overlay or descendant overlays are ignored.
 The internal scope may contain helper functions, evaluation results and other
-values; only existing check names and directory-selected derivations are
-exported. Factory ownership of
+values; only explicitly registered test trees and directory-selected derivations
+are exported. Factory ownership of
 =descendantOverlay= does not provide a path mapping to =mkChecks=. If a factory
 relocates results, the caller must arrange their export.
 
@@ -422,8 +457,16 @@ The optional =separator= defaults to ="/"=. A selected derivation at
 =packages.aggregation= in the assembled definitions becomes the flat check
 ="packages/aggregation"=.
 Passing =separator = "-"= or =separator = "."= changes that name to
-="packages-aggregation"= or ="packages.aggregation"=. Callers are responsible
-for name collisions introduced by their chosen separator.
+="packages-aggregation"= or ="packages.aggregation"=. Distinct attribute paths
+which produce the same flat name are rejected, including collisions between
+explicit and directory-selected checks. For example, a declared attribute named
+="branch/child"= and a nested path =branch.child= produce the same name with
+the default separator. Such collisions now fail rather than silently overwriting
+a check. The separator affects only the final output names, not dependency
+resolution or selection. Flattening requires inspecting the types of selected
+nodes to determine all output names;
+this does not traverse the internals of derivations or force unselected scope
+members.
 
 * Repository internals and maintenance
 These sections document the repository's implementation and checks. Direct use

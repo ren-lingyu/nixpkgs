@@ -36,6 +36,56 @@ let
     in
     describe_ root;
 
+  # Select derivations at directory-matched paths without traversing a leaf
+  # attribute set or enumerating unrelated scope members. Paths in diagnostics
+  # identify paths in the source scope, not in an export namespace. The path
+  # prefix locates the supplied scope within the full source scope (for example,
+  # a factory may select from a subtree). Also report the source directory.
+  selectDerivations =
+    {
+      tree,
+      scope,
+      context,
+      path ? [ ],
+    }:
+    let
+      select_ =
+        path_: node_: scope_:
+        lib.mapAttrs
+          (
+            name_: child_:
+            let
+              childPath_ = path_ ++ [ name_ ];
+              location_ = "${builtins.toJSON childPath_} (directory: ${toString child_.path_})";
+            in
+            if !(builtins.hasAttr name_ scope_) then
+              builtins.throw "${context}: missing namespace at ${location_}"
+            else if lib.isDerivation scope_.${name_} then
+              if child_.hasDescendants then
+                builtins.throw "${context}: derivation has descendant overlays at ${location_}"
+              else
+                scope_.${name_}
+            else if builtins.isAttrs scope_.${name_} then
+              select_ childPath_ child_ scope_.${name_}
+            else
+              builtins.throw "${context}: expected a non-derivation namespace at ${location_}, found ${
+                builtins.typeOf scope_.${name_}
+              }"
+          )
+          (
+            lib.filterAttrs (
+              name_: child_:
+              if child_.hasDescendants then
+                true
+              else if child_.hasOverlay then
+                lib.isDerivation (scope_.${name_} or null)
+              else
+                false
+            ) node_.children
+          );
+    in
+    select_ path tree scope;
+
   instantiateOverlay_ =
     extraArgs_: node_: constructor_:
     let
@@ -154,6 +204,7 @@ in
     hasPath_
     hasEntries_
     discoverTree
+    selectDerivations
     mkOverlaysFromTree
     ;
 

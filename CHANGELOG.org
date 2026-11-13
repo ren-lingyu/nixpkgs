@@ -62,5 +62,16 @@ imports and incorrect locked-source reuse with nested relative inputs.
 - =mkNixosModule= and =mkHomeModule= provide recursive module discovery.
 
 *** =lib.tests=
-- =mkChecks= assembles an independent test scope, preserving existing checks and
-  extracting directory-selected derivations with configurable names.
+- =mkChecks= assembles an independent test scope and uses the shared overlay
+  tree selector for directory-selected derivations.
+- Accept nested explicit check trees and select final values at the originally
+  declared paths. Initial declarations must be valid test trees and declared
+  node types must be preserved by overlays. Do not automatically export
+  overlay-added members of explicitly registered namespaces.
+- Require a non-derivation attribute set at the root of =checks=, and report
+  invalid selected values with their attribute paths and types.
+- Accept =recurseForDerivations = true= metadata in explicit test trees without
+  using it to control selection.
+- Combine structured check trees before flattening with configurable names.
+  Distinct attribute paths producing the same flattened name now fail instead
+  of silently overwriting a check.
