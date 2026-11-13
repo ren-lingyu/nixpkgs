@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs = {
-      url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1&rev=2074cc672349f14240fb7ea90d509e0b643e9dd4";
+      url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1";
     };
   };
 

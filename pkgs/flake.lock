@@ -13,7 +13,6 @@
       },
       "original": {
         "ref": "refs/heads/master",
-        "rev": "a41fe15d3d2c69a6f069bab4d90caab8a4b62be7",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/emacsmirror/elisp-autofmt.git"
@@ -50,7 +49,6 @@
       },
       "original": {
         "ref": "refs/heads/main",
-        "rev": "ea2630b7470978622c7689a1ff75d2b389175399",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/hercules-ci/flake-parts.git"
@@ -117,7 +115,6 @@
       },
       "original": {
         "ref": "refs/tags/v0.6.0",
-        "rev": "2662b944d8d93a2734bc78464864b140ec9e0b8f",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/rigortype/lisplens.git"
@@ -221,7 +218,6 @@
       },
       "original": {
         "ref": "refs/heads/nixpkgs-unstable",
-        "rev": "2074cc672349f14240fb7ea90d509e0b643e9dd4",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/NixOS/nixpkgs.git"
@@ -254,7 +250,6 @@
       },
       "original": {
         "ref": "refs/heads/main",
-        "rev": "0d6d739a833ba9a9c93034862e4a7b061a062a1c",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/numtide/treefmt-nix.git"

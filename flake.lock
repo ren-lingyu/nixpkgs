@@ -12,7 +12,6 @@
       },
       "original": {
         "ref": "refs/heads/nixpkgs-unstable",
-        "rev": "2074cc672349f14240fb7ea90d509e0b643e9dd4",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/NixOS/nixpkgs.git"
