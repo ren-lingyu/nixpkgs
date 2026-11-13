@@ -64,6 +64,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
+        "nixpkgs-for-nix-2_35_3": "nixpkgs-for-nix-2_35_3",
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
@@ -88,6 +89,23 @@
       },
       "original": {
         "ref": "refs/heads/nixpkgs-unstable",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/NixOS/nixpkgs.git"
+      }
+    },
+    "nixpkgs-for-nix-2_35_3": {
+      "locked": {
+        "lastModified": 1793735720,
+        "narHash": "sha256-smoxPKrzAhdGuFd2LLnG4m8P6IrZuW95DVyzjnlab7w=",
+        "ref": "refs/heads/master",
+        "rev": "9d3b8db48266c17be0b5f9c6360c3ecfbac3d1f5",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/NixOS/nixpkgs.git"
+      },
+      "original": {
+        "rev": "9d3b8db48266c17be0b5f9c6360c3ecfbac3d1f5",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/NixOS/nixpkgs.git"
