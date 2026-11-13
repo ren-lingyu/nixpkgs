@@ -20,6 +20,8 @@ entry does not record a release date or publication.
 **** Flake construction
 Construct flakes with flake-parts, shared module arguments and configurable
 per-system Nixpkgs overlays, with explicit argument validation and diagnostics.
+Evaluation requires Nix 2.35 or another evaluator supporting path values in
+=builtins.getFlake=.
 
 **** Treefmt integration
 - Provide a shared treefmt formatter and default formatting check, covering

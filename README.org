@@ -13,6 +13,8 @@ output, together with the functionality supplied through those functions.
 This includes the shared development shell, project formatting and
 =pkgs.treefmt-wrapper= for package builds supplied through =lib.mkFlake=.
 Compatibility is not currently promised, even for this intended public interface.
+Evaluation of the root flake requires Nix 2.35 or another evaluator supporting
+path values in =builtins.getFlake=; this requirement also applies to consumers.
 
 Other accessible outputs and implementation details are not intended as direct
 interfaces for external use and carry no compatibility guarantee. These include
@@ -68,7 +70,8 @@ check by default through =lib.mkDefault true=. It derives =projectRootFile= from
 the basename of =moduleLocation=, forces treefmt's default excludes off, and
 defaults the explicit exclude list to =[ ]=. Unmatched files are fatal, so
 consumers must configure exclusions for files outside their formatter coverage.
-The root repository excludes =*.patch=, =LICENSE= and =flake.lock=;
+The root repository excludes =*.patch=, =LICENSE=, =flake.lock= and
+=pkgs/flake.lock=;
 these repository-specific exclusions are not inherited by consumers.
 
 | Files                    | Formatter                                                                                       |
@@ -473,23 +476,45 @@ These sections document the repository's implementation and checks. Direct use
 of these contents is outside the intended public interface.
 
 ** Flake infrastructure
-The root flake consumes =pkgs/= as a local subflake named =local-nixpkgs=.
-That subflake uses flake-parts to assemble the shared library, package sets and
-the =mkFlake= wrapper before the root flake calls that wrapper. Its =nixpkgs=
-input follows the root's input; =flake-parts= and =treefmt-nix= are owned by the
-subflake. The subflake also declares non-flake source inputs for =elisp-autofmt=
-and =lisplens=, pinned in the root =flake.lock=.
+The root flake loads the private subflake =pkgs/= through
+=builtins.getFlake ./pkgs=, bound locally as =local-nixpkgs=. The subflake
+assembles the shared library, overlays and =mkFlake= wrapper as ordinary Nix
+outputs; it does not run a flake-parts evaluation to assemble itself or
+instantiate per-system packages. The root uses its wrapper to assemble its
+own outputs with flake-parts and passes the library and subflake as =llib=
+and =lpkgs= module arguments.
+
+The root =flake.lock= records its own Nixpkgs input. The independent
+=pkgs/flake.lock= records the foundation's implementation dependencies,
+including its own Nixpkgs, flake-parts, treefmt-nix, the upstream Nix release
+and the non-flake sources =elisp-autofmt= and =lisplens=. The two Nixpkgs
+inputs need not share a revision. Within the subflake, treefmt-nix follows
+its Nixpkgs; the Nix release retains its independent build dependencies.
+Downstream lock graphs contain only the root's declared inputs, not those
+of the private subflake. A downstream override of the root's Nixpkgs still
+controls the root's package instantiation, but not the foundation's inputs.
+
+Update the lock files separately, from the repository root:
+
+#+begin_src sh
+  nix flake update
+  nix flake update --flake path:./pkgs
+#+end_src
+
+The direct inputs are temporarily pinned by revision for the dependency-boundary
+migration. Change those revisions explicitly to update them while the pins
+remain. Both lock files must be generated and tracked; the private lock must
+be present in the source tree before evaluating the root's outputs.
 
 The source is organized as follows:
 
-| Path               | Purpose                                                                                                        |
-|--------------------+----------------------------------------------------------------------------------------------------------------|
-| =flake.nix=        | Consume the shared foundation, select public library exports, forward packages and assemble repository checks. |
-| =pkgs/flake.nix=   | Assemble the foundation and define =lib.mkFlake=.                                                              |
-| =pkgs/lib/=        | Shared merge, package/module discovery and test-assembly functions.                                            |
-| =pkgs/pkgs/=       | Package definitions and their internal overlay groups.                                                         |
-| =pkgs/modules/fp/= | Shared flake-parts integration, including formatter, check and project-root settings.                          |
-| =tests/=           | Library suites, independent test-assembly acceptance cases and fixtures.                                       |
+| Path             | Purpose                                                                                                  |
+|------------------+----------------------------------------------------------------------------------------------------------|
+| =flake.nix=      | Load the private foundation, select public exports, instantiate packages and assemble repository checks. |
+| =pkgs/flake.nix= | Assemble the foundation library, overlay groups and shared flake-parts configuration.                    |
+| =pkgs/lib/=      | Shared flake construction, merge, package/module discovery and test-assembly functions.                  |
+| =pkgs/pkgs/=     | Package definitions and their internal overlay groups.                                                   |
+| =tests/=         | Library suites, independent test-assembly acceptance cases and fixtures.                                 |
 
 The root exports =lib=, =packages=, =legacyPackages=, =devShells=, =formatter=
 and =checks=. This output inventory does not expand the public interface defined
@@ -506,8 +531,14 @@ intended public interface:
   import ./pkgs/lib { inherit lib; }
 #+end_src
 
-This direct import provides the merge, overlay, package/module and test helpers;
-=mkFlake= is assembled by the subflake and is available through its flake library.
+This direct import provides the merge, overlay, package/module and test helpers,
+as well as the internal =_makeMkFlake= implementation.
+
+The subflake defines the public =mkFlake= calling convention and explicitly
+supplies the implementation's arguments, including the flake-parts constructor,
+shared modules and overlays. The internal =_makeMkFlake= function handles
+argument validation, module arguments, per-system Nixpkgs instantiation and
+module composition. It is not exported by either flake's library.
 
 ** Internal packages
 =legacyPackages.${system}= contains =elisp-autofmt=, =gitignore-fmt=, =lisplens=,
@@ -574,9 +605,12 @@ The internal =treefmt= group selects =lisplens=, =elisp-autofmt=, =gitignore-fmt
 =nix-flake-patched=; neither adds a selection export.
 The =legacy= group selects all packages and adds the directory-selected
 =legacyPackages= attribute.
-The subflake applies =legacy= to its own package set and exports that selection
-by system. The root forwards it directly. These overlay groups are internal;
-neither flake exports an =overlays= output.
+The private subflake exports these overlay groups as =overlays= without applying
+them. The root uses =lib.mkForce= to replace the wrapper's shared overlay list
+with the =legacy= group through =perSystem.nixpkgs.overlays=. Its package outputs,
+development environment and formatter therefore use the same per-system package
+set, and =legacyPackages= exports the directory-selected packages from that set.
+The groups remain internal; the root does not export an =overlays= output.
 
 *** Treefmt wrapper
 =pkgs/pkgs/treefmt-wrapper/config.nix= holds the shared formatter programs,
@@ -586,7 +620,7 @@ that library and an =imports= list containing =config.nix= to its package defini
 The package builds an independent wrapper with =treefmt-nix.lib.mkWrapper= and
 exposes the same module list through =passthru.imports=.
 
-The shared module at =pkgs/modules/fp/treefmt/default.nix= imports
+The shared flake-parts module defined in =pkgs/flake.nix= imports
 =pkgs.treefmt-wrapper.passthru.imports=, enables the flake formatter and default
 formatting check, and derives =projectRootFile= from =moduleLocation=.
 Consumers can configure the resulting formatter through =perSystem.treefmt=.

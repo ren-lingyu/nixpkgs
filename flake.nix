@@ -3,22 +3,21 @@
 
   inputs = {
     nixpkgs = {
-      url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1";
-    };
-    local-nixpkgs = {
-      url = "path:./pkgs";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1&rev=2074cc672349f14240fb7ea90d509e0b643e9dd4";
     };
   };
 
   outputs =
     { self, ... }@inputs:
-    inputs.local-nixpkgs.lib.mkFlake inputs.nixpkgs
+    let
+      local-nixpkgs = builtins.getFlake ./pkgs;
+    in
+    local-nixpkgs.lib.mkFlake inputs.nixpkgs
       ({ lib }: {
         inherit inputs;
         moduleLocation = __curPos.file;
-        llib = inputs.local-nixpkgs.lib;
-        lpkgs = inputs.local-nixpkgs;
+        llib = local-nixpkgs.lib;
+        lpkgs = local-nixpkgs;
       })
       (
         {
@@ -52,7 +51,9 @@
                 ...
               }:
               {
-                legacyPackages = lpkgs.legacyPackages.${system};
+                nixpkgs.overlays = lib.mkForce [ lpkgs.overlays.legacy ];
+
+                legacyPackages = pkgs.legacyPackages;
 
                 packages = {
                   nix = pkgs.nix-flake-patched;
@@ -75,6 +76,7 @@
                     "*.patch"
                     "LICENSE"
                     "flake.lock"
+                    "pkgs/flake.lock"
                   ];
                 };
               };

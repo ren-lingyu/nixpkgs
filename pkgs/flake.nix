@@ -1,176 +1,83 @@
 {
   inputs = {
     nixpkgs = {
-      url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1";
+      url = "git+https://github.com/NixOS/nixpkgs.git?ref=refs/heads/nixpkgs-unstable&shallow=1&rev=2074cc672349f14240fb7ea90d509e0b643e9dd4";
     };
     # Keep the upstream release's build dependencies independent of the caller's Nixpkgs.
     nix-2_35_6 = {
-      url = "git+https://github.com/NixOS/nix.git?ref=refs/tags/2.35.6&shallow=1";
+      url = "git+https://github.com/NixOS/nix.git?ref=refs/tags/2.35.6&shallow=1&rev=4c9c2490ff10c6fc30f9675273af989569cf37da";
     };
     flake-parts = {
-      url = "git+https://github.com/hercules-ci/flake-parts.git?ref=refs/heads/main&shallow=1";
+      url = "git+https://github.com/hercules-ci/flake-parts.git?ref=refs/heads/main&shallow=1&rev=ea2630b7470978622c7689a1ff75d2b389175399";
     };
     treefmt-nix = {
-      url = "git+https://github.com/numtide/treefmt-nix.git?ref=refs/heads/main&shallow=1";
+      url = "git+https://github.com/numtide/treefmt-nix.git?ref=refs/heads/main&shallow=1&rev=0d6d739a833ba9a9c93034862e4a7b061a062a1c";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     elisp-autofmt = {
-      url = "git+https://github.com/emacsmirror/elisp-autofmt.git?ref=refs/heads/master&shallow=1";
+      url = "git+https://github.com/emacsmirror/elisp-autofmt.git?ref=refs/heads/master&shallow=1&rev=a41fe15d3d2c69a6f069bab4d90caab8a4b62be7";
       flake = false;
     };
     lisplens = {
-      url = "git+https://github.com/rigortype/lisplens.git?ref=refs/tags/v0.6.0&shallow=1";
+      url = "git+https://github.com/rigortype/lisplens.git?ref=refs/tags/v0.6.0&shallow=1&rev=2662b944d8d93a2734bc78464864b140ec9e0b8f";
       flake = false;
     };
   };
 
   outputs =
     { self, ... }@inputs:
-    inputs.flake-parts.lib.mkFlake
-      {
-        inherit inputs;
+    let
+      llib = import ./lib { lib = inputs.nixpkgs.lib; };
+      lpkgs = import ./pkgs {
+        llib = { inherit (llib) packages; };
+        sources = { inherit (inputs) elisp-autofmt lisplens; };
+        nix-2_35_6 = builtins.mapAttrs (_: packages: packages.nix) inputs.nix-2_35_6.packages;
+        treefmt-nix-lib = inputs.treefmt-nix.lib;
+      };
+    in
+    {
+      lib = {
+        inherit (llib)
+          mergeAttrsRecursive
+          overlays
+          packages
+          tests
+          ;
+        mkFlake =
+          nixpkgs: argsFun: module:
+          llib._makeMkFlake {
+            inherit nixpkgs argsFun module;
 
-        specialArgs =
-          let
-            lib = inputs.nixpkgs.lib;
-          in
-          rec {
-            llib = import ./lib { inherit lib; };
-            lpkgs = import ./pkgs {
-              inherit llib;
-              sources = { inherit (inputs) elisp-autofmt lisplens; };
-              nix-2_35_6 = builtins.mapAttrs (_: packages: packages.nix) inputs.nix-2_35_6.packages;
-              treefmt-nix-lib = inputs.treefmt-nix.lib;
-            };
-          };
-      }
-      (
-        {
-          llib,
-          lpkgs,
-          config,
-          lib,
-          ...
-        }@toplevel:
-        {
-          config = {
-            systems = inputs.nixpkgs.lib.systems.flakeExposed;
+            flakePartsMkFlake = inputs.flake-parts.lib.mkFlake;
 
-            flake = {
-              lib = toplevel.llib.mergeAttrsRecursive { allowOverrides = false; } [
-                toplevel.llib
-                {
-                  mkFlake =
-                    nixpkgs: argsFun: module:
-                    let
-                      args = argsFun { lib = nixpkgs.lib; };
-                      missingArgs = builtins.filter (name: !(builtins.hasAttr name args)) [
-                        "inputs"
-                        "moduleLocation"
-                      ];
-                      specialArgs = toplevel.llib.mergeAttrsRecursive { allowOverrides = true; } [
-                        {
-                          lib = nixpkgs.lib;
-                          llib = args.llib or { };
-                          lpkgs = args.lpkgs or { };
-                        }
-                        (args.specialArgs or { })
-                      ];
-                      flakeArgs = toplevel.llib.mergeAttrsRecursive { allowOverrides = true; } [
-                        { inherit specialArgs; }
-                        (builtins.removeAttrs args [
-                          "llib"
-                          "lpkgs"
-                        ])
-                      ];
-                    in
-                    assert nixpkgs.lib.assertMsg (builtins.isFunction argsFun)
-                      "mkFlake: the second argument must be a function accepting { lib } and returning an attribute set (for example, { lib }: { inherit inputs; moduleLocation = ./flake.nix; }).";
-                    assert nixpkgs.lib.assertMsg (builtins.isAttrs args)
-                      "mkFlake: the argument function must return an attribute set.";
-                    assert nixpkgs.lib.assertMsg (missingArgs == [ ])
-                      "mkFlake: the argument function result is missing required attributes: ${builtins.toJSON missingArgs}. Provide inputs and moduleLocation in the returned attribute set (for example, moduleLocation = ./flake.nix; or moduleLocation = __curPos.file;).";
-                    assert nixpkgs.lib.assertMsg (
-                      !(args ? specialArgs) || builtins.isAttrs args.specialArgs
-                    ) "mkFlake: specialArgs in the argument function result must be an attribute set.";
-                    inputs.flake-parts.lib.mkFlake flakeArgs {
-                      imports = [
-                        {
-                          imports = [ inputs.treefmt-nix.flakeModule ];
+            overlays = [
+              lpkgs.overlays.treefmt
+              lpkgs.overlays.nix
+            ];
 
-                          config.perSystem =
-                            {
-                              llib,
-                              lpkgs,
-                              pkgs,
-                              lib,
-                              system,
-                              config,
-                              ...
-                            }:
-                            {
-                              options = {
-                                nixpkgs = {
-                                  overlays = lib.mkOption {
-                                    type = lib.types.listOf (
-                                      lib.types.functionTo (lib.types.functionTo (lib.types.lazyAttrsOf lib.types.unspecified))
-                                    );
-                                    default = [ ];
-                                  };
-                                };
-                              };
-                              config = {
-                                _module.args = {
-                                  pkgs = nixpkgs.lib.mkForce (
-                                    import nixpkgs {
-                                      inherit system;
-                                      overlays = config.nixpkgs.overlays;
-                                    }
-                                  );
-                                };
+            modules = [
+              inputs.treefmt-nix.flakeModule
+              ({ lib, moduleLocation, ... }: {
+                config.perSystem = { pkgs, ... }: {
+                  treefmt = {
+                    imports = pkgs.treefmt-wrapper.passthru.imports;
+                    flakeFormatter = true;
+                    flakeCheck = lib.mkDefault true;
+                    projectRootFile = builtins.baseNameOf (builtins.toString moduleLocation);
+                  };
 
-                                nixpkgs.overlays = with toplevel.lpkgs.overlays; [
-                                  treefmt
-                                  nix
-                                ];
-
-                                devShells = {
-                                  nix = pkgs.mkShellNoCC {
-                                    packages = [ pkgs.nix-flake-patched ];
-
-                                    shellHook = ''export PATH="${pkgs.nix-flake-patched}/bin:$PATH"'';
-                                  };
-                                };
-                              };
-                            };
-                        }
-                        ./modules/fp/treefmt
-                        module
-                      ];
+                  devShells = {
+                    nix = pkgs.mkShellNoCC {
+                      packages = [ pkgs.nix-flake-patched ];
+                      shellHook = ''export PATH="${pkgs.nix-flake-patched}/bin:$PATH"'';
                     };
-                }
-              ];
-            };
-
-            perSystem =
-              {
-                system,
-                config,
-                pkgs,
-                lib,
-                ...
-              }:
-              {
-                _module.args = {
-                  pkgs = import inputs.nixpkgs {
-                    inherit system;
-                    overlays = [ lpkgs.overlays.legacy ];
                   };
                 };
-
-                legacyPackages = pkgs.legacyPackages;
-              };
+              })
+            ];
           };
-        }
-      );
+      };
+
+      inherit (lpkgs) overlays;
+    };
 }
