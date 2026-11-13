@@ -13,6 +13,7 @@
 !/CHANGELOGS/*.org
 
 !/pkgs/
+!/pkgs/flake.lock
 !/pkgs/flake.nix
 !/pkgs/lib/
 !/pkgs/lib/**/
